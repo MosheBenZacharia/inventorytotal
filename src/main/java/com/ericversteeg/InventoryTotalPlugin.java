@@ -194,47 +194,22 @@ public class InventoryTotalPlugin extends Plugin
 
 	int [] getInventoryTotals(boolean isNewRun)
 	{
-		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
-
-		if (itemContainer == null)
+		if (overlay.getInventoryItemContainer() == null)
 		{
 			return new int [2];
 		}
 
-		final Item[] items = itemContainer.getItems();
-
-		final LinkedList<Item> allItems = new LinkedList<>(Arrays.asList(items));
-		// only add when the runepouch is in the inventory
-		if (allItems.stream().anyMatch(s -> s.getId() == RUNEPOUCH_ITEM_ID || s.getId() == DIVINE_RUNEPOUCH_ITEM_ID))
-		{
-			allItems.addAll(getRunepouchContents());
-		}
-
 		int totalQty = 0;
 		int totalGp = 0;
+		Map<Integer, Integer> qtyMap = getInventoryQtyMap();
 
-		for (Item item: allItems)
+		for (Integer itemId: qtyMap.keySet())
 		{
-			int itemId = item.getId();
-
-			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-
-			String itemName = itemComposition.getName();
-			final boolean ignore = runData.ignoredItems.stream().anyMatch(s -> {
-				String lcItemName = itemName.toLowerCase();
-				String lcS = s.toLowerCase();
-				return lcItemName.contains(lcS);
-			});
-			if (ignore) { continue; }
-
-			final boolean isNoted = itemComposition.getNote() != -1;
-			final int realItemId = isNoted ? itemComposition.getLinkedNoteId() : itemId;
-
 			int totalPrice;
-			int gePrice = getPrice(realItemId);
-			int itemQty = item.getQuantity();
+			int gePrice = getPrice(itemId);
+			int itemQty = qtyMap.get(itemId);
 
-			if (realItemId == COINS)
+			if (itemId == COINS)
 			{
 				totalPrice = itemQty;
 			}
@@ -246,7 +221,7 @@ public class InventoryTotalPlugin extends Plugin
 			totalGp += totalPrice;
 			totalQty += itemQty;
 			
-			updateRunData(isNewRun, realItemId, itemQty, gePrice);
+			updateRunData(isNewRun, itemId, itemQty, gePrice);
 		}
 
 		int[] totals = new int[2];
@@ -319,12 +294,36 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		List<InventoryTotalLedgerItem> ledgerItems = new LinkedList<>();
 
-		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
-
-		if (itemContainer == null)
+		if (overlay.getInventoryItemContainer() == null)
 		{
 			return new LinkedList<>();
 		}
+
+		Map<Integer, Integer> qtyMap = getInventoryQtyMap();
+
+		for (Integer itemId: qtyMap.keySet())
+		{
+			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+
+			String itemName = itemComposition.getName();
+
+			Integer qty = qtyMap.get(itemId);
+
+			Integer total = runData.itemPrices.get(itemId);
+			if (itemId == COINS || total == null)
+			{
+				total = 1;
+			}
+
+			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, total));
+		}
+
+		return ledgerItems;
+	}
+
+	Map<Integer, Integer> getInventoryQtyMap()
+	{
+		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
 
 		final Item[] items = itemContainer.getItems();
 
@@ -365,24 +364,7 @@ public class InventoryTotalPlugin extends Plugin
 			}
 		}
 
-		for (Integer itemId: qtyMap.keySet())
-		{
-			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-
-			String itemName = itemComposition.getName();
-
-			Integer qty = qtyMap.get(itemId);
-
-			Integer total = runData.itemPrices.get(itemId);
-			if (itemId == COINS || total == null)
-			{
-				total = 1;
-			}
-
-			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, total));
-		}
-
-		return ledgerItems;
+		return qtyMap;
 	}
 
 	List<InventoryTotalLedgerItem> getProfitLossLedger()
