@@ -60,7 +60,6 @@ public class LootingBagManager
 	private final Map<Integer, Integer> bagItems = new HashMap<>();
 	private int freeSlots = -1;
 	private long value = -1;
-	private boolean atleast = false; // true if looting bag might be more valuable than value suggests
 
 	private PickupAction lastPickUpAction;
 
@@ -96,7 +95,6 @@ public class LootingBagManager
 			}
 		}
 		value = newValue;
-		atleast = false;
 	}
 
 	@Subscribe
@@ -176,17 +174,15 @@ public class LootingBagManager
 			return;
 		}
 
-		int quantity = event.getItem().getQuantity();
-		if (quantity >= 65535)
-		{
-			atleast = true;
-		}
-		value += getPrice(itemId) * quantity;
-
 		if (!bagItems.containsKey(itemId) || !itemComposition.isStackable())
 		{
+			if (freeSlots <= 0)
+				return;
 			freeSlots--;
 		}
+
+		int quantity = event.getItem().getQuantity();
+		value += getPrice(itemId) * quantity;
 		bagItems.merge(itemId, quantity, Integer::sum);
 	}
 
@@ -201,7 +197,7 @@ public class LootingBagManager
 		{
 			return "Check";
 		}
-		String text = atleast ? ">" : "";
+		String text = "";
 		if (value >= 10_000_000)
 		{
 			return text + value / 1_000_000 + "M";
