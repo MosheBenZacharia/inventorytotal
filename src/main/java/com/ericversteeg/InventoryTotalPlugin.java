@@ -7,6 +7,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.ItemManager;
@@ -52,6 +53,12 @@ public class InventoryTotalPlugin extends Plugin
 	private ItemManager itemManager;
 
 	@Inject
+	private LootingBagManager lootingBagManager;
+
+	@Inject
+	private EventBus eventBus;
+
+	@Inject
 	private ConfigManager configManager;
 
 	@Inject
@@ -92,12 +99,14 @@ public class InventoryTotalPlugin extends Plugin
 
 		runData = new InventoryTotalRunData();
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
+		eventBus.register(lootingBagManager);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(overlay);
+		eventBus.unregister(lootingBagManager);
 	}
 
 	@Subscribe
