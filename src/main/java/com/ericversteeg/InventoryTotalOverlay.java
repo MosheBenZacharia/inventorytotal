@@ -450,6 +450,10 @@ class InventoryTotalOverlay extends Overlay
 		}
 		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
+		if (plugin.needsLootingBagCheck())
+		{
+			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
+		}
 
 		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
 				i -> fontMetrics.stringWidth(ledgerEntries.get(i).leftText)
@@ -554,6 +558,10 @@ class InventoryTotalOverlay extends Overlay
 		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
 		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
+		if (plugin.needsLootingBagCheck())
+		{
+			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
+		}
 
 		long runTime = plugin.elapsedRunTime();
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
