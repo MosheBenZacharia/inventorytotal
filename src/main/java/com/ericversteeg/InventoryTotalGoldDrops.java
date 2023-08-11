@@ -151,6 +151,7 @@ public class InventoryTotalGoldDrops {
 
 			dropSpriteWidget = xpDropWidgetChildren[1];
 
+
 			xpDropToGoldDrop(dropTextWidget, dropSpriteWidget, goldDropValue);
 		}
 		else
@@ -166,7 +167,6 @@ public class InventoryTotalGoldDrops {
         /*
         Change xpdrop icon and text, to make a gold drop
          */
-
 
 		dropTextWidget.setText(formatGoldDropText(goldDropValue));
 
@@ -237,9 +237,9 @@ public class InventoryTotalGoldDrops {
 			amount *= -10;
 		}
 
-		//Need to offset to the left by one digit to account for the fake xp drop red icon that we're getting rid of
+		//Need to offset to the left by two digits to account for the fake xp drop red icon that we're getting rid of
 		amount /= 100;
-		//don't ever want a 0 drop
+		//don't ever want a 0 drop (anything <100 will have too much space sadly, can potentially fix this by messing with the widget)
 		if (amount == 0)
 			amount = 1;
 
