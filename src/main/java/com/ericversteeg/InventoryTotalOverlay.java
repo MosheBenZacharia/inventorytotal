@@ -88,7 +88,7 @@ class InventoryTotalOverlay extends Overlay
 		{
 			Widget [] altInventoryWidgets = new Widget[]
 			{
-				client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER),
+				client.getWidget(WidgetInfo.BANK_CONTAINER),
 				client.getWidget(WidgetInfo.DEPOSIT_BOX_INVENTORY_ITEMS_CONTAINER)
 			};
 
