@@ -88,7 +88,11 @@ class InventoryTotalOverlay extends Overlay
 		{
 			Widget [] altInventoryWidgets = new Widget[]
 			{
-				client.getWidget(WidgetInfo.BANK_CONTAINER),
+				client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER),
+				//With equipment open
+				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 4),
+				//With looting bag open
+				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 13),
 				client.getWidget(WidgetInfo.DEPOSIT_BOX_INVENTORY_ITEMS_CONTAINER)
 			};
 
