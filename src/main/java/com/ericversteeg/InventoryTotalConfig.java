@@ -271,8 +271,19 @@ public interface InventoryTotalConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(
+    @ConfigItem(
 			position = 23,
+            keyName = "goldDrops",
+            name = "Show Gold Drops",
+            description = "Show each profit increase or decrease as an XP drop"
+    )
+    default boolean goldDrops()
+    {
+        return false;
+    }
+
+	@ConfigItem(
+			position = 24,
 			keyName = "ignoredItems",
 			name = "Ignored Items",
 			description = "Ignore these items in your inventory (applies after banking)."

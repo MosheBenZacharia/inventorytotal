@@ -3,6 +3,8 @@ package com.ericversteeg;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import net.runelite.api.*;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -58,6 +60,7 @@ public class InventoryTotalPlugin extends Plugin
 	private String profileKey = "";
 
 	private InventoryTotalRunData runData;
+	private InventoryTotalGoldDrops goldDropsObject;
 
 	private InventoryTotalMode mode = InventoryTotalMode.TOTAL;
 
@@ -65,6 +68,7 @@ public class InventoryTotalPlugin extends Plugin
 	private InventoryTotalState prevState = InventoryTotalState.NONE;
 
 	private long totalGp = 0;
+	private Long previousTotalGp = null;
 	private long totalQty = 0;
 
 	private long initialGp = 0;
@@ -87,6 +91,7 @@ public class InventoryTotalPlugin extends Plugin
 		overlayManager.add(overlay);
 
 		runData = new InventoryTotalRunData();
+		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 	}
 
 	@Override
@@ -105,6 +110,36 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired scriptPreFired)
+	{
+		goldDropsObject.onScriptPreFired(scriptPreFired);
+	}
+    @Subscribe
+    public void onGameTick(GameTick gameTick)
+    {
+        //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
+
+		boolean isRun = this.state == InventoryTotalState.RUN;
+		if (!isRun)
+			return;
+		if (previousTotalGp == null)
+		{
+			previousTotalGp = Long.valueOf(totalGp);
+			return;
+		}
+        long tickProfit = (totalGp - previousTotalGp);
+		previousTotalGp = Long.valueOf(totalGp);
+		if(tickProfit == 0)
+			return;
+
+		// generate gold drop
+		if (config.goldDrops() && tickProfit != 0)
+		{
+			goldDropsObject.requestGoldDrop(tickProfit);
+		}
+    }
+
 	@Provides
 	InventoryTotalConfig provideConfig(ConfigManager configManager)
 	{
@@ -118,6 +153,8 @@ public class InventoryTotalPlugin extends Plugin
 		runStartTime = Instant.now().toEpochMilli();
 
 		runData.ignoredItems = getIgnoredItems();
+
+		previousTotalGp = null;
 	}
 
 	// to handle same tick bank closing
