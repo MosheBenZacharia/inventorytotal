@@ -2,6 +2,7 @@ package com.ericversteeg;
 
 import com.google.gson.Gson;
 import com.google.inject.Provides;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPreFired;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 	description = "Totals item prices in your inventory."
 )
 
+@Slf4j
 public class InventoryTotalPlugin extends Plugin
 {
 	static final int COINS = ItemID.COINS_995;
@@ -342,6 +344,11 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			allItems.addAll(getRunepouchContents());
 		}
+		// only add when the looting bag is in the inventory
+		if (allItems.stream().anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
+		{
+			allItems.addAll(lootingBagManager.getLootingBagContents());
+		}
 
 		Map<Integer, Integer> qtyMap = new HashMap<>();
 
@@ -374,6 +381,21 @@ public class InventoryTotalPlugin extends Plugin
 		}
 
 		return qtyMap;
+	}
+
+	boolean needsLootingBagCheck()
+	{
+		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
+		if(itemContainer == null)
+			return false;
+
+		// only when the looting bag is in the inventory
+		if (Arrays.asList(itemContainer.getItems()).stream().anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
+		{
+			return lootingBagManager.needsCheck() && this.state != InventoryTotalState.BANK;
+		}
+
+		return false;
 	}
 
 	List<InventoryTotalLedgerItem> getProfitLossLedger()

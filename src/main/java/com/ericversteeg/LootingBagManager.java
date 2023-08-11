@@ -4,7 +4,10 @@ package com.ericversteeg;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
@@ -95,6 +98,22 @@ public class LootingBagManager
 			}
 		}
 		value = newValue;
+	}
+
+	List<Item> getLootingBagContents()
+	{
+		List<Item> items = new ArrayList<>(bagItems.size());
+		//needs to be checked/calibrated
+		if (freeSlots < 0)
+		{
+			return items;
+		}
+		for (Integer itemId: bagItems.keySet())
+		{
+			Item item = new Item(itemId, bagItems.get(itemId));
+			items.add(item);
+		}
+		return items;
 	}
 
 	@Subscribe
@@ -207,6 +226,11 @@ public class LootingBagManager
 			return text + value / 1000 + "k";
 		}
 		return text + value;
+	}
+
+	boolean needsCheck()
+	{
+		return freeSlots < 0;
 	}
 
 	public String getFreeSlotsText()

@@ -1,12 +1,16 @@
 package com.ericversteeg;
 
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.SpriteID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -27,6 +31,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Slf4j
 class InventoryTotalOverlay extends Overlay
 {
 	private static final int TEXT_Y_OFFSET = 17;
@@ -41,6 +46,7 @@ class InventoryTotalOverlay extends Overlay
 	private final InventoryTotalConfig config;
 
 	private final ItemManager itemManager;
+	private final SpriteManager spriteManager;
 
 	private Widget inventoryWidget;
 	private ItemContainer inventoryItemContainer;
@@ -54,7 +60,7 @@ class InventoryTotalOverlay extends Overlay
 	private long newRunTime = 0;
 
 	@Inject
-	private InventoryTotalOverlay(Client client, InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager)
+	private InventoryTotalOverlay(Client client, InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager, SpriteManager spriteManager)
 	{
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -64,6 +70,7 @@ class InventoryTotalOverlay extends Overlay
 		this.config = config;
 
 		this.itemManager = itemManager;
+		this.spriteManager = spriteManager;
 	}
 
 	void updatePluginState()
@@ -213,6 +220,7 @@ class InventoryTotalOverlay extends Overlay
 							 String runTimeText, int height) {
 		int imageSize = 15;
 		boolean showCoinStack = config.showCoinStack();
+		boolean showLootingBagCheck = plugin.needsLootingBagCheck();
 		int numCoins;
 		if (total > Integer.MAX_VALUE)
 		{
@@ -251,6 +259,10 @@ class InventoryTotalOverlay extends Overlay
 		if (showCoinStack)
 		{
 			imageWidthWithPadding = imageSize + 3;
+		}
+		if (showLootingBagCheck)
+		{
+			imageWidthWithPadding += imageSize + 3;
 		}
 
 		int width = totalWidth + fixedRunTimeWidth + imageWidthWithPadding + HORIZONTAL_PADDING * 2;
@@ -341,10 +353,25 @@ class InventoryTotalOverlay extends Overlay
 		if (showCoinStack)
 		{
 			int imageOffset = 4;
+			if (showLootingBagCheck)
+				imageOffset -= imageWidthWithPadding / 2;
 
 			BufferedImage coinsImage = itemManager.getImage(ItemID.COINS_995, numCoins, false);
 			coinsImage = ImageUtil.resizeImage(coinsImage, imageSize, imageSize);
 			graphics.drawImage(coinsImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
+		}
+
+		if (showLootingBagCheck)
+		{
+			int imageOffset = 4;
+
+			BufferedImage lootingBagImage = itemManager.getImage(ItemID.LOOTING_BAG_22586, numCoins, false);
+			lootingBagImage = ImageUtil.resizeImage(lootingBagImage, imageSize, imageSize);
+			graphics.drawImage(lootingBagImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
+
+			BufferedImage redXImage = spriteManager.getSprite(SpriteID.UNKNOWN_DISABLED_ICON, 0);
+			redXImage = ImageUtil.resizeImage(redXImage, imageSize, imageSize);
+			graphics.drawImage(redXImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 		}
 
 		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
