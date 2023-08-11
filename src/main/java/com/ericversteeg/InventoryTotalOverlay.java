@@ -1,5 +1,6 @@
 package com.ericversteeg;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -30,6 +31,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import net.runelite.client.util.QuantityFormatter;
 
 @Slf4j
 class InventoryTotalOverlay extends Overlay
@@ -37,6 +39,7 @@ class InventoryTotalOverlay extends Overlay
 	private static final int TEXT_Y_OFFSET = 17;
 	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
 	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
+	private static final String CHECK_LOOTING_BAG_TEXT = "Check Looting Bag";
 	private static final int HORIZONTAL_PADDING = 10;
 	private static final int BANK_CLOSE_DELAY = 1200;
 	static final int COINS = ItemID.COINS_995;
@@ -529,6 +532,16 @@ class InventoryTotalOverlay extends Overlay
 		}
 	}
 
+	@RequiredArgsConstructor
+	class LedgerEntry
+	{
+		final String leftText;
+		final Color leftColor;
+		final String rightText;
+		final Color rightColor;
+		final boolean addGap;
+	}
+
 	private void renderProfitLossLedger(Graphics2D graphics)
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
@@ -554,18 +567,9 @@ class InventoryTotalOverlay extends Overlay
 			return;
 		}
 
-		int totalGain = gain.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
-		int totalLoss = loss.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
-		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
-
-		ledger.add(new InventoryTotalLedgerItem("Total Gain", 1, totalGain));
-		ledger.add(new InventoryTotalLedgerItem("Total Loss", 1, totalLoss));
-		ledger.add(new InventoryTotalLedgerItem("Total", 1, total));
-
 		String [] descriptions = ledger.stream().map(item -> {
 			String desc = item.getDescription();
-			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1
-					&& !item.getDescription().contains("Total") && !item.getDescription().contains("Coins"))
+			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
 				desc = NumberFormat.getInstance(Locale.ENGLISH).format(Math.abs(item.getQty())) + " " + desc;
 			}
@@ -573,13 +577,57 @@ class InventoryTotalOverlay extends Overlay
 		}).toArray(String[]::new);
 		Integer [] prices = ledger.stream().map(item -> item.getQty() * item.getAmount()).toArray(Integer[]::new);
 
-		String [] formattedPrices = Arrays.stream(prices).map(
-				p -> NumberFormat.getInstance(Locale.ENGLISH).format(p)
-		).toArray(String[]::new);
+		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
+		if (descriptions.length == prices.length)
+		{
+			String prevDesc = "";
+			for (int i = 0; i < descriptions.length; i++)
+			{
+				Color leftColor = Color.decode("#FFF7E3");
+				Color rightColor = Color.WHITE;
+				boolean addGap = false;
+				String desc = descriptions[i];
 
-		Integer [] rowWidths = IntStream.range(0, descriptions.length).mapToObj(
-				i -> fontMetrics.stringWidth(descriptions[i])
-						+ fontMetrics.stringWidth(formattedPrices[i])
+				if (!prevDesc.contains("Total") && desc.contains("Total"))
+				{
+					addGap = true;
+				}
+				else if (i > 0 && prices[i - 1] >= 0 && prices[i] < 0 && !prevDesc.contains("Total"))
+				{
+					addGap = true;
+				}
+
+				prevDesc = desc;
+
+				int price = prices[i];
+				String formattedPrice = NumberFormat.getInstance(Locale.ENGLISH).format(price);
+				rightColor = priceToColor(price);
+
+				ledgerEntries.add(new LedgerEntry(desc, leftColor, formattedPrice, rightColor, addGap));
+			}
+		}
+
+		int totalGain = gain.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
+		int totalLoss = loss.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
+		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
+		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
+		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
+		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
+
+		long runTime = plugin.elapsedRunTime();
+		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
+		{
+			int gpPerHour = getGpPerHour(runTime, total);
+			//decimal stack only works on positive numbers
+			String decimalStack = QuantityFormatter.quantityToRSDecimalStack(Math.abs(gpPerHour));
+			if (gpPerHour < 0)
+				decimalStack = "-" + decimalStack;
+			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, decimalStack, priceToColor(gpPerHour), false));
+		}
+
+		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
+				i -> fontMetrics.stringWidth(ledgerEntries.get(i).leftText)
+						+ fontMetrics.stringWidth(ledgerEntries.get(i).rightText)
 		).toArray(Integer[]::new);
 
 		Arrays.sort(rowWidths);
@@ -599,7 +647,7 @@ class InventoryTotalOverlay extends Overlay
 			sectionPaddingTotal += sectionPadding;
 		}
 
-		int h = descriptions.length * rowH + TEXT_Y_OFFSET / 2 + sectionPaddingTotal + 2;
+		int h = ledgerEntries.size() * rowH + TEXT_Y_OFFSET / 2 + sectionPaddingTotal + 2;
 
 		int x = mouseX - rowW - 10;
 		int y = mouseY - h / 2;
@@ -616,72 +664,79 @@ class InventoryTotalOverlay extends Overlay
 		graphics.drawRoundRect(x - borderWidth / 2, y - borderWidth / 2,
 				rowW + borderWidth / 2, h + borderWidth / 2, cornerRadius, cornerRadius);
 
-		if (descriptions.length == prices.length)
+		renderLedgerEntries(ledgerEntries, x, y, rowW, rowH, sectionPadding, graphics);
+	}
+	
+	private int lastGpPerHour;
+	private long lastGpPerHourUpdateTime;
+
+	private int getGpPerHour(long runTime, int total)
+	{
+		//dont want to update too often
+		long timeNow = Instant.now().toEpochMilli();
+		if (timeNow - lastGpPerHourUpdateTime < 1000)
 		{
-			int yOffset = 0;
-			String prevDesc = "";
-			for (int i = 0; i < descriptions.length; i++)
-			{
-				String desc = descriptions[i];
+			return lastGpPerHour;
+		}
 
-				if (!prevDesc.contains("Total") && desc.contains("Total"))
-				{
-					yOffset += sectionPadding;
-				}
-				else if (i > 0 && prices[i - 1] >= 0 && prices[i] < 0 && !prevDesc.contains("Total"))
-				{
-					yOffset += sectionPadding;
-				}
+		float hours = ((float) runTime) / 3600000f;
+		int gpPerHour = (int) (total / hours);
+		
+		lastGpPerHourUpdateTime = timeNow;
+		lastGpPerHour = gpPerHour;
+		return gpPerHour;
+	}
 
-				int textX = x + HORIZONTAL_PADDING;
-				int textY = y + rowH * i + TEXT_Y_OFFSET + yOffset;
+	private String formatNumber(int number)
+	{
+		return NumberFormat.getInstance(Locale.ENGLISH).format(number);
+	}
 
-				TextComponent textComponent = new TextComponent();
+	private Color priceToColor(int price)
+	{
+		if (price > 0)
+		{
+			return Color.GREEN;
+		}
+		else if (price < 0)
+		{
+			return Color.RED;
+		}
+		else
+		{
+			return Color.WHITE;
+		}
+	}
 
-				if (desc.contains("Total") && desc.length() == 5)
-				{
-					textComponent.setColor(Color.ORANGE);
-				}
-				else if (desc.contains("Total"))
-				{
-					textComponent.setColor(Color.YELLOW);
-				}
-				else
-				{
-					textComponent.setColor(Color.decode("#FFF7E3"));
-				}
+	private void renderLedgerEntries(LinkedList<LedgerEntry> ledgerEntries, int x, int y, int rowW, int rowH, int sectionPadding, Graphics2D graphics)
+	{
+		FontMetrics fontMetrics = graphics.getFontMetrics();
+		int yPosition = TEXT_Y_OFFSET;
+		for (LedgerEntry ledgerEntry: ledgerEntries)
+		{
+			if(ledgerEntry.addGap)
+				yPosition += sectionPadding;
 
-				textComponent.setText(desc);
+			int textX = x + HORIZONTAL_PADDING;
+			int textY = y + yPosition;
 
-				textComponent.setPosition(new Point(textX, textY));
-				textComponent.render(graphics);
+			TextComponent textComponent = new TextComponent();
+			textComponent.setColor(ledgerEntry.leftColor);
+			textComponent.setText(ledgerEntry.leftText);
+			textComponent.setPosition(new Point(textX, textY));
+			textComponent.render(graphics);
+			
+			String rightText = ledgerEntry.rightText;
+			int textW = fontMetrics.stringWidth(rightText);
+			textX = x + rowW - HORIZONTAL_PADDING - textW;
 
-				prevDesc = desc;
+			textComponent = new TextComponent();
+			textComponent.setColor(ledgerEntry.rightColor);
+			textComponent.setText(rightText);
+			textComponent.setPosition(new Point(textX, textY));
+			textComponent.render(graphics);
 
-				int price = prices[i];
-
-				String formattedPrice = NumberFormat.getInstance(Locale.ENGLISH).format(price);
-
-				int textW = fontMetrics.stringWidth(formattedPrice);
-				textX = x + rowW - HORIZONTAL_PADDING - textW;
-				textY = y + rowH * i + TEXT_Y_OFFSET + yOffset;
-
-				textComponent = new TextComponent();
-
-				if (price > 0)
-				{
-					textComponent.setColor(Color.GREEN);
-				}
-				else if (price < 0)
-				{
-					textComponent.setColor(Color.RED);
-				}
-
-				textComponent.setText(formattedPrice);
-
-				textComponent.setPosition(new Point(textX, textY));
-				textComponent.render(graphics);
-			}
+			yPosition += rowH;
 		}
 	}
 
@@ -747,6 +802,9 @@ class InventoryTotalOverlay extends Overlay
 
 	private String getFormattedRunTime()
 	{
+		if (!config.showRunTime())
+			return null;
+
 		long runTime = plugin.elapsedRunTime();
 
 		if (runTime == InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)

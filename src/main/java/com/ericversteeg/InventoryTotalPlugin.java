@@ -570,7 +570,7 @@ public class InventoryTotalPlugin extends Plugin
 
 	long elapsedRunTime()
 	{
-		if (runStartTime == 0 || !config.showRunTime())
+		if (runStartTime == 0)
 		{
 			return NO_PROFIT_LOSS_TIME;
 		}
