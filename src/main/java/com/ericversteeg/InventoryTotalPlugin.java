@@ -231,17 +231,7 @@ public class InventoryTotalPlugin extends Plugin
 			final int realItemId = isNoted ? itemComposition.getLinkedNoteId() : itemId;
 
 			int totalPrice;
-			int gePrice;
-
-			if (runData.itemPrices.containsKey(realItemId))
-			{
-				gePrice = runData.itemPrices.get(realItemId);
-			}
-			else
-			{
-				gePrice = itemManager.getItemPrice(realItemId);
-			}
-
+			int gePrice = getPrice(realItemId);
 			int itemQty = item.getQuantity();
 
 			if (realItemId == COINS)
@@ -255,32 +245,8 @@ public class InventoryTotalPlugin extends Plugin
 
 			totalGp += totalPrice;
 			totalQty += itemQty;
-
-			if (realItemId != COINS && !runData.itemPrices.containsKey(realItemId))
-			{
-				runData.itemPrices.put(realItemId, gePrice);
-			}
-
-			if (isNewRun)
-			{
-				if (runData.initialItemQtys.containsKey(realItemId))
-				{
-					runData.initialItemQtys.put(realItemId, runData.initialItemQtys.get(realItemId) + itemQty);
-				}
-				else
-				{
-					runData.initialItemQtys.put(realItemId, itemQty);
-				}
-			}
-
-			if (runData.itemQtys.containsKey(realItemId))
-			{
-				runData.itemQtys.put(realItemId, runData.itemQtys.get(realItemId) + itemQty);
-			}
-			else
-			{
-				runData.itemQtys.put(realItemId, itemQty);
-			}
+			
+			updateRunData(isNewRun, realItemId, itemQty, gePrice);
 		}
 
 		int[] totals = new int[2];
@@ -338,46 +304,12 @@ public class InventoryTotalPlugin extends Plugin
 				qty = ammo.getQuantity();
 			}
 
-			int gePrice;
-
-			if (runData.itemPrices.containsKey(itemId))
-			{
-				gePrice = runData.itemPrices.get(itemId);
-			}
-			else
-			{
-				gePrice = itemManager.getItemPrice(itemId);
-			}
-
+			int gePrice = getPrice(itemId);
 			int totalPrice = qty * gePrice;
 
 			eTotal += totalPrice;
 
-			if (!runData.itemPrices.containsKey(itemId))
-			{
-				runData.itemPrices.put(itemId, gePrice);
-			}
-
-			if (isNewRun)
-			{
-				if (runData.initialItemQtys.containsKey(itemId))
-				{
-					runData.initialItemQtys.put(itemId, runData.initialItemQtys.get(itemId) + qty);
-				}
-				else
-				{
-					runData.initialItemQtys.put(itemId, qty);
-				}
-			}
-
-			if (runData.itemQtys.containsKey(itemId))
-			{
-				runData.itemQtys.put(itemId, runData.itemQtys.get(itemId) + qty);
-			}
-			else
-			{
-				runData.itemQtys.put(itemId, qty);
-			}
+			updateRunData(isNewRun, itemId, qty, gePrice);
 		}
 
 		return eTotal;
@@ -541,6 +473,47 @@ public class InventoryTotalPlugin extends Plugin
 			items.add(item);
 		}
 		return items;
+	}
+
+	void updateRunData(boolean isNewRun, int itemId, int itemQty, int gePrice)
+	{
+		if (itemId != COINS && !runData.itemPrices.containsKey(itemId))
+		{
+			runData.itemPrices.put(itemId, gePrice);
+		}
+
+		if (isNewRun)
+		{
+			if (runData.initialItemQtys.containsKey(itemId))
+			{
+				runData.initialItemQtys.put(itemId, runData.initialItemQtys.get(itemId) + itemQty);
+			}
+			else
+			{
+				runData.initialItemQtys.put(itemId, itemQty);
+			}
+		}
+
+		if (runData.itemQtys.containsKey(itemId))
+		{
+			runData.itemQtys.put(itemId, runData.itemQtys.get(itemId) + itemQty);
+		}
+		else
+		{
+			runData.itemQtys.put(itemId, itemQty);
+		}
+	}
+
+	int getPrice(int itemId)
+	{
+		if (runData.itemPrices.containsKey(itemId))
+		{
+			return runData.itemPrices.get(itemId);
+		}
+		else
+		{
+			return itemManager.getItemPrice(itemId);
+		}
 	}
 
 	// max invoke rate approximately once per tick
