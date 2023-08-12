@@ -340,8 +340,12 @@ public class InventoryTotalPlugin extends Plugin
 		return ledgerItems;
 	}
 
+	//avoid GC
+	private Map<Integer, Integer> inventoryQtyMap = new HashMap<>();
+
 	Map<Integer, Integer> getInventoryQtyMap()
 	{
+		inventoryQtyMap.clear();
 		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
 
 		final Item[] items = itemContainer.getItems();
@@ -357,8 +361,7 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			allItems.addAll(lootingBagManager.getLootingBagContents());
 		}
-
-		Map<Integer, Integer> qtyMap = new HashMap<>();
+		
 
 		for (Item item: allItems) {
 			int itemId = item.getId();
@@ -375,20 +378,22 @@ public class InventoryTotalPlugin extends Plugin
 
 			final boolean isNoted = itemComposition.getNote() != -1;
 			final int realItemId = isNoted ? itemComposition.getLinkedNoteId() : itemId;
-
 			int itemQty = item.getQuantity();
+			
+			if (weaponChargesManager.isChargeableWeapon(realItemId) && weaponChargesManager.hasChargeData(realItemId))
+			{
+				//TODO: figure out how to account for ignored items here?
+				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(realItemId);
+				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
+				{
+					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);
+				});
+			}
 
-			if (qtyMap.containsKey(realItemId))
-			{
-				qtyMap.put(realItemId, qtyMap.get(realItemId) + itemQty);
-			}
-			else
-			{
-				qtyMap.put(realItemId, itemQty);
-			}
+			inventoryQtyMap.merge(realItemId, itemQty, Integer::sum);
 		}
 
-		return qtyMap;
+		return inventoryQtyMap;
 	}
 
 	boolean needsLootingBagCheck()
@@ -470,11 +475,14 @@ public class InventoryTotalPlugin extends Plugin
 		return ledgerItems;
 	}
 
+	//dont GC
+	private List<Item> runepouchItems = new ArrayList<>(RUNEPOUCH_AMOUNT_VARBITS.length);
+
 	// from ClueScrollPlugin
 	private List<Item> getRunepouchContents()
 	{
+		runepouchItems.clear();
 		EnumComposition runepouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-		List<Item> items = new ArrayList<>(RUNEPOUCH_AMOUNT_VARBITS.length);
 		for (int i = 0; i < RUNEPOUCH_AMOUNT_VARBITS.length; i++)
 		{
 			int amount = client.getVarbitValue(RUNEPOUCH_AMOUNT_VARBITS[i]);
@@ -491,9 +499,9 @@ public class InventoryTotalPlugin extends Plugin
 
 			final int itemId = runepouchEnum.getIntValue(runeId);
 			Item item = new Item(itemId, amount);
-			items.add(item);
+			runepouchItems.add(item);
 		}
-		return items;
+		return runepouchItems;
 	}
 
 	void updateRunData(boolean isNewRun, int itemId, int itemQty, int gePrice)

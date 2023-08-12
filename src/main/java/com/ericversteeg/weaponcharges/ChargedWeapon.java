@@ -2,10 +2,13 @@
 package com.ericversteeg.weaponcharges;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import lombok.Getter;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.api.ItemID;
 import net.runelite.client.util.Text;
 
 @Getter
@@ -148,6 +151,21 @@ public enum ChargedWeapon
 			ChargesMessage.staticChargeMessage("Your Trident of the seas has one charge.", 1),
 			ChargesMessage.staticChargeMessage("Your Trident of the seas has no charges.", 0)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+
+			//Trident of the seas charges:
+			// 1 death rune per charge
+			// 1 chaos rune per charge
+			// 5 fire runes per charge
+			// 10 coins per charge
+			chargeComponents.put(ItemID.DEATH_RUNE, charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
+			chargeComponents.put(ItemID.COINS, charges * 10);
+		})
 	),
 	TRIDENT_OF_THE_SWAMP(new ChargedWeaponBuilder()
 		.chargedItemIds(12899 /*TRIDENT_OF_THE_SWAMP*/)
@@ -882,6 +900,13 @@ public enum ChargedWeapon
 		)
 	);
 
+	//why does Consumer not take multiple arguments????
+	private class UpdateChargeComponentsParams
+	{
+		Integer currentCharges;
+		Map<Integer, Integer> chargeComponents = new HashMap<>();
+	}
+
 	private static class ChargedWeaponBuilder {
 		List<Integer> chargedItemIds = Collections.emptyList();
 		public ChargedWeaponBuilder chargedItemIds(Integer... chargedItemIds) {
@@ -941,6 +966,12 @@ public enum ChargedWeapon
 			this.defaultLowChargeThreshold = defaultLowChargeThreshold;
 			return this;
 		}
+		Consumer<UpdateChargeComponentsParams> updateChargeComponents = (params) -> {return;};
+		public  ChargedWeaponBuilder updateChargeComponents(Consumer<UpdateChargeComponentsParams> consumer)
+		{
+			this.updateChargeComponents = consumer;
+			return this;
+		}
 	}
 
 	public final List<Integer> itemIds;
@@ -959,6 +990,8 @@ public enum ChargedWeapon
 	private final List<ChargesMessage> checkChargesRegexes;
 	private final List<ChargesMessage> updateMessageChargesRegexes;
 	private final List<ChargesDialogHandler> dialogHandlers;
+	private final Consumer<UpdateChargeComponentsParams> updateChargeComponents;
+	private final UpdateChargeComponentsParams updateParams;
 
 	ChargedWeapon(ChargedWeaponBuilder builder) {
 		this.itemIds = builder.chargedItemIds;
@@ -973,6 +1006,16 @@ public enum ChargedWeapon
 		this.checkChargesRegexes = builder.checkChargesRegexes;
 		this.updateMessageChargesRegexes = builder.updateMessageChargesRegexes;
 		this.dialogHandlers = builder.dialogHandlers;
+		this.updateChargeComponents = builder.updateChargeComponents;
+		this.updateParams = new UpdateChargeComponentsParams();
+	}
+
+	public Map<Integer, Integer> getChargeComponents(Integer charges)
+	{
+		this.updateParams.currentCharges = charges;
+		this.updateParams.chargeComponents.clear();
+		this.updateChargeComponents.accept(updateParams);
+		return this.updateParams.chargeComponents;
 	}
 
 	public static ChargedWeapon getChargedWeaponFromId(int itemId)

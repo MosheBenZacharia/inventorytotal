@@ -4,7 +4,9 @@ package com.ericversteeg.weaponcharges;
 import com.ericversteeg.InventoryTotalConfig;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -658,6 +660,56 @@ public class WeaponChargesManager
 
 	@Inject
 	ConfigManager configManager;
+
+	private  Map<Integer, Integer> emptyMap = new HashMap<>();
+
+	public boolean isChargeableWeapon(Integer itemId)
+	{
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
+			if (chargedWeapon.getItemIds().contains(itemId)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean hasChargeData(Integer itemId)
+	{
+		if (itemId == ItemID.TOXIC_BLOWPIPE)
+		{
+			return (getDartsLeft() != null) && (getScalesLeft() != null) && (getDartType() != DartType.UNKNOWN);
+		}
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
+			if (chargedWeapon.getItemIds().contains(itemId)) {
+				return getCharges(chargedWeapon) != null;
+			}
+		}
+		log.info("Didn't find a chargeable weapon for this itemID, this shouldn't happen.");
+		return false;
+	}
+
+	public Map<Integer, Integer> getChargeComponents(Integer itemId)
+	{
+		ChargedWeapon weapon = null;
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
+			if (chargedWeapon.getItemIds().contains(itemId)) {
+				weapon = chargedWeapon;
+				break;
+			}
+		}
+		if (weapon == null)
+		{
+			log.info("Weapon is NULL");
+			return emptyMap;
+		}
+		//special case cause of how fucked the blowpipe is
+		if (weapon == ChargedWeapon.TOXIC_BLOWPIPE)
+		{
+			//TODO: implement
+			return emptyMap;
+		}
+		return weapon.getChargeComponents(getCharges(weapon));
+	}
 
 	public Integer getCharges(ChargedWeapon weapon) {
 		String configString = configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName);

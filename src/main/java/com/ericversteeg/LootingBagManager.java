@@ -100,20 +100,23 @@ public class LootingBagManager
 		value = newValue;
 	}
 
+	//dont GC
+	private List<Item> lootingBagItems = new ArrayList<>(bagItems.size());
+
 	List<Item> getLootingBagContents()
 	{
-		List<Item> items = new ArrayList<>(bagItems.size());
+		lootingBagItems.clear();
 		//needs to be checked/calibrated
 		if (freeSlots < 0)
 		{
-			return items;
+			return lootingBagItems;
 		}
 		for (Integer itemId: bagItems.keySet())
 		{
 			Item item = new Item(itemId, bagItems.get(itemId));
-			items.add(item);
+			lootingBagItems.add(item);
 		}
-		return items;
+		return lootingBagItems;
 	}
 
 	@Subscribe
