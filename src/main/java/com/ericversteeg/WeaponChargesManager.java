@@ -1,16 +1,6 @@
 //TODO: attribute geheur properly
 package com.ericversteeg;
 
-import com.google.inject.Provides;
-import com.weaponcharges.WeaponChargesConfig.DisplayWhen;
-import static com.weaponcharges.WeaponChargesConfig.DisplayWhen.ALWAYS;
-import static com.weaponcharges.WeaponChargesConfig.DisplayWhen.LOW_CHARGE;
-import static com.weaponcharges.WeaponChargesConfig.DisplayWhen.NEVER;
-import static com.weaponcharges.WeaponChargesConfig.DisplayWhen.USE_DEFAULT;
-import com.weaponcharges.WeaponChargesConfig.SerpModes;
-import static com.weaponcharges.WeaponChargesConfig.SerpModes.BOTH;
-import static com.weaponcharges.WeaponChargesConfig.SerpModes.PERCENT;
-import static com.weaponcharges.WeaponChargesConfig.SerpModes.SCALES;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -31,7 +21,6 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
-import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
@@ -43,11 +32,9 @@ import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.kit.KitType;
-import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -58,30 +45,17 @@ import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.chatbox.ChatboxPanelManager;
-import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
-@PluginDescriptor(
-	name = "Weapon Charges",
-	description = "Displays ibans blast and swamp trident charges on the inventory icon or as an infobox.",
-	tags = {"iban", "trident", "charge"}
-)
-// TODO for midrif's weak math brain: https://github.com/runelite/runelite/pull/11044/files
-// could also do this for stuff like ibans, but in reverse. You can't charge those, but you might want to know how
-// many runes to bring so that you don't run out of runes before charges.
 @Slf4j
-public class WeaponChargesManager extends Plugin implements KeyListener
+public class WeaponChargesManager
 {
-	public static final String CONFIG_GROUP_NAME = "weaponCharges";
-	public static final String DEV_MODE_CONFIG_KEY = "logData";
+	public static final String CONFIG_GROUP_NAME = InventoryTotalConfig.GROUP;
 	private static final int BLOWPIPE_ATTACK_ANIMATION = 5061;
 
 	// TODO rename. This is used for when an item is used on a weapon, when a weapon is used on an item, and when "pages" is clicked.
@@ -89,111 +63,16 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 	ChargedWeapon lastUnchargeClickedWeapon;
 
 	@Inject Client client;
-	@Inject private WeaponChargesItemOverlay itemOverlay;
-	@Inject private ItemManager itemManager;
-	@Inject private WeaponChargesConfig config;
 	@Inject private ClientThread clientThread;
-	@Inject private EventBus eventBus;
-	@Inject private OverlayManager overlayManager;
-	@Inject private KeyManager keyManager;
-	@Inject private DialogTracker dialogTracker;
 	@Inject private ChatboxPanelManager chatboxPanelManager;
 	@Inject private ChatMessageManager chatMessageManager;
 
-	private Devtools devtools;
+	private boolean verboseLogging = true;
 
-	@Provides
-	WeaponChargesConfig getConfig(ConfigManager configManager)
+	void initialize()
 	{
-		return configManager.getConfig(WeaponChargesConfig.class);
-	}
-
-	@Override
-	protected void startUp()
-	{
-		overlayManager.add(itemOverlay);
-		if (config.devMode()) enableDevMode();
-		dialogTracker.reset();
-		eventBus.register(dialogTracker);
-		keyManager.registerKeyListener(dialogTracker);
-		keyManager.registerKeyListener(this);
-		dialogTracker.setStateChangedListener(this::dialogStateChanged);
-		dialogTracker.setOptionSelectedListener(this::optionSelected);
-
 		lastLocalPlayerAnimationChangedGameTick = -1;
 		lastLocalPlayerAnimationChanged = -1;
-	}
-
-	@Override
-	protected void shutDown()
-	{
-		overlayManager.remove(itemOverlay);
-		disableDevMode();
-		eventBus.unregister(dialogTracker);
-		keyManager.unregisterKeyListener(dialogTracker);
-		keyManager.unregisterKeyListener(this);
-	}
-
-	void dialogStateChanged(DialogTracker.DialogState dialogState)
-	{
-		if (devtools != null && config.devMode()) devtools.dialogStateChanged(dialogState);
-
-		// TODO if you can calculate the total charges available in the inventory you could get an accurate count on the "add how many charges" dialog, because max charges - max charges addable = current charges.
-
-		for (ChargesDialogHandler nonUniqueDialogHandler : ChargedWeapon.getNonUniqueDialogHandlers())
-		{
-			nonUniqueDialogHandler.handleDialog(dialogState, this);
-		}
-
-		outer_loop:
-		for (ChargedWeapon chargedWeapon : ChargedWeapon.values())
-		{
-			for (ChargesDialogHandler dialogHandler : chargedWeapon.getDialogHandlers())
-			{
-				if (dialogHandler.handleDialog(dialogState, this)) break outer_loop;
-			}
-		}
-	}
-
-	//	private static final Pattern CHARGES_PATTERN = Pattern.compile("How many charges would you like to add\\? \\(0 - ([\\d,]+)\\)");
-//
-	void optionSelected(DialogTracker.DialogState dialogState, String optionSelected)
-	{
-		if (devtools != null && config.devMode()) devtools.optionSelected(dialogState, optionSelected);
-
-		// I don't think adding a single charge by using the items on the weapon is going to be trackable if the user
-		// skips the sprite dialog.
-
-		for (ChargesDialogHandler nonUniqueDialogHandler : ChargedWeapon.getNonUniqueDialogHandlers())
-		{
-			nonUniqueDialogHandler.handleDialogOptionSelected(dialogState, optionSelected, this);
-		}
-
-		outer_loop:
-		for (ChargedWeapon chargedWeapon : ChargedWeapon.values())
-		{
-			for (ChargesDialogHandler dialogHandler : chargedWeapon.getDialogHandlers())
-			{
-				if (dialogHandler.handleDialogOptionSelected(dialogState, optionSelected, this)) break outer_loop;
-			}
-		}
-	}
-
-	@Subscribe
-	public void onConfigChanged(ConfigChanged configChanged) {
-		if (configChanged.getGroup().equals(CONFIG_GROUP_NAME) && configChanged.getKey().equals(DEV_MODE_CONFIG_KEY)) {
-			if (config.devMode()) {
-				enableDevMode();
-			} else {
-				disableDevMode();
-			}
-		}
-	}
-
-	private void enableDevMode()
-	{
-		if (devtools == null) devtools = new Devtools(this);
-		eventBus.register(devtools);
 	}
 
 	private int lastDegradedHitsplatTick = -1000; // 1000 is far more than 91, so the serp helm will be able to have its degrading tracked on login rather than having to wait 90 ticks.
@@ -207,7 +86,7 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 				if (client.getTickCount() - lastDegradedHitsplatTick > 90) {
 					addCharges(helm, -10, false);
 					lastDegradedHitsplatTick = client.getTickCount();
-					if (config.devMode())
+					if (verboseLogging)
 						client.addChatMessage(ChatMessageType.FRIENDSCHAT, "WeaponCharges", "Serpentine Helmet has Degraded!", "DEVMODE");
 				}
 			}
@@ -227,84 +106,18 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 		}
 	}
 
-	private void disableDevMode()
-	{
-		if (devtools != null) eventBus.unregister(devtools);
-	}
-
 	// There are two lists to keep a list of checked weapons not just in the last tick, but in the last 2. I do this because
 	// I'm paranoid that someone will somehow check an item without getting a check message, or the check message
 	// does not match any regexes for some reason. This can cause the plugin to assign charges to the wrong weapon.
 	private List<ChargedWeapon> lastWeaponChecked = new ArrayList<>();
 	private List<ChargedWeapon> lastWeaponChecked2 = new ArrayList<>();
 
-	// If this doesn't have -1 priority, it will run prior to the vanilla
-	// runelite MES which cannot properly handle other plugins adding menu
-	// entries to the menu before it adds its menu entries. This is because it
-	// uses the MenuOpened event's list of menu entries which does not reflect
-	// changes to the menu entries made by other plugins in their MenuOpened
-	// subscribers. It can lead to the vanilla runelite MES menu options being
-	// added in the wrong spot.
-	@Subscribe(priority = -1)
-	public void onMenuOpened(MenuOpened e)
-	{
-		onMenuOpened2();
-
-		addVorkathsHeadMenuOptions();
-	}
-
-	private void addVorkathsHeadMenuOptions()
-	{
-		if (!client.isKeyPressed(KeyCode.KC_SHIFT) || config.vorkathsHeadMenuOptionDisabled()) {
-			return;
-		}
-
-		for (MenuEntry menuEntry : client.getMenuEntries())
-		{
-			int itemId;
-			if (WidgetInfo.TO_GROUP(menuEntry.getParam1()) == WidgetID.EQUIPMENT_GROUP_ID) { // item is equipped.
-				int childId = WidgetInfo.TO_CHILD(menuEntry.getParam1());
-				if (childId == 16) // cape slot.
-				{
-					ItemContainer itemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
-					if (itemContainer == null) return;
-
-					Item item = itemContainer.getItem(EquipmentInventorySlot.CAPE.getSlotIdx());
-					if (item == null) return;
-
-					itemId = item.getId();
-				} else {
-					return;
-				}
-			} else if (menuEntry.getItemId() != -1) {
-				itemId = menuEntry.getItemId();
-			} else {
-				continue;
-			}
-
-			if (
-				itemId == ItemID.RANGING_CAPE ||
-					itemId == ItemID.RANGING_CAPET ||
-					itemId == ItemID.MAX_CAPE
-			) {
-				boolean vorkathsHeadUsed = Boolean.valueOf(configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, "vorkathsHeadUsed"));
-				client.createMenuEntry(0)
-					.setOption("Weapon Charges Plugin vorkath's head ammo saving is " + (vorkathsHeadUsed ? "on" : "off"))
-					.setTarget(ColorUtil.wrapWithColorTag("Click to turn " + (vorkathsHeadUsed ? "off" : "on"), Color.ORANGE))
-					.onClick(entry -> {
-						configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "vorkathsHeadUsed", !vorkathsHeadUsed);
-					});
-				break;
-			}
-		}
-	}
-
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		if (event.getMenuOption().equalsIgnoreCase("check")) {
 			// TODO investigate shift-click.
-			if (config.devMode()) log.info("clicked \"check\" on " + event.getMenuTarget());
+			if (verboseLogging) log.info("clicked \"check\" on " + event.getMenuTarget());
 
 			if (WidgetInfo.TO_GROUP(event.getParam1()) == WidgetID.EQUIPMENT_GROUP_ID) { // item is equipped.
 				int childId = WidgetInfo.TO_CHILD(event.getParam1());
@@ -320,7 +133,7 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 				{
 					if (chargedWeapon.getItemIds().contains(event.getItemId()) && chargedWeapon.getCheckChargesRegexes().isEmpty())
 					{
-						if (config.devMode()) log.info("adding last weapon checked to " + chargedWeapon);
+						if (verboseLogging) log.info("adding last weapon checked to " + chargedWeapon);
 						lastWeaponChecked.add(chargedWeapon);
 						break;
 					}
@@ -331,7 +144,7 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 			{
 				if (chargedWeapon.getItemIds().contains(event.getItemId()))
 				{
-					if (config.devMode()) log.info("setting lastUnchargeClickedWeapon to " + chargedWeapon);
+					if (verboseLogging) log.info("setting lastUnchargeClickedWeapon to " + chargedWeapon);
 					lastUnchargeClickedWeapon = chargedWeapon;
 					break;
 				}
@@ -344,7 +157,7 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 			} else {
 				lastUsedOnWeapon = ChargedWeapon.getChargedWeaponFromId(event.getItemId());
 			}
-			if (config.devMode()) log.info("pages checked. setting last used weapon to {}", lastUsedOnWeapon.toString());
+			if (verboseLogging) log.info("pages checked. setting last used weapon to {}", lastUsedOnWeapon.toString());
 		}
 
 		if (event.getMenuAction() == MenuAction.WIDGET_TARGET_ON_WIDGET) {
@@ -361,13 +174,13 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 				lastUsedOnWeapon = ChargedWeapon.getChargedWeaponFromId(itemUsedOnId);
 				if (lastUsedOnWeapon != null)
 				{
-					if (config.devMode()) log.info("{}: used {} on {}", client.getTickCount(), itemUsedId, lastUsedOnWeapon);
+					if (verboseLogging) log.info("{}: used {} on {}", client.getTickCount(), itemUsedId, lastUsedOnWeapon);
 					checkSingleCrystalShardUse(itemUsed, itemUsedId);
 				} else {
-					if (config.devMode()) log.info("{}: used {} on {}", client.getTickCount(), itemUsedId, itemUsedOnId);
+					if (verboseLogging) log.info("{}: used {} on {}", client.getTickCount(), itemUsedId, itemUsedOnId);
 				}
 			} else {
-				if (config.devMode()) log.info("{}: used {} on {}", client.getTickCount(), lastUsedOnWeapon, itemUsedOnId);
+				if (verboseLogging) log.info("{}: used {} on {}", client.getTickCount(), lastUsedOnWeapon, itemUsedOnId);
 				checkSingleCrystalShardUse(itemUsedOn, itemUsedOnId);
 			}
 		}
@@ -418,7 +231,7 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 					setCharges(chargedWeapon, checkMessage.getChargesLeft(matcher));
 				} else if (lastUsedOnWeapon != null) {
 					setCharges(lastUsedOnWeapon, checkMessage.getChargesLeft(matcher));
-					if (config.devMode()) log.info("applying charges to last used-on weapon: {}", lastUsedOnWeapon);
+					if (verboseLogging) log.info("applying charges to last used-on weapon: {}", lastUsedOnWeapon);
 				} else {
 					log.warn("saw check message without having seen a charged weapon checked or used: \"" + message + "\"" );
 				}
@@ -889,38 +702,6 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 		setScalesLeft((scalesLeft == null ? 0 : scalesLeft) + change, logChange);
 	}
 
-	@Getter
-	private boolean showChargesKeyIsDown = false;
-
-	@Override
-	public void keyPressed(KeyEvent e)
-	{
-		if (config.showOnHotkey().matches(e)) {
-			showChargesKeyIsDown = true;
-		}
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e)
-	{
-		if (config.showOnHotkey().matches(e)) {
-			showChargesKeyIsDown = false;
-		}
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e)
-	{
-
-	}
-
-	@Subscribe
-	public void onFocusChanged(FocusChanged focusChanged) {
-		if (!focusChanged.isFocused()) {
-			showChargesKeyIsDown = false;
-		}
-	}
-
 	@RequiredArgsConstructor
 	public enum DartType {
 		UNKNOWN(-1, Color.LIGHT_GRAY, null),
@@ -950,156 +731,4 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 			return null;
 		}
 	}
-
-	public void onMenuOpened2()
-	{
-		if (!client.isKeyPressed(KeyCode.KC_SHIFT) || config.hideShiftRightClickOptions())
-		{
-			return;
-		}
-
-		MenuEntry[] entries = client.getMenuEntries();
-		for (int i = 0; i < entries.length; i++)
-		{
-			MenuEntry entry = entries[i];
-			Widget w = entry.getWidget();
-
-			int itemId;
-			if (w != null && WidgetInfo.TO_GROUP(w.getId()) == WidgetID.INVENTORY_GROUP_ID
-				&& "Examine".equals(entry.getOption()) && entry.getIdentifier() == 10)
-			{
-				itemId = entry.getItemId();
-			}
-			else if (w != null && WidgetInfo.TO_GROUP(w.getId()) == WidgetID.EQUIPMENT_GROUP_ID
-				&& "Examine".equals(entry.getOption()) && entry.getIdentifier() == 10)
-			{
-				w = w.getChild(1);
-				itemId = w.getItemId();
-			}
-			else
-			{
-				continue;
-			}
-
-			for (ChargedWeapon chargedWeapon : ChargedWeapon.values())
-			{
-				if (!chargedWeapon.getItemIds().contains(itemId) && !chargedWeapon.getUnchargedIds().contains(itemId))
-				{
-					continue;
-				}
-
-				// I want to insert the menu entry underneath everything else (except "Cancel"), such as the runelite MES left and shift click swap options, and inventory tags, because those are more useful to people.
-				MenuEntry submenuEntry = client.createMenuEntry(1)
-					.setOption("Weapon charges plugin")
-					.setType(MenuAction.RUNELITE_SUBMENU);
-				/*
-				Set low charge threshold (500)
-				Show charge count on item
-				[ ] Use default setting
-				[ ] Always
-				[x] Only when low
-				[ ] Never
-				 */
-				addSubmenu("Set low charge threshold (" + chargedWeapon.getLowCharge(configManager) + ")",
-					e -> openChangeLowChargeDialog(chargedWeapon, chargedWeapon.getLowCharge(configManager)),
-					submenuEntry);
-				addSubmenu(ColorUtil.wrapWithColorTag("Show charge count on item", Color.decode("#ff9040")),
-					submenuEntry);
-				DisplayWhen displayWhen = chargedWeapon.getDisplayWhen(configManager);
-				addSubmenuRadioButtonStyle(displayWhen == USE_DEFAULT, "Use default settings",
-					e -> chargedWeapon.setDisplayWhen(configManager, USE_DEFAULT),
-					submenuEntry);
-				addSubmenuRadioButtonStyle(displayWhen == LOW_CHARGE, "When low",
-					e -> chargedWeapon.setDisplayWhen(configManager, LOW_CHARGE),
-					submenuEntry);
-				addSubmenuRadioButtonStyle(displayWhen == ALWAYS, "Always",
-					e -> chargedWeapon.setDisplayWhen(configManager, ALWAYS),
-					submenuEntry);
-				addSubmenuRadioButtonStyle(displayWhen == NEVER, "Never",
-					e -> chargedWeapon.setDisplayWhen(configManager, NEVER),
-					submenuEntry);
-				if (chargedWeapon == ChargedWeapon.SERPENTINE_HELM) {
-					addSubmenu(ColorUtil.wrapWithColorTag("Display style", Color.decode("#ff9040")),
-						submenuEntry);
-					SerpModes serpMode = getSerpHelmDisplayStyle();
-					addSubmenuRadioButtonStyle(serpMode == PERCENT, "Percent",
-						e -> setSerpHelmDisplayStyle(PERCENT),
-						submenuEntry);
-					addSubmenuRadioButtonStyle(serpMode == SCALES, "Scales",
-						e -> setSerpHelmDisplayStyle(SCALES),
-						submenuEntry);
-					addSubmenuRadioButtonStyle(serpMode == BOTH, "Both",
-						e -> setSerpHelmDisplayStyle(BOTH),
-						submenuEntry);
-				}
-				break;
-			}
-		}
-	}
-
-	public void setSerpHelmDisplayStyle(SerpModes percent)
-	{
-		configManager.setConfiguration(CONFIG_GROUP_NAME, "serpentine_helm_display_style", percent);
-	}
-
-	public SerpModes getSerpHelmDisplayStyle()
-	{
-		String serpentine_helm_display_style = configManager.getConfiguration(CONFIG_GROUP_NAME, "serpentine_helm_display_style");
-		try
-		{
-			return SerpModes.valueOf(serpentine_helm_display_style);
-		} catch (IllegalArgumentException | NullPointerException e) {
-			return PERCENT;
-		}
-	}
-
-	private void openChangeLowChargeDialog(ChargedWeapon chargedWeapon, int currentLowCharge)
-	{
-		chatboxPanelManager.openTextInput("Set low charge threshold for " + chargedWeapon.getName() + ", (currently " + currentLowCharge + "):")
-			.addCharValidator(c -> "-0123456789".indexOf(c) != -1)
-			.onDone((Consumer<String>) (input) -> clientThread.invoke(() ->
-			{
-				int newLowChargeThreshold;
-				try
-				{
-					newLowChargeThreshold = Integer.parseInt(input);
-				} catch (NumberFormatException e) {
-					final String message = new ChatMessageBuilder()
-						.append(ChatColorType.HIGHLIGHT)
-						.append("\"" + input + "\" is not a number.")
-						.build();
-
-					chatMessageManager.queue(
-						QueuedMessage.builder()
-							.type(ChatMessageType.CONSOLE)
-							.runeLiteFormattedMessage(message)
-							.build());
-					return;
-				}
-				chargedWeapon.setLowCharge(configManager, newLowChargeThreshold);
-			}))
-			.build();
-	}
-
-	private void addSubmenu(String option, MenuEntry submenuEntry)
-	{
-		addSubmenu(option, e -> {}, submenuEntry);
-	}
-
-	private void addSubmenuRadioButtonStyle(boolean selected, String option, Consumer<MenuEntry> callback, MenuEntry submenuEntry)
-	{
-		addSubmenu("(" + (selected ? "x" : "  ") + ") " + option,
-			callback,
-			submenuEntry);
-	}
-
-	private void addSubmenu(String option, Consumer<MenuEntry> callback, MenuEntry submenuEntry)
-	{
-		client.createMenuEntry(0)
-			.setOption(option)
-			.setType(MenuAction.RUNELITE)
-			.onClick(callback)
-			.setParent(submenuEntry);
-	}
-
 }
