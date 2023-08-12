@@ -153,7 +153,7 @@ public class InventoryTotalPlugin extends Plugin
 			return;
 
 		// generate gold drop
-		if (config.goldDrops() && tickProfit != 0)
+		if (config.goldDrops() && config.enableProfitLoss() && tickProfit != 0)
 		{
 			goldDropsObject.requestGoldDrop(tickProfit);
 		}

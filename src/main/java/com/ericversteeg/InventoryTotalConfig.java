@@ -275,7 +275,7 @@ public interface InventoryTotalConfig extends Config
 			position = 23,
             keyName = "goldDrops",
             name = "Show Gold Drops",
-            description = "Show each profit increase or decrease as an XP drop"
+            description = "Show each profit increase or decrease as an XP drop (only works in profit/loss mode)."
     )
     default boolean goldDrops()
     {
