@@ -40,6 +40,9 @@ public class InventoryTotalPlugin extends Plugin
 	private InventoryTotalOverlay overlay;
 
 	@Inject
+	private WeaponChargesManager weaponChargesManager;
+
+	@Inject
 	private OverlayManager overlayManager;
 
 	@Inject
@@ -102,6 +105,8 @@ public class InventoryTotalPlugin extends Plugin
 		runData = new InventoryTotalRunData();
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 		eventBus.register(lootingBagManager);
+		eventBus.register(weaponChargesManager);
+		weaponChargesManager.initialize();
 	}
 
 	@Override
@@ -109,6 +114,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		eventBus.unregister(lootingBagManager);
+		eventBus.unregister(weaponChargesManager);
 	}
 
 	@Subscribe
