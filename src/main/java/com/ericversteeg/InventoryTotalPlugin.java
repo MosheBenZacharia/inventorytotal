@@ -593,7 +593,16 @@ public class InventoryTotalPlugin extends Plugin
 		}
 		else
 		{
-			return itemManager.getItemPrice(itemId);
+			//certain things should still have value (still need to figure out what else to include)
+			if (itemId == ItemID.CRYSTAL_SHARD)
+			{
+				ItemComposition composition = itemManager.getItemComposition(itemId);
+				return composition.getHaPrice();
+			}
+			else
+			{
+				return itemManager.getItemPrice(itemId);
+			}
 		}
 	}
 
