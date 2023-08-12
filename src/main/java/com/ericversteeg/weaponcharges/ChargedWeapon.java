@@ -988,45 +988,6 @@ public enum ChargedWeapon
 		return null;
 	}
 
-	public static final String DISPLAY_CONFIG_KEY_SUFFIX = "_display";
-	public static final String LOW_CHARGE_CONFIG_KEY_SUFFIX = "_low_charge_threshold";
-
-	public DisplayWhen getDisplayWhen(ConfigManager configManager) {
-		try
-		{
-			return DisplayWhen.valueOf(configManager.getConfiguration(WeaponChargesPlugin.CONFIG_GROUP_NAME, settingsConfigKey + DISPLAY_CONFIG_KEY_SUFFIX));
-		}
-		catch (NullPointerException | IllegalArgumentException e)
-		{
-			// return default value.
-			return DisplayWhen.USE_DEFAULT;
-		}
-	}
-
-	public void setDisplayWhen(ConfigManager configManager, DisplayWhen displayWhen)
-	{
-		if (displayWhen == null) throw new IllegalArgumentException("displaywhen cannot be set to null");
-		configManager.setConfiguration(WeaponChargesPlugin.CONFIG_GROUP_NAME, settingsConfigKey + DISPLAY_CONFIG_KEY_SUFFIX, displayWhen);
-	}
-
-	public int getLowCharge(ConfigManager configManager)
-	{
-		try
-		{
-			return Integer.parseInt(configManager.getConfiguration(WeaponChargesPlugin.CONFIG_GROUP_NAME, settingsConfigKey + LOW_CHARGE_CONFIG_KEY_SUFFIX));
-		}
-		catch (NullPointerException | IllegalArgumentException e)
-		{
-			// return default value.
-			return getDefaultLowChargeThreshold();
-		}
-	}
-
-	public void setLowCharge(ConfigManager configManager, int charges)
-	{
-		configManager.setConfiguration(WeaponChargesPlugin.CONFIG_GROUP_NAME, settingsConfigKey + LOW_CHARGE_CONFIG_KEY_SUFFIX, charges);
-	}
-
 	private static ChargedWeapon get_scythe_circumvent_illegal_self_reference() {
 		return SCYTHE_OF_VITUR;
 	}

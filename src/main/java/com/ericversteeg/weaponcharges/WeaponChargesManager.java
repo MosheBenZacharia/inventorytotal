@@ -679,6 +679,10 @@ public class WeaponChargesManager
 
 	public void addCharges(ChargedWeapon weapon, int change, boolean logChange) {
 		Integer charges = getCharges(weapon);
+		if (verboseLogging)
+		{
+			log.info("Adding " + change + " charges to " + weapon.name + "which has " + charges + "charges.");
+		}
 		setCharges(weapon, (charges == null ? 0 : charges) + change, logChange);
 	}
 
