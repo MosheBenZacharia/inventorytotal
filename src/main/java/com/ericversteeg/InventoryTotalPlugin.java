@@ -290,6 +290,24 @@ public class InventoryTotalPlugin extends Plugin
 		}
 
 		int eTotal = 0;
+		for (int itemId: eIds) {
+			if (weaponChargesManager.isChargeableWeapon(itemId) && weaponChargesManager.hasChargeData(itemId))
+			{
+				//TODO: figure out how to account for ignored items here?
+				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
+				for (Integer chargeComponentItemId: chargeComponents.keySet())
+				{
+					int price = getPrice(chargeComponentItemId);
+					int chargeComponentQty = chargeComponents.get(chargeComponentItemId);
+					if (itemId == COINS)
+					{
+						price = 1;
+					}
+					eTotal += chargeComponentQty * price;
+					updateRunData(isNewRun, chargeComponentItemId, chargeComponentQty, price);
+				}
+			}
+		}
 		for (int itemId: eIds)
 		{
 			int qty = 1;
