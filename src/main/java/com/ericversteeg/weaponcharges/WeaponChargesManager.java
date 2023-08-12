@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
@@ -24,12 +27,14 @@ import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.Player;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.ItemDespawned;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.kit.KitType;
@@ -48,8 +53,17 @@ import net.runelite.client.util.Text;
 @Slf4j
 public class WeaponChargesManager
 {
+	@Data
+	@AllArgsConstructor
+	public class PickupAction
+	{
+		int itemId;
+		WorldPoint worldPoint;
+	}
+	
 	public static final String CONFIG_GROUP_NAME = InventoryTotalConfig.GROUP;
 	private static final int BLOWPIPE_ATTACK_ANIMATION = 5061;
+	private static final int AMMO_SAVING_SETTING_VARBIT = 5697;
 
 	// TODO rename. This is used for when an item is used on a weapon, when a weapon is used on an item, and when "pages" is clicked.
 	ChargedWeapon lastUsedOnWeapon;
@@ -64,6 +78,7 @@ public class WeaponChargesManager
 	@Inject private DialogTracker dialogTracker;
 
 	private boolean verboseLogging = true;
+	private PickupAction lastPickUpAction;
 
 	public void startUp()
 	{
@@ -162,6 +177,11 @@ public class WeaponChargesManager
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		if (event.getMenuAction() == MenuAction.GROUND_ITEM_THIRD_OPTION && event.getMenuOption().equals("Take"))
+		{
+			WorldPoint point = WorldPoint.fromScene(client, event.getParam0(), event.getParam1(), client.getPlane());
+			lastPickUpAction = new PickupAction(event.getId(), point);
+		}
 		if (event.getMenuOption().equalsIgnoreCase("check")) {
 			// TODO investigate shift-click.
 			if (verboseLogging) log.info("clicked \"check\" on " + event.getMenuTarget());
@@ -238,6 +258,90 @@ public class WeaponChargesManager
 		if (itemUsedId == ItemID.CRYSTAL_SHARD && itemUsed.getQuantity() == 1 && ChargedWeapon.CRYSTAL_SHARD_RECHARGABLE_ITEMS.contains(lastUsedOnWeapon)) {
 			checkSingleCrystalShardUse = client.getTickCount();
 		}
+	}
+
+	private boolean hasToxicBlowpipeEquippedOrInInventory()
+	{
+		final ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+		if (itemContainer != null)
+		{
+			Item[] inventoryItems = itemContainer.getItems();
+			for (Item item : inventoryItems)
+			{
+				if (item.getId() == ItemID.TOXIC_BLOWPIPE)
+				{
+					return true;
+				}
+			}
+		}
+		final ItemContainer equipmentContainer = client.getItemContainer(InventoryID.EQUIPMENT);
+		if (equipmentContainer != null)
+		{
+			Item weapon = equipmentContainer.getItem(EquipmentInventorySlot.WEAPON.getSlotIdx());
+			if (weapon != null && weapon.getId() == ItemID.TOXIC_BLOWPIPE)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean hasBlowpipeData()
+	{
+		return (getDartsLeft() != null) && (getScalesLeft() != null) && (getDartType() != DartType.UNKNOWN);
+	}
+
+	@Subscribe
+	public void onItemDespawned(ItemDespawned event)
+	{
+		//see if user has ammo saving enabled
+		if (client.getVarbitValue(AMMO_SAVING_SETTING_VARBIT) != 1)
+		{
+			return;
+		}
+
+		//check has blowpipe data
+		if (!hasBlowpipeData())
+		{
+			return;
+		}
+
+		//check item is correct dart
+		int itemId = event.getItem().getId();
+		if (itemId != getDartType().itemId)
+		{
+			return;
+		}
+
+		//check has blowpipe equipped or in inventory
+		if (!hasToxicBlowpipeEquippedOrInInventory())
+		{
+			return;
+		}
+
+		if (lastPickUpAction == null)
+		{
+			return;
+		}
+
+		// not on same tile
+		if (!event.getTile().getWorldLocation().equals(client.getLocalPlayer().getWorldLocation()))
+		{
+			return;
+		}
+
+		if (!event.getTile().getWorldLocation().equals(lastPickUpAction.getWorldPoint()))
+		{
+			return;
+		}
+
+		if (itemId != lastPickUpAction.getItemId())
+		{
+			return;
+		}
+
+		int quantity = event.getItem().getQuantity();
+		addDartsLeft(quantity, false);
 	}
 
 	@Subscribe
@@ -811,7 +915,7 @@ public class WeaponChargesManager
 	{
 		if (itemId == ItemID.TOXIC_BLOWPIPE)
 		{
-			return (getDartsLeft() != null) && (getScalesLeft() != null) && (getDartType() != DartType.UNKNOWN);
+			return hasBlowpipeData();
 		}
 		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
 			if (chargedWeapon.getItemIds().contains(itemId)) {
