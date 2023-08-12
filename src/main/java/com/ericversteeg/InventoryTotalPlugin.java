@@ -251,13 +251,17 @@ public class InventoryTotalPlugin extends Plugin
 		return totals;
 	}
 
-	int getEquipmentTotal(boolean isNewRun)
+	//no GC
+	private Map<Integer, Integer> equipmentQtyMap = new HashMap<>();
+	private Map<Integer, Integer> getEquipmentQtyMap()
 	{
+		equipmentQtyMap.clear();
+
 		ItemContainer itemContainer = overlay.getEquipmentItemContainer();
 
 		if (itemContainer == null)
 		{
-			return 0;
+			return equipmentQtyMap;
 		}
 
 		Item ring = itemContainer.getItem(EquipmentInventorySlot.RING.getSlotIdx());
@@ -267,8 +271,6 @@ public class InventoryTotalPlugin extends Plugin
 
 		int [] ids = player.getPlayerComposition().getEquipmentIds();
 
-		LinkedList<Integer> eIds = new LinkedList<>();
-
 		for (int id: ids)
 		{
 			if (id < 512)
@@ -276,24 +278,30 @@ public class InventoryTotalPlugin extends Plugin
 				continue;
 			}
 
-			eIds.add(id - 512);
+			equipmentQtyMap.put(id - 512, 1);
 		}
 
 		if (ring != null)
 		{
-			eIds.add(ring.getId());
+			equipmentQtyMap.put(ring.getId(), 1);
 		}
 
 		if (ammo != null)
 		{
-			eIds.add(ammo.getId());
+			equipmentQtyMap.put(ammo.getId(), ammo.getQuantity());
 		}
 
+		return equipmentQtyMap;
+	}
+
+	int getEquipmentTotal(boolean isNewRun)
+	{
+		Map<Integer, Integer> equMap = getEquipmentQtyMap();
+
 		int eTotal = 0;
-		for (int itemId: eIds) {
+		for (int itemId: equMap.keySet()) {
 			if (weaponChargesManager.isChargeableWeapon(itemId) && weaponChargesManager.hasChargeData(itemId))
 			{
-				//TODO: figure out how to account for ignored items here?
 				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
 				for (Integer chargeComponentItemId: chargeComponents.keySet())
 				{
@@ -308,14 +316,9 @@ public class InventoryTotalPlugin extends Plugin
 				}
 			}
 		}
-		for (int itemId: eIds)
+		for (int itemId: equMap.keySet())
 		{
-			int qty = 1;
-			if (ammo != null && itemId == ammo.getId())
-			{
-				qty = ammo.getQuantity();
-			}
-
+			int qty = equMap.get(itemId);
 			int gePrice = getPrice(itemId);
 			int totalPrice = qty * gePrice;
 
@@ -400,7 +403,6 @@ public class InventoryTotalPlugin extends Plugin
 			
 			if (weaponChargesManager.isChargeableWeapon(realItemId) && weaponChargesManager.hasChargeData(realItemId))
 			{
-				//TODO: figure out how to account for ignored items here?
 				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(realItemId);
 				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
 				{
