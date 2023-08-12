@@ -231,12 +231,17 @@ class InventoryTotalOverlay extends Overlay
 		return null;
 	}
 
+	private boolean needsCheck()
+	{
+		return plugin.needsLootingBagCheck() || (plugin.getChargeableItemsNeedingCheck().size() != 0);
+	}
+
 	private void renderTotal(InventoryTotalConfig config, Graphics2D graphics, InventoryTotalPlugin plugin,
 							 Widget inventoryWidget, long totalQty, long total, String totalText,
 							 String runTimeText, int height) {
 		int imageSize = 15;
 		boolean showCoinStack = config.showCoinStack();
-		boolean showLootingBagCheck = plugin.needsLootingBagCheck();
+		boolean showCheckIcon = needsCheck();
 		int numCoins;
 		if (total > Integer.MAX_VALUE)
 		{
@@ -276,7 +281,7 @@ class InventoryTotalOverlay extends Overlay
 		{
 			imageWidthWithPadding = imageSize + 3;
 		}
-		if (showLootingBagCheck)
+		if (showCheckIcon)
 		{
 			imageWidthWithPadding += imageSize + 3;
 		}
@@ -369,7 +374,7 @@ class InventoryTotalOverlay extends Overlay
 		if (showCoinStack)
 		{
 			int imageOffset = 4;
-			if (showLootingBagCheck)
+			if (showCheckIcon)
 				imageOffset -= imageWidthWithPadding / 2;
 
 			BufferedImage coinsImage = itemManager.getImage(ItemID.COINS_995, numCoins, false);
@@ -377,13 +382,9 @@ class InventoryTotalOverlay extends Overlay
 			graphics.drawImage(coinsImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 		}
 
-		if (showLootingBagCheck)
+		if (showCheckIcon)
 		{
 			int imageOffset = 4;
-
-			BufferedImage lootingBagImage = itemManager.getImage(ItemID.LOOTING_BAG_22586, numCoins, false);
-			lootingBagImage = ImageUtil.resizeImage(lootingBagImage, imageSize, imageSize);
-			graphics.drawImage(lootingBagImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 
 			BufferedImage redXImage = spriteManager.getSprite(SpriteID.UNKNOWN_DISABLED_ICON, 0);
 			redXImage = ImageUtil.resizeImage(redXImage, imageSize, imageSize);
@@ -416,7 +417,7 @@ class InventoryTotalOverlay extends Overlay
 		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getInventoryLedger().stream()
 				.filter(item -> item.getQty() != 0).collect(Collectors.toList());
 
-		if (ledger.isEmpty())
+		if (ledger.isEmpty() && !needsCheck())
 		{
 			return;
 		}
@@ -454,6 +455,11 @@ class InventoryTotalOverlay extends Overlay
 		{
 			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
 		}
+		for (String itemName : plugin.getChargeableItemsNeedingCheck())
+		{
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to Calibrate Charges", Color.RED, "", Color.WHITE, false));
+		}
+
 
 		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
 				i -> fontMetrics.stringWidth(ledgerEntries.get(i).leftText)
@@ -511,7 +517,7 @@ class InventoryTotalOverlay extends Overlay
 		ledger.addAll(gain);
 		ledger.addAll(loss);
 
-		if (ledger.isEmpty())
+		if (ledger.isEmpty() && !needsCheck())
 		{
 			return;
 		}
@@ -558,10 +564,6 @@ class InventoryTotalOverlay extends Overlay
 		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
 		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
-		if (plugin.needsLootingBagCheck())
-		{
-			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
-		}
 
 		long runTime = plugin.elapsedRunTime();
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
@@ -572,6 +574,14 @@ class InventoryTotalOverlay extends Overlay
 			if (gpPerHour < 0)
 				decimalStack = "-" + decimalStack;
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, decimalStack, priceToColor(gpPerHour), false));
+		}
+		if (plugin.needsLootingBagCheck())
+		{
+			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
+		}
+		for (String itemName : plugin.getChargeableItemsNeedingCheck())
+		{
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to Calibrate Charges", Color.RED, "", Color.WHITE, false));
 		}
 
 		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(

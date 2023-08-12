@@ -797,6 +797,16 @@ public class WeaponChargesManager
 		return false;
 	}
 
+	public ChargedWeapon getChargedWeapon(Integer itemId)
+	{
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
+			if (chargedWeapon.getItemIds().contains(itemId)) {
+				return chargedWeapon;
+			}
+		}
+		return null;
+	}
+
 	public boolean hasChargeData(Integer itemId)
 	{
 		if (itemId == ItemID.TOXIC_BLOWPIPE)

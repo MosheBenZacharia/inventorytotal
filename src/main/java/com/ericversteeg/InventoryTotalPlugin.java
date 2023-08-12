@@ -431,6 +431,38 @@ public class InventoryTotalPlugin extends Plugin
 		return false;
 	}
 
+	//no GC
+	private HashSet<String> chargeableItemsNeedingCheck = new HashSet<>();
+
+	HashSet<String> getChargeableItemsNeedingCheck()
+	{
+		chargeableItemsNeedingCheck.clear();
+
+		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
+		//loop through container instead of getting qtyMap because we dont care about chargeable items in looting bag
+		if (itemContainer != null)
+		{
+			Item[] inventoryItems = itemContainer.getItems();
+			for (Item item : inventoryItems)
+			{
+				if (weaponChargesManager.isChargeableWeapon(item.getId()) && !weaponChargesManager.hasChargeData(item.getId()))
+				{
+					chargeableItemsNeedingCheck.add(weaponChargesManager.getChargedWeapon(item.getId()).name);
+				}
+			}
+		}
+		Map<Integer, Integer> equMap = getEquipmentQtyMap();
+		for (Integer itemId : equMap.keySet())
+		{
+			if (weaponChargesManager.isChargeableWeapon(itemId) && !weaponChargesManager.hasChargeData(itemId))
+			{
+				chargeableItemsNeedingCheck.add(weaponChargesManager.getChargedWeapon(itemId).name);
+			}
+		}
+
+		return chargeableItemsNeedingCheck;
+	}
+
 	List<InventoryTotalLedgerItem> getProfitLossLedger()
 	{
 		Map<Integer, Integer> prices = runData.itemPrices;
