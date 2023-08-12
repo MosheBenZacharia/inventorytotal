@@ -34,6 +34,7 @@ import net.runelite.api.ItemID;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Player;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
@@ -614,13 +615,13 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 	public void onClientTick(ClientTick clientTick)
 	{
 		if (checkTomeOfFire) {
-			int graphic = client.getLocalPlayer().getGraphic();
+			Player localPlayer = client.getLocalPlayer();
 			if (
-				graphic == 99 ||
-					graphic == 126 ||
-					graphic == 129 ||
-					graphic == 155 ||
-					graphic == 1464
+				localPlayer.hasSpotAnim(99) ||
+					localPlayer.hasSpotAnim(126) ||
+					localPlayer.hasSpotAnim(129) ||
+					localPlayer.hasSpotAnim(155) ||
+					localPlayer.hasSpotAnim(1464)
 			) {
 				addCharges(ChargedWeapon.TOME_OF_FIRE, -1, false);
 			}
@@ -628,20 +629,20 @@ public class WeaponChargesManager extends Plugin implements KeyListener
 		checkTomeOfFire = false;
 
 		if (checkTomeOfWater) {
-			int graphic = client.getLocalPlayer().getGraphic();
+			Player localPlayer = client.getLocalPlayer();
 			if (
-				graphic == 177 || //bind/snare/entangle
-					graphic == 102 || //curse spells
-					graphic == 105 ||
-					graphic == 108 ||
-					graphic == 167 ||
-					graphic == 170 ||
-					graphic == 173 ||
-					graphic ==  93 || //water spells
-					graphic == 120 ||
-					graphic == 135 ||
-					graphic == 161 ||
-					graphic == 1458
+					localPlayer.hasSpotAnim(177) || //bind/snare/entangle
+					localPlayer.hasSpotAnim(102) || //curse spells
+					localPlayer.hasSpotAnim(105) ||
+					localPlayer.hasSpotAnim(108) ||
+					localPlayer.hasSpotAnim(167) ||
+					localPlayer.hasSpotAnim(170) ||
+					localPlayer.hasSpotAnim(173) ||
+					localPlayer.hasSpotAnim( 93) || //water spells
+					localPlayer.hasSpotAnim(120) ||
+					localPlayer.hasSpotAnim(135) ||
+					localPlayer.hasSpotAnim(161) ||
+					localPlayer.hasSpotAnim(1458)
 			) {
 				addCharges(ChargedWeapon.TOME_OF_WATER, -1, false);
 			}
