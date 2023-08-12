@@ -1,15 +1,13 @@
 //TODO: attribute geheur properly
-package com.ericversteeg;
+package com.ericversteeg.weaponcharges;
 
+import com.ericversteeg.InventoryTotalConfig;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
@@ -22,13 +20,11 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
-import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
@@ -38,18 +34,13 @@ import net.runelite.api.kit.KitType;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.chat.ChatColorType;
-import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
-import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.chatbox.ChatboxPanelManager;
+import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
-import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 @Slf4j
@@ -66,14 +57,68 @@ public class WeaponChargesManager
 	@Inject private ClientThread clientThread;
 	@Inject private ChatboxPanelManager chatboxPanelManager;
 	@Inject private ChatMessageManager chatMessageManager;
+	@Inject private EventBus eventBus;
+	@Inject private KeyManager keyManager;
+	@Inject private DialogTracker dialogTracker;
 
 	private boolean verboseLogging = true;
 
-	void initialize()
+	public void startUp()
 	{
 		lastLocalPlayerAnimationChangedGameTick = -1;
 		lastLocalPlayerAnimationChanged = -1;
+		dialogTracker.reset();
+		eventBus.register(dialogTracker);
+		keyManager.registerKeyListener(dialogTracker);
+		dialogTracker.setStateChangedListener(this::dialogStateChanged);
+		dialogTracker.setOptionSelectedListener(this::optionSelected);
 	}
+
+	public void shutDown()
+	{
+		eventBus.unregister(dialogTracker);
+		keyManager.unregisterKeyListener(dialogTracker);
+	}
+
+	void dialogStateChanged(DialogTracker.DialogState dialogState)
+	{
+		// TODO if you can calculate the total charges available in the inventory you could get an accurate count on the "add how many charges" dialog, because max charges - max charges addable = current charges.
+
+		for (ChargesDialogHandler nonUniqueDialogHandler : ChargedWeapon.getNonUniqueDialogHandlers())
+		{
+			nonUniqueDialogHandler.handleDialog(dialogState, this);
+		}
+
+		outer_loop:
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values())
+		{
+			for (ChargesDialogHandler dialogHandler : chargedWeapon.getDialogHandlers())
+			{
+				if (dialogHandler.handleDialog(dialogState, this)) break outer_loop;
+			}
+		}
+	}
+
+	void optionSelected(DialogTracker.DialogState dialogState, String optionSelected)
+	{
+		// I don't think adding a single charge by using the items on the weapon is going to be trackable if the user
+		// skips the sprite dialog.
+
+		for (ChargesDialogHandler nonUniqueDialogHandler : ChargedWeapon.getNonUniqueDialogHandlers())
+		{
+			nonUniqueDialogHandler.handleDialogOptionSelected(dialogState, optionSelected, this);
+		}
+
+		outer_loop:
+		for (ChargedWeapon chargedWeapon : ChargedWeapon.values())
+		{
+			for (ChargesDialogHandler dialogHandler : chargedWeapon.getDialogHandlers())
+			{
+				if (dialogHandler.handleDialogOptionSelected(dialogState, optionSelected, this)) break outer_loop;
+			}
+		}
+	}
+
 
 	private int lastDegradedHitsplatTick = -1000; // 1000 is far more than 91, so the serp helm will be able to have its degrading tracked on login rather than having to wait 90 ticks.
 

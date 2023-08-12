@@ -1,6 +1,5 @@
 //TODO: attribute geheur properly
-package com.ericversteeg;
-import com.weaponcharges.WeaponChargesConfig.DisplayWhen;
+package com.ericversteeg.weaponcharges;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

@@ -1,5 +1,6 @@
 package com.ericversteeg;
 
+import com.ericversteeg.weaponcharges.WeaponChargesManager;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
@@ -106,7 +107,7 @@ public class InventoryTotalPlugin extends Plugin
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 		eventBus.register(lootingBagManager);
 		eventBus.register(weaponChargesManager);
-		weaponChargesManager.initialize();
+		weaponChargesManager.startUp();
 	}
 
 	@Override
@@ -115,6 +116,7 @@ public class InventoryTotalPlugin extends Plugin
 		overlayManager.remove(overlay);
 		eventBus.unregister(lootingBagManager);
 		eventBus.unregister(weaponChargesManager);
+		weaponChargesManager.shutDown();
 	}
 
 	@Subscribe
