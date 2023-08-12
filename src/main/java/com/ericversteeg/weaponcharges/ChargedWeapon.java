@@ -93,6 +93,11 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericSpriteDialogFullChargeMessage()
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			//Ibans staff can be recharged for free at the well, or you can pay coins to the guy in West Ardougne.
+			//For now assume users are recharging for free, in future consider exposing this as an option in config.
+		})
 	),
 
 	/* Tridents
@@ -156,15 +161,10 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Integer> chargeComponents = params.chargeComponents;
 
-			//Trident of the seas charges:
-			// 1 death rune per charge
-			// 1 chaos rune per charge
-			// 5 fire runes per charge
-			// 10 coins per charge
 			chargeComponents.put(ItemID.DEATH_RUNE, charges);
 			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
 			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
-			chargeComponents.put(ItemID.COINS, charges * 10);
+			chargeComponents.put(ItemID.COINS_995, charges * 10);
 		})
 	),
 	TRIDENT_OF_THE_SWAMP(new ChargedWeaponBuilder()
@@ -185,6 +185,16 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericUnchargeDialog()
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+
+			chargeComponents.put(ItemID.DEATH_RUNE, charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
+			chargeComponents.put(ItemID.ZULRAHS_SCALES, charges);
+		})
 	),
 	TRIDENT_OF_THE_SEAS_E(new ChargedWeaponBuilder()
 		.chargedItemIds(22288 /*TRIDENT_OF_THE_SEAS_E*/)
@@ -198,6 +208,16 @@ public enum ChargedWeapon
 			ChargesMessage.staticChargeMessage("Your Trident of the seas \\(e\\) has one charge.", 1),
 			ChargesMessage.staticChargeMessage("Your Trident of the seas \\(e\\) has no charges.", 0)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+
+			chargeComponents.put(ItemID.DEATH_RUNE, charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
+			chargeComponents.put(ItemID.COINS_995, charges * 10);
+		})
 	),
 	TRIDENT_OF_THE_SWAMP_E(new ChargedWeaponBuilder()
 		.chargedItemIds(22292 /*TRIDENT_OF_THE_SWAMP_E*/)
@@ -217,8 +237,18 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericUnchargeDialog()
 			)
 		)
-	),
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
 
+			chargeComponents.put(ItemID.DEATH_RUNE, charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
+			chargeComponents.put(ItemID.ZULRAHS_SCALES, charges);
+		})
+	),
+	//this can actually reach 20k charges if you combine two of them...
 	ABYSSAL_TENTACLE(new ChargedWeaponBuilder()
 		.chargedItemIds(12006 /*ABYSSAL_TENTACLE*/, 26484 /*ABYSSAL_TENTACLE_OR*/)
 		.animationIds(1658)
@@ -228,6 +258,10 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your abyssal tentacle can perform ([\\d,]+) more attacks.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			//TODO: support fractional components
+		})
 	),
 	/* chally
 		checking:
@@ -259,6 +293,16 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your crystal halberd has ([\\d,]+) charges remaining.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//Assume cheapest cost per charge
+			chargeComponents.put(ItemID.COINS_995, charges * 60);
+
+			//TODO: config for user to decide if they are using crystal shards vs paying ilfeen,
+			// and see if i can find varbit for how many times ilfeen has recharged (since that affects cost per charge)
+		})
 	),
 
 	/* Tome of fire:
@@ -293,6 +337,15 @@ public enum ChargedWeapon
 		.updateMessageChargesRegexes(
 			ChargesMessage.staticChargeMessage("Your Tome of Fire is now empty.", 0)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int pages = charges / 20;
+			if (pages > 0)
+				chargeComponents.put(ItemID.BURNT_PAGE, pages);
+		})
 	),
 	/* Tome of water:
 		checking:
@@ -319,6 +372,15 @@ public enum ChargedWeapon
 		.updateMessageChargesRegexes(
 			ChargesMessage.staticChargeMessage("Your Tome of Water is now empty.", 0)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int pages = charges / 20;
+			if (pages > 0)
+				chargeComponents.put(ItemID.SOAKED_PAGE, pages);
+		})
 	),
 	/* scythe
 		check (full, <full & >1, 1, 0/empty):
@@ -390,6 +452,16 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericSpriteDialogUnchargeMessage()
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int vials = charges / 100;
+			if (vials > 0)
+				chargeComponents.put(ItemID.VIAL_OF_BLOOD, vials);
+			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3);
+		})
 	),
 	/* blood fury
 		check (full, <full & >1, 1, 0/empty):
@@ -484,6 +556,12 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericSpriteDialogChargesMessage(true, 3)
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3);
+		})
 	),
 	/* arclight
 		check (full, <full & >1, 1, 0/empty):
@@ -518,6 +596,15 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your arclight has ([\\d,]+) charges left.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int shards = charges / 333;
+			if (shards > 0)
+				chargeComponents.put(ItemID.ANCIENT_SHARD, shards);
+		})
 	),
 	/* Ether Weapon common
 		check (full, <full & >1, 1, 0/empty):
@@ -564,6 +651,8 @@ public enum ChargedWeapon
 		.name("Craw's bow")
 		.rechargeAmount(16_000)
 		.configKeyName("craws_bow")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	WEBWEAVER(new ChargedWeaponBuilder()
 		.chargedItemIds(27655 /*WEBWEAVER_BOW*/)
@@ -573,6 +662,8 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("webweaver_bow")
 		.settingsConfigKey("craws_bow")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	/* Vigorra's chainmace
 		message overlap:
@@ -585,6 +676,8 @@ public enum ChargedWeapon
 		.name("Viggora's chainmace")
 		.rechargeAmount(16_000)
 		.configKeyName("viggoras_chainmace")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	URSINE (new ChargedWeaponBuilder()
 		.chargedItemIds(27660 /*URSINE_CHAINMACE*/)
@@ -594,6 +687,8 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("ursine_chainmace")
 		.settingsConfigKey("viggoras_chainmace")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	/* Thammaron's sceptre
 		message overlap:
@@ -606,6 +701,8 @@ public enum ChargedWeapon
 		.animationIds(1167,1978,1979,1162,1167,7855,811)
 		.rechargeAmount(16_000)
 		.configKeyName("thammarons_sceptre")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	ACCURSED(new ChargedWeaponBuilder()
 		.chargedItemIds(27665 /*ACCURSED_SCEPTRE*/, 27679 /*ACCURSED_SCEPTRE_A*/)
@@ -618,6 +715,8 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("accursed_sceptre")
 		.settingsConfigKey("thammarons_sceptre")
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
 	),
 	/*
 	check:
@@ -633,6 +732,16 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your crystal bow has ([\\d,]+) charges remaining.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//Assume cheapest cost per charge
+			chargeComponents.put(ItemID.COINS_995, charges * 72);
+
+			//TODO: config for user to decide if they are using crystal shards vs paying ilfeen,
+			// and see if i can find varbit for how many times ilfeen has recharged (since that affects cost per charge)
+		})
 	),
 	/*
 	check:
@@ -652,6 +761,15 @@ public enum ChargedWeapon
 		.updateMessageChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage(Text.removeTags("<col=ff0000>Your bow of Faerdhinen has ([\\d,]+) charges remaining.</col>"), 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int shards = charges / 100;
+			if (shards > 0)
+				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+		})
 	),
 	/*
 	crystal armor
@@ -669,6 +787,15 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your crystal helm has ([\\d,]+) charges remaining.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int shards = charges / 100;
+			if (shards > 0)
+				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+		})
 	),
 	CRYSTAL_BODY(new ChargedWeaponBuilder()
 		.chargedItemIds(23975 /*CRYSTAL_BODY*/, 27697 /*CRYSTAL_BODY_27697*/, 27709 /*CRYSTAL_BODY_27709*/, 27721 /*CRYSTAL_BODY_27721*/, 27733 /*CRYSTAL_BODY_27733*/, 27745 /*CRYSTAL_BODY_27745*/, 27757 /*CRYSTAL_BODY_27757*/, 27769 /*CRYSTAL_BODY_27769*/)
@@ -679,6 +806,15 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your crystal body has ([\\d,]+) charges remaining.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int shards = charges / 100;
+			if (shards > 0)
+				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+		})
 	),
 	CRYSTAL_LEGS(new ChargedWeaponBuilder()
 		.chargedItemIds(23979 /*CRYSTAL_LEGS*/, 27701 /*CRYSTAL_LEGS_27701*/, 27713 /*CRYSTAL_LEGS_27713*/, 27725 /*CRYSTAL_LEGS_27725*/, 27737 /*CRYSTAL_LEGS_27737*/, 27749 /*CRYSTAL_LEGS_27749*/, 27761 /*CRYSTAL_LEGS_27761*/, 27773 /*CRYSTAL_LEGS_27773*/)
@@ -689,6 +825,15 @@ public enum ChargedWeapon
 		.checkChargesRegexes(
 			ChargesMessage.matcherGroupChargeMessage("Your crystal legs has ([\\d,]+) charges remaining.", 1)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			//TODO: support fractional components
+			int shards = charges / 100;
+			if (shards > 0)
+				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+		})
 	),
 	/* Serpentine Helmet:
 	degradation mechanics:
@@ -746,6 +891,8 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericInputChargeMessage()
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+				{ params.chargeComponents.put(ItemID.ZULRAHS_SCALES, params.currentCharges); })
 	),
 	/* Tumeken's shadow
 		https://github.com/geheur/weapon-charges/issues/14 log here.
@@ -825,6 +972,13 @@ public enum ChargedWeapon
 				ChargesDialogHandler.genericSpriteDialogChargesMessage(true, 2)
 			)
 		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			chargeComponents.put(ItemID.SOUL_RUNE, charges * 2);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges * 5);
+		})
 	),
 	/**
 	 * Only used to access settings. Lots of things in the blowpipe are handled specially because it holds two kinds of

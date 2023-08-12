@@ -822,6 +822,9 @@ public class WeaponChargesManager
 		return false;
 	}
 
+	//avoid GC
+	private  Map<Integer, Integer> blowpipeMap = new HashMap<>();
+
 	public Map<Integer, Integer> getChargeComponents(Integer itemId)
 	{
 		ChargedWeapon weapon = null;
@@ -839,8 +842,13 @@ public class WeaponChargesManager
 		//special case cause of how fucked the blowpipe is
 		if (weapon == ChargedWeapon.TOXIC_BLOWPIPE)
 		{
-			//TODO: implement
-			return emptyMap;
+			blowpipeMap.clear();
+			Float dartCount = getDartsLeft();
+			Float scaleCount = getScalesLeft();
+			DartType dartType = getDartType();
+			blowpipeMap.put(dartType.itemId, dartCount.intValue());
+			blowpipeMap.put(ItemID.ZULRAHS_SCALES, scaleCount.intValue());
+			return blowpipeMap;
 		}
 		return weapon.getChargeComponents(getCharges(weapon));
 	}
