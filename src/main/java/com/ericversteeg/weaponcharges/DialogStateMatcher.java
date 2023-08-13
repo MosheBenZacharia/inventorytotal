@@ -1,4 +1,6 @@
-//TODO: Attribute geheur
+/*
+ * Copyright (c) 2023, geheur <https://github.com/geheur>
+ */
 package com.ericversteeg.weaponcharges;
 
 import java.util.ArrayList;

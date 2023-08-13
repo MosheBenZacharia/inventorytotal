@@ -1,5 +1,6 @@
-//TODO: Proper attribution to patrick watts
-
+/*
+ * Copyright (c) 2023, Patrick Watts <https://github.com/pwatts6060>
+ */
 package com.ericversteeg;
 
 import com.google.common.collect.ImmutableSet;

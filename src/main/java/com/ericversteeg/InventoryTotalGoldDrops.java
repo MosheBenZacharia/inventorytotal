@@ -1,5 +1,6 @@
-//TODO: Give proper attribution to nofatigue (BSD-2)
-
+/*
+ * Copyright (c) 2023, nofatigue <https://github.com/nofatigue>
+ */
 package com.ericversteeg;
 
 import lombok.extern.slf4j.Slf4j;

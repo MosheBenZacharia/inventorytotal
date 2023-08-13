@@ -1,4 +1,6 @@
-//TODO: properly attribute geheur
+/*
+ * Copyright (c) 2023, geheur <https://github.com/geheur>
+ */
 package com.ericversteeg.weaponcharges;
 import java.util.function.Function;
 import java.util.regex.Matcher;

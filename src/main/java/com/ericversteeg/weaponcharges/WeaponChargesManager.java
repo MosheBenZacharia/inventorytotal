@@ -1,4 +1,6 @@
-//TODO: attribute geheur properly
+/*
+ * Copyright (c) 2023, geheur <https://github.com/geheur>
+ */
 package com.ericversteeg.weaponcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
