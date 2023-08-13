@@ -42,6 +42,7 @@ class InventoryTotalOverlay extends Overlay
 	private static final String CHECK_LOOTING_BAG_TEXT = "Check Looting Bag";
 	private static final int HORIZONTAL_PADDING = 10;
 	private static final int BANK_CLOSE_DELAY = 1200;
+	private static final int imageSize = 15;
 	static final int COINS = ItemID.COINS_995;
 
 	private final Client client;
@@ -64,6 +65,10 @@ class InventoryTotalOverlay extends Overlay
 	
 	private int lastGpPerHour;
 	private long lastGpPerHourUpdateTime;
+
+	private BufferedImage coinsImage;
+	private int lastCoinValue;
+	private BufferedImage redXImage;
 
 	@RequiredArgsConstructor
 	class LedgerEntry
@@ -236,10 +241,31 @@ class InventoryTotalOverlay extends Overlay
 		return plugin.needsLootingBagCheck() || (plugin.getChargeableItemsNeedingCheck().size() != 0);
 	}
 
+	private BufferedImage getCoinsImage(int quantity)
+	{
+		if (coinsImage == null || quantity != lastCoinValue)
+		{
+			coinsImage = itemManager.getImage(ItemID.COINS_995, quantity, false);
+			coinsImage = ImageUtil.resizeImage(coinsImage, imageSize, imageSize);
+		}
+		lastCoinValue = quantity;
+		return coinsImage;
+	}
+
+	private BufferedImage getRedXImage()
+	{
+		if (redXImage == null)
+		{
+			redXImage = spriteManager.getSprite(SpriteID.UNKNOWN_DISABLED_ICON, 0);
+			redXImage = ImageUtil.resizeImage(redXImage, imageSize, imageSize);
+		}
+		return redXImage;
+	}
+
 	private void renderTotal(InventoryTotalConfig config, Graphics2D graphics, InventoryTotalPlugin plugin,
 							 Widget inventoryWidget, long totalQty, long total, String totalText,
 							 String runTimeText, int height) {
-		int imageSize = 15;
+		
 		boolean showCoinStack = config.showCoinStack();
 		boolean showCheckIcon = needsCheck();
 		int numCoins;
@@ -377,17 +403,15 @@ class InventoryTotalOverlay extends Overlay
 			if (showCheckIcon)
 				imageOffset -= imageWidthWithPadding / 2;
 
-			BufferedImage coinsImage = itemManager.getImage(ItemID.COINS_995, numCoins, false);
-			coinsImage = ImageUtil.resizeImage(coinsImage, imageSize, imageSize);
-			graphics.drawImage(coinsImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
+			BufferedImage image = getCoinsImage(numCoins);
+			graphics.drawImage(image, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 		}
 
 		if (showCheckIcon)
 		{
 			int imageOffset = 4;
 
-			BufferedImage redXImage = spriteManager.getSprite(SpriteID.UNKNOWN_DISABLED_ICON, 0);
-			redXImage = ImageUtil.resizeImage(redXImage, imageSize, imageSize);
+			BufferedImage redXImage = getRedXImage();
 			graphics.drawImage(redXImage, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 		}
 
