@@ -589,7 +589,7 @@ class InventoryTotalOverlay extends Overlay
 		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
 		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
 		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
-		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
+		ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
 
 		long runTime = plugin.elapsedRunTime();
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
