@@ -36,10 +36,11 @@ import com.ericversteeg.itemcharges.triggers.TriggerWidget;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,16 +70,15 @@ public class ChargedItem {
 	@Nullable protected TriggerItemContainer[] triggers_item_containers;
 	@Nullable protected TriggerMenuOption[] triggers_menu_options;
 
-	protected boolean needs_to_be_equipped_for_infobox;
 	private boolean in_equipment;
 	private boolean in_inventory;
 	private final List<String[]> menu_entries = new ArrayList<>();
 	private int animation = -1;
 	private int graphic = -1;
+	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
+	protected Map<Integer, Integer> itemQuantities = new HashMap<>();
 
-	private String tooltip;
-	private boolean render = false;
 	@Nullable public Integer negative_full_charges;
 	public boolean zero_charges_is_positive = false;
 	private int gametick = 0;
@@ -105,7 +105,6 @@ public class ChargedItem {
 
 		client_thread.invokeLater(() -> {
 			loadChargesFromConfig();
-			updateTooltip();
 			onChargesUpdated();
 		});
 	}
@@ -213,7 +212,7 @@ public class ChargedItem {
 		// Update infobox variables for other triggers.
 		this.in_equipment = in_equipment;
 		this.in_inventory = in_inventory;
-		this.render = render;
+		this.isInInventoryOrEquipment = render;
 		if (charges != null) this.charges = charges;
 	}
 
@@ -434,7 +433,7 @@ public class ChargedItem {
 		// Check all animation triggers.
 		for (final TriggerGraphic trigger_graphic : triggers_graphics) {
 			// Valid animation id check.
-			if (trigger_graphic.graphic_id != event.getActor().getGraphic()) continue;
+			if (!event.getActor().hasSpotAnim(trigger_graphic.graphic_id)) continue;
 
 			// Unallowed items check.
 			if (trigger_graphic.unallowed_items != null) {
@@ -629,13 +628,6 @@ public class ChargedItem {
 	private void updateInfobox(final int item_id) {
 		// Item id.
 		this.item_id = item_id;
-
-		// Tooltip.
-		updateTooltip();
-	}
-
-	private void updateTooltip() {
-		tooltip = items.getItemComposition(item_id).getName() + (needs_to_be_equipped_for_infobox && !in_equipment ? " - Needs to be equipped" : "");
 	}
 
 	protected void onChargesUpdated() {}
