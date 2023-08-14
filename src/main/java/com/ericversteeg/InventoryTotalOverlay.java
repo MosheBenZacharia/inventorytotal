@@ -188,7 +188,15 @@ class InventoryTotalOverlay extends Overlay
 		// check post new run
 		if (postNewRun && (Instant.now().toEpochMilli() - newRunTime) > BANK_CLOSE_DELAY)
 		{
-			plugin.postNewRun();
+			//make sure user didn't open the bank back up in those two ticks
+			if (plugin.getState() == InventoryTotalState.RUN)
+			{
+				plugin.postNewRun();
+			}
+			else
+			{
+				hideInterstitial();
+			}
 			postNewRun = false;
 		}
 	}
@@ -196,6 +204,7 @@ class InventoryTotalOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		//TODO: do i need to even run this every frame? can i just run this once per tick?
 		updatePluginState();
 
 		boolean isInvHidden = inventoryWidget == null || inventoryWidget.isHidden();
