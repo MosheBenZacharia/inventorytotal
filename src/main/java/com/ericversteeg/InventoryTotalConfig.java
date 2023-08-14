@@ -11,6 +11,7 @@ import java.awt.*;
 public interface InventoryTotalConfig extends Config
 {
 	String GROUP = "inventorytotal";
+	String fish_barrel = "fish_barrel";
 
 	@ConfigItem(
 			position = 0,
