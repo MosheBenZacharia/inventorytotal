@@ -77,7 +77,7 @@ public class ChargedItem {
 	private int graphic = -1;
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
-	protected Map<Integer, Integer> itemQuantities = new HashMap<>();
+	protected Map<Integer, Integer> itemQuantities = null;
 
 	@Nullable public Integer negative_full_charges;
 	public boolean zero_charges_is_positive = false;
@@ -107,6 +107,14 @@ public class ChargedItem {
 			loadChargesFromConfig();
 			onChargesUpdated();
 		});
+	}
+
+	protected void emptyOrClear()
+	{
+		if (itemQuantities == null)
+			itemQuantities = new HashMap<>();
+		else
+			itemQuantities.clear();
 	}
 
 	public int getCharges() {
@@ -551,7 +559,15 @@ public class ChargedItem {
 			// Fixed charges.
 			new Thread(() -> {
 				try { Thread.sleep(600); } catch (final Exception ignored) {}
-				setCharges(trigger_menu_option.charges);
+
+				if (trigger_menu_option.charges != null)
+				{
+					setCharges(trigger_menu_option.charges);
+				}
+				else
+				{
+					trigger_menu_option.consumer.accept(menu_target);
+				}
 			}).start();
 
 			// Menu option used.

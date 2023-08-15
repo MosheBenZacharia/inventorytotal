@@ -418,6 +418,15 @@ public class InventoryTotalPlugin extends Plugin
 					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);
 				});
 			}
+			
+			if (chargedItemManager.isChargeableItem(realItemId) && chargedItemManager.hasChargeData(realItemId))
+			{
+				Map<Integer, Integer> chargeComponents = chargedItemManager.getChargeComponents(realItemId);
+				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
+				{
+					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);
+				});
+			}
 
 			inventoryQtyMap.merge(realItemId, itemQty, Integer::sum);
 		}

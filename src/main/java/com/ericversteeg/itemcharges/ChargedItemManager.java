@@ -23,6 +23,8 @@ import net.runelite.client.game.ItemManager;
 
 import javax.inject.Inject;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 
 
@@ -154,6 +156,48 @@ public class ChargedItemManager {
 		for (final ChargedItem chargedItem : this.chargedItems) {
 			chargedItem.onGameTick(gametick);
 		}
+	}
+
+
+	/// API for InventoryTotalPlugin
+
+	private  Map<Integer, Integer> emptyMap = new HashMap<>();
+
+	public boolean isChargeableItem(Integer itemId)
+	{
+		return getChargedItem(itemId) != null;
+	}
+
+	public ChargedItem getChargedItem(Integer itemId)
+	{
+		for (ChargedItem chargedItem : chargedItems) {
+			if (chargedItem.item_id == itemId) {
+				return chargedItem;
+			}
+		}
+		return null;
+	}
+
+	public boolean hasChargeData(Integer itemId)
+	{
+		ChargedItem chargedItem = getChargedItem(itemId);
+		if (chargedItem == null)
+		{
+			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
+			return false;
+		}
+		return true;
+	}
+
+	public Map<Integer, Integer> getChargeComponents(Integer itemId)
+	{
+		ChargedItem chargedItem = getChargedItem(itemId);
+		if (chargedItem == null)
+		{
+			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
+			return emptyMap;
+		}
+		return chargedItem.itemQuantities;
 	}
 }
 

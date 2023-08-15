@@ -1,6 +1,8 @@
 //TODO: attribute tictac7x
 package com.ericversteeg.itemcharges.triggers;
 
+import java.util.function.Consumer;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -8,17 +10,26 @@ public class TriggerMenuOption {
     @Nullable public final String target;
     @Nonnull public final String option;
 
-    @Nonnull public Integer charges;
+    @Nullable public Integer charges;
+    @Nullable public Consumer<String> consumer;
 
-    public TriggerMenuOption(@Nonnull final String target, @Nonnull final String option, final int charges) {
+    public TriggerMenuOption(@Nonnull final String target, @Nonnull final String option) {
         this.target = target;
         this.option = option;
-        this.charges = charges;
     }
 
-    public TriggerMenuOption(@Nonnull final String option, final int charges) {
+    public TriggerMenuOption(@Nonnull final String option) {
         this.target = null;
         this.option = option;
+    }
+
+    public TriggerMenuOption fixedCharges(final int charges) {
         this.charges = charges;
+        return this;
+    }
+
+    public TriggerMenuOption extraConsumer(final Consumer<String> consumer) {
+        this.consumer = consumer;
+        return this;
     }
 }
