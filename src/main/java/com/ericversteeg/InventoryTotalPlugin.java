@@ -421,7 +421,7 @@ public class InventoryTotalPlugin extends Plugin
 			
 			if (chargedItemManager.isChargeableItem(realItemId) && chargedItemManager.hasChargeData(realItemId))
 			{
-				Map<Integer, Integer> chargeComponents = chargedItemManager.getChargeComponents(realItemId);
+				Map<Integer, Integer> chargeComponents = chargedItemManager.getItemQuantities(realItemId);
 				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
 				{
 					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);

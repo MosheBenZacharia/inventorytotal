@@ -31,7 +31,9 @@ public class U_FishBarrel extends ChargedItem
 {
 	private final int FISH_BARREL_SIZE = 28;
 	private static final String catchMessage = "^You catch (an?|some) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves\\.)?$";
-	private Pattern catchPattern = Pattern.compile(catchMessage);
+	private static final Pattern catchPattern = Pattern.compile(catchMessage);
+	private static final String checkRegex = "([0-9]+) x ([a-zA-Z ]+),? ?";
+	private static final Pattern checkPattern = Pattern.compile(checkRegex);
 	private Integer lastFishCaught = null;
 	
 	// maps the name of the fish as it appears in chat message to corresponding item ID
@@ -58,7 +60,7 @@ public class U_FishBarrel extends ChargedItem
 		.put("lava eel", ItemID.RAW_LAVA_EEL)
 		.put("leaping salmon", ItemID.LEAPING_SALMON)
 		.put("monkfish", ItemID.RAW_MONKFISH)
-		.put("Karambwan", ItemID.RAW_KARAMBWAN)
+		.put("karambwan", ItemID.RAW_KARAMBWAN)
 		.put("leaping sturgeon", ItemID.LEAPING_STURGEON)
 		.put("shark", ItemID.RAW_SHARK)
 		.put("infernal eel", ItemID.INFERNAL_EEL)
@@ -96,10 +98,9 @@ public class U_FishBarrel extends ChargedItem
 					final Matcher matcher = catchPattern.matcher(message);
 					if (matcher.matches())
 					{
-						final String fishName = matcher.group(2);
+						final String fishName = matcher.group(2).toLowerCase();
 						if (FISH_TYPES_BY_NAME.containsKey(fishName))
 						{
-							log.info(fishName);
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
 							lastFishCaught = fishId;
 							super.itemQuantities.merge(fishId, 1, Integer::sum);
@@ -117,7 +118,6 @@ public class U_FishBarrel extends ChargedItem
 					
 					if (lastFishCaught != null)
 					{
-						log.info("got double catch");
 						super.itemQuantities.merge(lastFishCaught, 1, Integer::sum);
 					}
 					else
@@ -126,7 +126,34 @@ public class U_FishBarrel extends ChargedItem
 					}
 				}
 			}),
-			new TriggerChatMessage("The barrel contains:").multipleCharges()
+			new TriggerChatMessage("The barrel contains:").extraConsumer(message -> {
+				
+				super.emptyOrClear();
+				//fix weird whitespace issue
+				final Matcher matcher = checkPattern.matcher(message.replace("\u00A0", " "));
+				while (matcher.find())
+				{
+					try
+					{
+						int fishAmount = Integer.parseInt(matcher.group(1));
+						String fishName = matcher.group(2).toLowerCase().replace("raw ", "");
+						if (FISH_TYPES_BY_NAME.containsKey(fishName))
+						{
+							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
+							lastFishCaught = fishId;
+							super.itemQuantities.merge(fishId, fishAmount, Integer::sum);
+						}
+						else
+						{
+							log.error("no match found");
+						}
+					}
+					catch (NumberFormatException e)
+					{
+						log.error("couldn't parse fish barrel check", e);
+					}
+				}
+			}),
 		};
 		this.triggers_item_containers = new TriggerItemContainer[]{
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open fish barrel").menuOption("Fill").increaseByDifference(),

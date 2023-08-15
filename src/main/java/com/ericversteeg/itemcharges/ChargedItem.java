@@ -117,6 +117,19 @@ public class ChargedItem {
 			itemQuantities.clear();
 	}
 
+	public boolean hasChargeData()
+	{
+		return itemQuantities != null;
+		//TODO: switch to this one
+		//return this.charges != ChargedItemManager.CHARGES_UNKNOWN || itemQuantities != null;
+	}
+
+	//should be overriden by derived class if they are using charges (should work like weapon charges)
+	public Map<Integer,Integer> getItemQuantities()
+	{
+		return this.itemQuantities;
+	}
+
 	public int getCharges() {
 		return charges;
 	}

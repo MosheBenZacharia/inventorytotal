@@ -168,9 +168,10 @@ public class ChargedItemManager {
 		return getChargedItem(itemId) != null;
 	}
 
-	public ChargedItem getChargedItem(Integer itemId)
+	private ChargedItem getChargedItem(Integer itemId)
 	{
 		for (ChargedItem chargedItem : chargedItems) {
+			//note that the item's item_id is constantly updated based on which variation is in your inventory/equipment
 			if (chargedItem.item_id == itemId) {
 				return chargedItem;
 			}
@@ -186,10 +187,10 @@ public class ChargedItemManager {
 			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
 			return false;
 		}
-		return true;
+		return chargedItem.hasChargeData();
 	}
 
-	public Map<Integer, Integer> getChargeComponents(Integer itemId)
+	public Map<Integer, Integer> getItemQuantities(Integer itemId)
 	{
 		ChargedItem chargedItem = getChargedItem(itemId);
 		if (chargedItem == null)
@@ -197,7 +198,7 @@ public class ChargedItemManager {
 			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
 			return emptyMap;
 		}
-		return chargedItem.itemQuantities;
+		return chargedItem.getItemQuantities();
 	}
 }
 
