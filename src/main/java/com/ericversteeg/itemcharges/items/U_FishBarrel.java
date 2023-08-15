@@ -9,6 +9,7 @@ import com.ericversteeg.itemcharges.triggers.TriggerItem;
 import com.ericversteeg.itemcharges.triggers.TriggerItemContainer;
 import com.ericversteeg.itemcharges.triggers.TriggerMenuOption;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -75,9 +76,10 @@ public class U_FishBarrel extends ChargedItem
 		final ConfigManager configs,
 		final ItemManager items,
 		final ChatMessageManager chat_messages,
-		final Notifier notifier
+		final Notifier notifier,
+		final Gson gson
 	) {
-		super(ChargesItem.FISH_BARREL, ItemID.FISH_BARREL, client, client_thread, configs, items, chat_messages, notifier);
+		super(ChargesItem.FISH_BARREL, ItemID.FISH_BARREL, client, client_thread, configs, items, chat_messages, notifier, gson);
 
 		this.config_key = InventoryTotalConfig.fish_barrel;
 		this.zero_charges_is_positive = true;
@@ -103,7 +105,7 @@ public class U_FishBarrel extends ChargedItem
 						{
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
 							lastFishCaught = fishId;
-							super.itemQuantities.merge(fishId, 1, Integer::sum);
+							super.addItems(fishId, 1);
 						}
 					}
 					else
@@ -118,7 +120,7 @@ public class U_FishBarrel extends ChargedItem
 					
 					if (lastFishCaught != null)
 					{
-						super.itemQuantities.merge(lastFishCaught, 1, Integer::sum);
+						super.addItems(lastFishCaught, 1);
 					}
 					else
 					{
@@ -141,7 +143,7 @@ public class U_FishBarrel extends ChargedItem
 						{
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
 							lastFishCaught = fishId;
-							super.itemQuantities.merge(fishId, fishAmount, Integer::sum);
+							super.addItems(fishId, fishAmount);
 						}
 						else
 						{

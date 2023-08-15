@@ -3,6 +3,8 @@ package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
 import com.ericversteeg.itemcharges.items.U_FishBarrel;
+import com.google.gson.Gson;
+
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.AnimationChanged;
@@ -56,11 +58,14 @@ public class ChargedItemManager {
 	@Inject
 	private Notifier notifier;
 
+	@Inject
+	private Gson gson;
+
 	private ChargedItem[] chargedItems;
 
 	public void startUp() {
 		chargedItems = new ChargedItem[]{
-			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier),
+			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson),
 		};
 	}
 

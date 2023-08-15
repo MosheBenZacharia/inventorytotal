@@ -33,6 +33,7 @@ import com.ericversteeg.itemcharges.triggers.TriggerItemContainer;
 import com.ericversteeg.itemcharges.triggers.TriggerMenuOption;
 import com.ericversteeg.itemcharges.triggers.TriggerReset;
 import com.ericversteeg.itemcharges.triggers.TriggerWidget;
+import com.google.gson.Gson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.lang.reflect.Type;
 
 public class ChargedItem {
 	public final ChargesItem infobox_id;
@@ -53,6 +55,7 @@ public class ChargedItem {
 	protected final ConfigManager configs;
 	protected final ChatMessageManager chat_messages;
 	protected final Notifier notifier;
+	protected final Gson gson;
 
 	@Nullable public ItemContainer inventory;
 	@Nullable protected ItemContainer equipment;
@@ -77,7 +80,7 @@ public class ChargedItem {
 	private int graphic = -1;
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
-	protected Map<Integer, Integer> itemQuantities = null;
+	private Map<Integer, Integer> itemQuantities = null;
 
 	@Nullable public Integer negative_full_charges;
 	public boolean zero_charges_is_positive = false;
@@ -92,7 +95,8 @@ public class ChargedItem {
 		final ConfigManager configs,
 		final ItemManager items,
 		final ChatMessageManager chat_messages,
-		final Notifier notifier
+		final Notifier notifier,
+		final Gson gson
 	) {
 		this.infobox_id = infobox_id;
 		this.item_id = item_id;
@@ -102,6 +106,7 @@ public class ChargedItem {
 		this.items = items;
 		this.chat_messages = chat_messages;
 		this.notifier = notifier;
+		this.gson = gson;
 
 		client_thread.invokeLater(() -> {
 			loadChargesFromConfig();
@@ -115,6 +120,13 @@ public class ChargedItem {
 			itemQuantities = new HashMap<>();
 		else
 			itemQuantities.clear();
+		onItemQuantitiesModified();
+	}
+
+	protected void addItems(Integer itemId, Integer count)
+	{
+		itemQuantities.merge(itemId, count, Integer::sum);
+		onItemQuantitiesModified();
 	}
 
 	protected Integer getItemCount()
@@ -215,7 +227,7 @@ public class ChargedItem {
 						Integer count = differenceMap.get(itemId);
 						if (count > 0)
 						{
-							itemQuantities.merge(itemId, count, Integer::sum);
+							addItems(itemId, count);
 						}
 					}
 					break;
@@ -661,9 +673,19 @@ public class ChargedItem {
 	}
 
 	private void loadChargesFromConfig() {
-		if (config_key == null) return;
+		if (config_key == null) 
+			return;
+		
 		try {
 			charges = Integer.parseInt(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key));
+			return;
+		} catch (final Exception ignored) {}
+
+		//if that didn't work try loading map
+		try {
+			Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
+			itemQuantities = gson.fromJson(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key), mapType);
+			return;
 		} catch (final Exception ignored) {}
 
 	}
@@ -676,6 +698,13 @@ public class ChargedItem {
 
 		if (config_key != null) {
 			setConfiguration(config_key, charges);
+		}
+	}
+
+	private void onItemQuantitiesModified() {
+
+		if (config_key != null) {
+			setConfiguration(config_key, gson.toJson(this.itemQuantities));
 		}
 	}
 
