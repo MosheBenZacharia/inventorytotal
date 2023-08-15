@@ -177,7 +177,7 @@ public class ChargedItem {
 
 		boolean in_equipment = false;
 		boolean in_inventory = false;
-		boolean render = false;
+		boolean inInventoryOrEquipment = false;
 		Integer charges = null;
 
 		for (final TriggerItem trigger_item : triggers_items) {
@@ -187,7 +187,7 @@ public class ChargedItem {
 
 			// Find out if infobox should be rendered.
 			if (in_inventory_item || in_equipment_item) {
-				render = true;
+				inInventoryOrEquipment = true;
 
 				// Update infobox item picture and tooltip dynamically based on the items if use has different variant of it.
 				if (trigger_item.item_id != item_id) {
@@ -212,7 +212,7 @@ public class ChargedItem {
 		// Update infobox variables for other triggers.
 		this.in_equipment = in_equipment;
 		this.in_inventory = in_inventory;
-		this.isInInventoryOrEquipment = render;
+		this.isInInventoryOrEquipment = inInventoryOrEquipment;
 		if (charges != null) this.charges = charges;
 	}
 
