@@ -94,7 +94,7 @@ public class U_FishBarrel extends ChargedItem
 			}),
 			//new TriggerChatMessage("The barrel is full. It may be emptied at a bank.").onItemClick().fixedCharges(FISH_BARREL_SIZE),
 			new TriggerChatMessage("(You catch .*)").extraConsumer(message -> {
-				if ((item_id == ItemID.OPEN_FISH_BARREL || item_id == ItemID.OPEN_FISH_SACK_BARREL) && getCharges() < FISH_BARREL_SIZE) {
+				if ((item_id == ItemID.OPEN_FISH_BARREL || item_id == ItemID.OPEN_FISH_SACK_BARREL) && getItemCount() < FISH_BARREL_SIZE && super.hasChargeData()) {
 					final Matcher matcher = catchPattern.matcher(message);
 					if (matcher.matches())
 					{
@@ -114,7 +114,7 @@ public class U_FishBarrel extends ChargedItem
 			}),
 			//new TriggerChatMessage("The barrel is full. It may be emptied at a bank.").onItemClick().fixedCharges(FISH_BARREL_SIZE),
 			new TriggerChatMessage("(.* enabled you to catch an extra fish.)").extraConsumer(message -> {
-				if ((item_id == ItemID.OPEN_FISH_BARREL || item_id == ItemID.OPEN_FISH_SACK_BARREL) && getCharges() < FISH_BARREL_SIZE) {
+				if ((item_id == ItemID.OPEN_FISH_BARREL || item_id == ItemID.OPEN_FISH_SACK_BARREL) && getItemCount() < FISH_BARREL_SIZE && super.hasChargeData()) {
 					
 					if (lastFishCaught != null)
 					{
@@ -156,8 +156,8 @@ public class U_FishBarrel extends ChargedItem
 			}),
 		};
 		this.triggers_item_containers = new TriggerItemContainer[]{
-			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open fish barrel").menuOption("Fill").increaseByDifference(),
-			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Fish barrel").menuOption("Fill").increaseByDifference(),
+			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open fish barrel").menuOption("Fill").addDifference(),
+			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Fish barrel").menuOption("Fill").addDifference(),
 		};
 		this.triggers_menu_options = new TriggerMenuOption[]{
 			new TriggerMenuOption("Open fish barrel", "Empty").extraConsumer((message) ->

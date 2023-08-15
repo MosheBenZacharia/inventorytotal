@@ -117,6 +117,18 @@ public class ChargedItem {
 			itemQuantities.clear();
 	}
 
+	protected Integer getItemCount()
+	{
+		if (itemQuantities == null)
+			return 0;
+		Integer itemCount = 0;
+		for	(Integer quantity : itemQuantities.values())
+		{
+			itemCount += quantity;
+		}
+		return itemCount;
+	}
+
 	public boolean hasChargeData()
 	{
 		return itemQuantities != null;
@@ -134,6 +146,9 @@ public class ChargedItem {
 		return charges;
 	}
 
+	//avoid GC
+	private Map<Integer, Integer> differenceMap = new HashMap<>();
+
 	public void onItemContainersChanged(final ItemContainerChanged event) {
 		if (event.getItemContainer() == null) return;
 
@@ -141,6 +156,20 @@ public class ChargedItem {
 		int items_difference = 0;
 		if (event.getItemContainer().getId() == InventoryID.INVENTORY.getId() && inventory_items != null) {
 			items_difference = itemsDifference(inventory_items, event.getItemContainer().getItems());
+		}
+
+		differenceMap.clear();
+		if (event.getItemContainer().getId() == InventoryID.INVENTORY.getId() && inventory_items != null) {
+			Item[] before = inventory_items;
+			Item[] after = event.getItemContainer().getItems();
+			for (Item beforeItem : before)
+			{
+				differenceMap.merge(beforeItem.getId(), 1, Integer::sum);
+			}
+			for (Item afterItem : after)
+			{
+				differenceMap.merge(afterItem.getId(), -1, Integer::sum);
+			}
 		}
 
 		// Update inventory reference.
@@ -175,6 +204,20 @@ public class ChargedItem {
 				// Increase by difference of amount of items.
 				if (trigger_item_container.increase_by_difference) {
 					increaseCharges(items_difference);
+					break;
+				}
+				
+				//add missing items
+				if (trigger_item_container.add_difference && itemQuantities != null) {
+
+					for (Integer itemId : differenceMap.keySet())
+					{
+						Integer count = differenceMap.get(itemId);
+						if (count > 0)
+						{
+							itemQuantities.merge(itemId, count, Integer::sum);
+						}
+					}
 					break;
 				}
 
