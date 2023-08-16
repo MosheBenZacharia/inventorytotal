@@ -12,6 +12,7 @@ public interface InventoryTotalConfig extends Config
 {
 	String GROUP = "inventorytotal";
 	String fish_barrel = "fish_barrel";
+	String log_basket = "log_basket";
 
 	@ConfigItem(
 			position = 0,

@@ -94,7 +94,6 @@ public class U_FishBarrel extends ChargedItem
 			{
 				super.emptyOrClear();
 			}),
-			//new TriggerChatMessage("The barrel is full. It may be emptied at a bank.").onItemClick().fixedCharges(FISH_BARREL_SIZE),
 			new TriggerChatMessage("(You catch .*)").extraConsumer(message -> {
 				if ((item_id == ItemID.OPEN_FISH_BARREL || item_id == ItemID.OPEN_FISH_SACK_BARREL) && getItemCount() < FISH_BARREL_SIZE && super.hasChargeData()) {
 					final Matcher matcher = catchPattern.matcher(message);
@@ -142,7 +141,6 @@ public class U_FishBarrel extends ChargedItem
 						if (FISH_TYPES_BY_NAME.containsKey(fishName))
 						{
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
-							lastFishCaught = fishId;
 							super.addItems(fishId, fishAmount);
 						}
 						else

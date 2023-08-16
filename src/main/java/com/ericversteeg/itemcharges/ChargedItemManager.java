@@ -3,6 +3,7 @@ package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
 import com.ericversteeg.itemcharges.items.U_FishBarrel;
+import com.ericversteeg.itemcharges.items.U_LogBasket;
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +67,7 @@ public class ChargedItemManager {
 	public void startUp() {
 		chargedItems = new ChargedItem[]{
 			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson),
+			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson),
 		};
 	}
 
@@ -113,17 +115,17 @@ public class ChargedItemManager {
 		}
 	}
 
-	@Subscribe
-	public void onConfigChanged(final ConfigChanged event) {
-		Arrays.stream(chargedItems).forEach(chargedItem -> chargedItem.onConfigChanged(event));
-		if (event.getGroup().equals(config.GROUP)) {
-			log.debug("CONFIG | " +
-				"key: " + event.getKey() +
-				", old value: " + event.getOldValue() +
-				", new value: " + event.getNewValue()
-			);
-		}
-	}
+	// @Subscribe
+	// public void onConfigChanged(final ConfigChanged event) {
+	// 	Arrays.stream(chargedItems).forEach(chargedItem -> chargedItem.onConfigChanged(event));
+	// 	if (event.getGroup().equals(config.GROUP)) {
+	// 		log.debug("CONFIG | " +
+	// 			"key: " + event.getKey() +
+	// 			", old value: " + event.getOldValue() +
+	// 			", new value: " + event.getNewValue()
+	// 		);
+	// 	}
+	// }
 
 	@Subscribe
 	public void onHitsplatApplied(final HitsplatApplied event) {

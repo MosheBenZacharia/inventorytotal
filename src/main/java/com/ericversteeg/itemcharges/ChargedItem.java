@@ -35,6 +35,8 @@ import com.ericversteeg.itemcharges.triggers.TriggerReset;
 import com.ericversteeg.itemcharges.triggers.TriggerWidget;
 import com.google.gson.Gson;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.Type;
 
+@Slf4j
 public class ChargedItem {
 	public final ChargesItem infobox_id;
 	public int item_id;
@@ -430,11 +433,11 @@ public class ChargedItem {
 		});
 	}
 
-	public void onConfigChanged(final ConfigChanged event) {
-		if (event.getGroup().equals(InventoryTotalConfig.GROUP) && event.getKey().equals(config_key)) {
-			charges = Integer.parseInt(event.getNewValue());
-		}
-	}
+	// public void onConfigChanged(final ConfigChanged event) {
+	// 	if (event.getGroup().equals(InventoryTotalConfig.GROUP) && event.getKey().equals(config_key)) {
+	// 		charges = Integer.parseInt(event.getNewValue());
+	// 	}
+	// }
 
 	public void onAnimationChanged(final AnimationChanged event) {
 		// Player check.
@@ -677,14 +680,14 @@ public class ChargedItem {
 			return;
 		
 		try {
-			charges = Integer.parseInt(configs.getConfiguration(InventoryTotalConfig.GROUP, configs.getRSProfileKey(), config_key));
+			charges = Integer.parseInt(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key));
 			return;
 		} catch (final Exception ignored) {}
 
 		//if that didn't work try loading map
 		try {
 			Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
-			itemQuantities = gson.fromJson(configs.getConfiguration(InventoryTotalConfig.GROUP, configs.getRSProfileKey(), config_key), mapType);
+			itemQuantities = gson.fromJson(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key), mapType);
 			return;
 		} catch (final Exception ignored) {}
 
@@ -719,11 +722,11 @@ public class ChargedItem {
 	}
 
 	private void setConfiguration(final String key, @Nonnull final String value) {
-		configs.setConfiguration(InventoryTotalConfig.GROUP, configs.getRSProfileKey(), key, value);
+		configs.setConfiguration(InventoryTotalConfig.GROUP, key, value);
 	}
 
 	private void setConfiguration(final String key, final int value) {
-		configs.setConfiguration(InventoryTotalConfig.GROUP,configs.getRSProfileKey(),  key, value);
+		configs.setConfiguration(InventoryTotalConfig.GROUP, key, value);
 	}
 
 	private void updateInfobox(final int item_id) {
