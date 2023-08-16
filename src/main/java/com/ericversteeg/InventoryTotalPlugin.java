@@ -91,8 +91,6 @@ public class InventoryTotalPlugin extends Plugin
 
 	private long initialGp = 0;
 
-	private long runStartTime = 0;
-
 	private long lastWriteSaveTime = 0;
 
 	// from ClueScrollPlugin
@@ -178,8 +176,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		overlay.showInterstitial();
 
-		runStartTime = Instant.now().toEpochMilli();
-
+		runData.runStartTime = Instant.now().toEpochMilli();
 		runData.ignoredItems = getIgnoredItems();
 
 		previousTotalGp = null;
@@ -215,7 +212,7 @@ public class InventoryTotalPlugin extends Plugin
 		runData.itemPrices.clear();
 
 		initialGp = 0;
-		runStartTime = 0;
+		runData.runStartTime = 0;
 
 		writeSavedData();
 	}
@@ -699,14 +696,14 @@ public class InventoryTotalPlugin extends Plugin
 
 	long elapsedRunTime()
 	{
-		if (runStartTime == 0)
+		if (runData.runStartTime == 0)
 		{
 			return NO_PROFIT_LOSS_TIME;
 		}
 
 		return Instant
 				.now()
-				.minusMillis(runStartTime)
+				.minusMillis(runData.runStartTime)
 				.toEpochMilli();
 	}
 
