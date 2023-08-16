@@ -903,7 +903,7 @@ public class WeaponChargesManager
 		return false;
 	}
 
-	public ChargedWeapon getChargedWeapon(Integer itemId)
+	private ChargedWeapon getChargedWeapon(Integer itemId)
 	{
 		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
 			if (chargedWeapon.getItemIds().contains(itemId)) {

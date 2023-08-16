@@ -300,6 +300,15 @@ public class InventoryTotalPlugin extends Plugin
 			equipmentQtyMap.put(ammo.getId(), ammo.getQuantity());
 		}
 
+		Map<Integer, Integer> chargedWeaponComponents = getChargedWeaponComponentQtyMap(equipmentQtyMap.keySet());
+		for (int itemId: chargedWeaponComponents.keySet()) {
+			equipmentQtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Integer::sum);
+		}
+		Map<Integer, Integer> chargedItemComponents = getChargedItemQtyMap(equipmentQtyMap.keySet());
+		for (int itemId: chargedItemComponents.keySet()) {
+			equipmentQtyMap.merge(itemId, chargedItemComponents.get(itemId), Integer::sum);
+		}
+
 		return equipmentQtyMap;
 	}
 
@@ -308,27 +317,14 @@ public class InventoryTotalPlugin extends Plugin
 		Map<Integer, Integer> equMap = getEquipmentQtyMap();
 
 		int eTotal = 0;
-		for (int itemId: equMap.keySet()) {
-			if (weaponChargesManager.isChargeableWeapon(itemId) && weaponChargesManager.hasChargeData(itemId))
-			{
-				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
-				for (Integer chargeComponentItemId: chargeComponents.keySet())
-				{
-					int price = getPrice(chargeComponentItemId);
-					int chargeComponentQty = chargeComponents.get(chargeComponentItemId);
-					if (itemId == COINS)
-					{
-						price = 1;
-					}
-					eTotal += chargeComponentQty * price;
-					updateRunData(isNewRun, chargeComponentItemId, chargeComponentQty, price);
-				}
-			}
-		}
 		for (int itemId: equMap.keySet())
 		{
 			int qty = equMap.get(itemId);
 			int gePrice = getPrice(itemId);
+			if (itemId == COINS)
+			{
+				gePrice = 1;
+			}
 			int totalPrice = qty * gePrice;
 
 			eTotal += totalPrice;
@@ -337,6 +333,42 @@ public class InventoryTotalPlugin extends Plugin
 		}
 
 		return eTotal;
+	}
+
+	//avoid GC
+	private Map<Integer, Integer> chargedWeaponComponentQtyMap = new HashMap<>();
+	private Map<Integer, Integer> getChargedWeaponComponentQtyMap(Set<Integer> itemIdsToCheck)
+	{
+		chargedWeaponComponentQtyMap.clear();
+		for (int itemId: itemIdsToCheck) {
+			if (weaponChargesManager.isChargeableWeapon(itemId) && weaponChargesManager.hasChargeData(itemId))
+			{
+				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
+				for (Integer chargeComponentItemId: chargeComponents.keySet())
+				{
+					chargedWeaponComponentQtyMap.merge(chargeComponentItemId, chargeComponents.get(chargeComponentItemId), Integer::sum);
+				}
+			}
+		}
+		return chargedWeaponComponentQtyMap;
+	}
+
+	//avoid GC
+	private Map<Integer, Integer> chargedItemQtyMap = new HashMap<>();
+	private Map<Integer, Integer> getChargedItemQtyMap(Set<Integer> itemIdsToCheck)
+	{
+		chargedItemQtyMap.clear();
+		for (int itemId: itemIdsToCheck) {
+			if (chargedItemManager.isChargeableItem(itemId) && chargedItemManager.hasChargeData(itemId))
+			{
+				Map<Integer, Integer> itemContents = chargedItemManager.getItemQuantities(itemId);
+				for (Integer itemContentId: itemContents.keySet())
+				{
+					chargedItemQtyMap.merge(itemContentId, itemContents.get(itemContentId), Integer::sum);
+				}
+			}
+		}
+		return chargedItemQtyMap;
 	}
 
 	List<InventoryTotalLedgerItem> getInventoryLedger()
@@ -408,27 +440,17 @@ public class InventoryTotalPlugin extends Plugin
 
 			final boolean isNoted = itemComposition.getNote() != -1;
 			final int realItemId = isNoted ? itemComposition.getLinkedNoteId() : itemId;
-			int itemQty = item.getQuantity();
-			
-			if (weaponChargesManager.isChargeableWeapon(realItemId) && weaponChargesManager.hasChargeData(realItemId))
-			{
-				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(realItemId);
-				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
-				{
-					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);
-				});
-			}
-			
-			if (chargedItemManager.isChargeableItem(realItemId) && chargedItemManager.hasChargeData(realItemId))
-			{
-				Map<Integer, Integer> chargeComponents = chargedItemManager.getItemQuantities(realItemId);
-				chargeComponents.forEach((chargeComponentItemId, chargeComponentQty) ->
-				{
-					inventoryQtyMap.merge(chargeComponentItemId, chargeComponentQty, Integer::sum);
-				});
-			}
 
-			inventoryQtyMap.merge(realItemId, itemQty, Integer::sum);
+			inventoryQtyMap.merge(realItemId, item.getQuantity(), Integer::sum);
+		}
+
+		Map<Integer, Integer> chargedWeaponComponents = getChargedWeaponComponentQtyMap(inventoryQtyMap.keySet());
+		for (int itemId: chargedWeaponComponents.keySet()) {
+			inventoryQtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Integer::sum);
+		}
+		Map<Integer, Integer> chargedItemComponents = getChargedItemQtyMap(inventoryQtyMap.keySet());
+		for (int itemId: chargedItemComponents.keySet()) {
+			inventoryQtyMap.merge(itemId, chargedItemComponents.get(itemId), Integer::sum);
 		}
 
 		return inventoryQtyMap;
@@ -436,6 +458,8 @@ public class InventoryTotalPlugin extends Plugin
 
 	boolean needsLootingBagCheck()
 	{
+		if (this.state == InventoryTotalState.BANK)
+			return false;
 		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
 		if(itemContainer == null)
 			return false;
@@ -443,7 +467,7 @@ public class InventoryTotalPlugin extends Plugin
 		// only when the looting bag is in the inventory
 		if (Arrays.asList(itemContainer.getItems()).stream().anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
 		{
-			return lootingBagManager.needsCheck() && this.state != InventoryTotalState.BANK;
+			return lootingBagManager.needsCheck();
 		}
 
 		return false;
@@ -455,9 +479,11 @@ public class InventoryTotalPlugin extends Plugin
 	HashSet<String> getChargeableItemsNeedingCheck()
 	{
 		chargeableItemsNeedingCheck.clear();
+		if (this.state == InventoryTotalState.BANK)
+			return chargeableItemsNeedingCheck;
 
 		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
-		//loop through container instead of getting qtyMap because we dont care about chargeable items in looting bag
+		//loop through container instead of getting qtyMap because we dont care about chargeable items in looting bag (actually can you even put something charged in a container? wouldnt be tradeable right?)
 		if (itemContainer != null)
 		{
 			Item[] inventoryItems = itemContainer.getItems();
@@ -465,8 +491,12 @@ public class InventoryTotalPlugin extends Plugin
 			{
 				if (weaponChargesManager.isChargeableWeapon(item.getId()) && !weaponChargesManager.hasChargeData(item.getId()))
 				{
-					chargeableItemsNeedingCheck.add(weaponChargesManager.getChargedWeapon(item.getId()).name);
-				}
+					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName());
+				} 
+				else if (chargedItemManager.isChargeableItem(item.getId()) && !chargedItemManager.hasChargeData(item.getId()))
+				{
+					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName());
+				} 
 			}
 		}
 		Map<Integer, Integer> equMap = getEquipmentQtyMap();
@@ -474,8 +504,12 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			if (weaponChargesManager.isChargeableWeapon(itemId) && !weaponChargesManager.hasChargeData(itemId))
 			{
-				chargeableItemsNeedingCheck.add(weaponChargesManager.getChargedWeapon(itemId).name);
+				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName());
 			}
+			else if (chargedItemManager.isChargeableItem(itemId) && !chargedItemManager.hasChargeData(itemId))
+			{
+				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName());
+			} 
 		}
 
 		return chargeableItemsNeedingCheck;
