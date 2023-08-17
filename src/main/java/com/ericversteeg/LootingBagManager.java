@@ -4,13 +4,17 @@
 package com.ericversteeg;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Provides;
+import com.google.gson.Gson;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,6 +34,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -61,11 +66,27 @@ public class LootingBagManager
 	@Inject
 	private ItemManager itemManager;
 
-	private final Map<Integer, Integer> bagItems = new HashMap<>();
-	private int freeSlots = -1;
-	private long value = -1;
+	@Inject
+	private ConfigManager configManager;
+
+	@Inject
+	private Gson gson;
+
+	@Inject
+	private ScheduledExecutorService executor;
+
+	private Map<Integer, Integer> bagItems = null;
+	// private int freeSlots = -1;
+	// private long value = -1;
+	private int lastLootingBagUseOn = -2;
 
 	private PickupAction lastPickUpAction;
+
+	public void startUp()
+	{
+		Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
+		bagItems = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag), mapType);
+	}
 
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded widgetLoaded)
@@ -82,33 +103,29 @@ public class LootingBagManager
 		ItemContainer itemContainer = client.getItemContainer(LOOTING_BAG_CONTAINER);
 		if (itemContainer == null)
 		{
-			value = 0;
-			freeSlots = LOOTING_BAG_SIZE;
+			bagItems.clear();
+			saveData();
 			return;
 		}
-		long newValue = 0;
 		bagItems.clear();
-		freeSlots = LOOTING_BAG_SIZE;
 		for (Item item : itemContainer.getItems())
 		{
 			if (item.getId() >= 0)
 			{
 				bagItems.merge(item.getId(), item.getQuantity(), Integer::sum);
-				newValue += getPrice(item.getId()) * item.getQuantity();
-				freeSlots--;
 			}
 		}
-		value = newValue;
+		saveData();
 	}
 
 	//dont GC
-	private List<Item> lootingBagItems = new ArrayList<>(bagItems.size());
+	private List<Item> lootingBagItems = new ArrayList<>(LOOTING_BAG_SIZE);
 
 	List<Item> getLootingBagContents()
 	{
 		lootingBagItems.clear();
 		//needs to be checked/calibrated
-		if (freeSlots < 0)
+		if (bagItems == null)
 		{
 			return lootingBagItems;
 		}
@@ -120,35 +137,89 @@ public class LootingBagManager
 		return lootingBagItems;
 	}
 
+	//avoid GC
+	private Map<Integer, Integer> differenceMap = new HashMap<>();
+	private Item[] inventory_items;
+
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		if (event.getContainerId() != LOOTING_BAG_CONTAINER)
-		{
+		if (event.getItemContainer() == null)
 			return;
+
+		if (event.getContainerId() == InventoryID.INVENTORY.getId())
+		{
+			if (inventory_items != null && bagItems != null &&
+				(lastLootingBagUseOn == client.getTickCount() || lastLootingBagUseOn + 1 == client.getTickCount()))
+			{
+				differenceMap.clear();
+				Item[] before = inventory_items;
+				Item[] after = event.getItemContainer().getItems();
+				for (Item beforeItem : before)
+				{
+					differenceMap.merge(beforeItem.getId(), 1, Integer::sum);
+				}
+				for (Item afterItem : after)
+				{
+					differenceMap.merge(afterItem.getId(), -1, Integer::sum);
+				}
+				for (Integer itemId : differenceMap.keySet())
+				{
+					Integer count = differenceMap.get(itemId);
+					if (count > 0 && canAddItem(itemId))
+					{
+						bagItems.merge(itemId, count, Integer::sum);
+					}
+				}
+				saveData();
+			}
+			inventory_items = event.getItemContainer().getItems();
 		}
-		updateValue();
+		if (event.getContainerId() == LOOTING_BAG_CONTAINER)
+		{
+			updateValue();
+		}
 	}
 
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		if (event.getMenuAction() != MenuAction.GROUND_ITEM_THIRD_OPTION)
+		if (event.getMenuAction() == MenuAction.GROUND_ITEM_THIRD_OPTION && event.getMenuOption().equals("Take"))
 		{
-			return;
+			WorldPoint point = WorldPoint.fromScene(client, event.getParam0(), event.getParam1(), client.getPlane());
+			lastPickUpAction = new PickupAction(event.getId(), point);
 		}
-		if (!event.getMenuOption().equals("Take"))
-		{
-			return;
+
+		if (event.getMenuAction() == MenuAction.WIDGET_TARGET_ON_WIDGET) {
+			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+			if (itemContainer == null)
+				return;
+			Item itemA = itemContainer.getItem(client.getSelectedWidget().getIndex());
+			if (itemA == null) 
+				return;
+			int itemAId = itemA.getId();
+			Item itemB = itemContainer.getItem(event.getWidget().getIndex());
+			if (itemB == null) 
+				return;
+			int itemBId = itemB.getId();
+
+			boolean usedItemOnLootingBag = isLootingBag(itemAId) || isLootingBag(itemBId);
+			if (usedItemOnLootingBag)
+			{
+				lastLootingBagUseOn = client.getTickCount();
+			}
 		}
-		WorldPoint point = WorldPoint.fromScene(client, event.getParam0(), event.getParam1(), client.getPlane());
-		lastPickUpAction = new PickupAction(event.getId(), point);
+	}
+
+	private boolean isLootingBag(int itemId)
+	{
+		return itemId == ItemID.LOOTING_BAG || itemId == ItemID.LOOTING_BAG_22586;
 	}
 
 	@Subscribe
 	public void onItemDespawned(ItemDespawned event)
 	{
-		if (value < 0)
+		if (bagItems == null)
 		{
 			return;
 		}
@@ -197,16 +268,44 @@ public class LootingBagManager
 			return;
 		}
 
-		if (!bagItems.containsKey(itemId) || !itemComposition.isStackable())
+		if (!canAddItem(itemId))
 		{
-			if (freeSlots <= 0)
-				return;
-			freeSlots--;
+			return;
 		}
 
 		int quantity = event.getItem().getQuantity();
-		value += getPrice(itemId) * quantity;
 		bagItems.merge(itemId, quantity, Integer::sum);
+		saveData();
+	}
+
+	private boolean canAddItem(int itemId)
+	{
+		if (isStackable(itemId) && bagItems.containsKey(itemId))
+		{
+			return true;
+		}
+		else
+		{
+			int slotsUsed = 0;
+			for (Integer bagItemId : bagItems.keySet())
+			{
+				slotsUsed += isStackable(bagItemId) ? 1 : bagItems.get(bagItemId);
+			}
+			return slotsUsed < LOOTING_BAG_SIZE;
+		}
+	}
+
+	private boolean isStackable(int itemId)
+	{
+		return itemManager.getItemComposition(itemId).isStackable();
+	}
+
+	private void saveData()
+	{
+		executor.execute(() ->
+		{
+			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag, gson.toJson(this.bagItems));
+		});
 	}
 
 	public long getPrice(int itemId)
@@ -214,35 +313,8 @@ public class LootingBagManager
 		return itemManager.getItemPrice(itemId);
 	}
 
-	public String getValueText()
-	{
-		if (value < 0)
-		{
-			return "Check";
-		}
-		String text = "";
-		if (value >= 10_000_000)
-		{
-			return text + value / 1_000_000 + "M";
-		}
-		if (value >= 100_000)
-		{
-			return text + value / 1000 + "k";
-		}
-		return text + value;
-	}
-
 	boolean needsCheck()
 	{
-		return freeSlots < 0;
-	}
-
-	public String getFreeSlotsText()
-	{
-		if (freeSlots < 0)
-		{
-			return "Check";
-		}
-		return Integer.toString(freeSlots);
+		return bagItems == null;
 	}
 }

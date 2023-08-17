@@ -113,6 +113,7 @@ public class InventoryTotalPlugin extends Plugin
 		eventBus.register(chargedItemManager);
 		weaponChargesManager.startUp();
 		chargedItemManager.startUp();
+		lootingBagManager.startUp();
 	}
 
 	@Override
