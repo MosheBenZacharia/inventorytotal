@@ -223,7 +223,17 @@ class InventoryTotalOverlay extends Overlay
 
 		int height = 20;
 
-		String totalText = getTotalText(plugin.getProfitGp());
+		long total = plugin.getProfitGp();
+		String totalText = getTotalText(total);
+
+		if (config.showGpPerHourOnOverlay() 
+			&& plugin.getMode() == InventoryTotalMode.PROFIT_LOSS
+			 && plugin.getState() == InventoryTotalState.RUN
+			 && !showInterstitial)
+		{
+			total = getGpPerHour(plugin.elapsedRunTime(), (int) total);
+			totalText = getGpPerHourString((int) total) + "/hr";
+		}
 
 		String formattedRunTime = getFormattedRunTime();
 		String runTimeText = null;
@@ -233,8 +243,6 @@ class InventoryTotalOverlay extends Overlay
 			runTimeText = " (" + formattedRunTime + ")";
 		}
 
-		long total = plugin.getProfitGp();
-
 		if (showInterstitial)
 		{
 			total = 0;
@@ -242,6 +250,8 @@ class InventoryTotalOverlay extends Overlay
 			if (plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
 			{
 				totalText = "0";
+				if (config.showGpPerHourOnOverlay())
+					totalText += "/hr";
 			}
 			else
 			{
@@ -612,11 +622,8 @@ class InventoryTotalOverlay extends Overlay
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
 		{
 			int gpPerHour = getGpPerHour(runTime, total);
-			//decimal stack only works on positive numbers
-			String decimalStack = QuantityFormatter.quantityToRSDecimalStack(Math.abs(gpPerHour));
-			if (gpPerHour < 0)
-				decimalStack = "-" + decimalStack;
-			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, decimalStack, priceToColor(gpPerHour), false));
+			String gpPerHourString = getGpPerHourString(gpPerHour);
+			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}
 		if (plugin.needsLootingBagCheck())
 		{
@@ -669,6 +676,15 @@ class InventoryTotalOverlay extends Overlay
 		renderLedgerEntries(ledgerEntries, x, y, rowW, rowH, sectionPadding, graphics);
 	}
 
+	private String getGpPerHourString(int gpPerHour)
+	{
+		//decimal stack only works on positive numbers
+		String decimalStack = QuantityFormatter.quantityToRSDecimalStack(Math.abs(gpPerHour));
+		if (gpPerHour < 0)
+			decimalStack = "-" + decimalStack;
+		return decimalStack;
+	}
+
 	private int getGpPerHour(long runTime, int total)
 	{
 		//dont want to update too often
@@ -677,6 +693,7 @@ class InventoryTotalOverlay extends Overlay
 		{
 			return lastGpPerHour;
 		}
+
 
 		float hours = ((float) runTime) / 3600000f;
 		int gpPerHour = (int) (total / hours);

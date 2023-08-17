@@ -220,7 +220,18 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 19,
+			position = 20,
+			keyName = "showGpPerHourOnOverlay",
+			name = "Show GP/hr On Overlay",
+			description = "Configures whether or not gp/hr is shown instead of net total when in profit / loss mode."
+	)
+	default boolean showGpPerHourOnOverlay()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 22,
 			keyName = "showExactGp",
 			name = "Show Exact Gp",
 			description = "Configures whether or not the exact gp value is visible."
@@ -231,7 +242,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 20,
+			position = 24,
 			keyName = "showCoinStack",
 			name = "Show Coin Stack",
 			description = "Configures whether or not the coin stack image is visible."
@@ -242,7 +253,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 21,
+			position = 26,
 			keyName = "showWhileBanking",
 			name = "Show While Banking",
 			description = "Configures whether or not the total is visible while banking."
@@ -253,7 +264,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 22,
+			position = 28,
 			keyName = "showOnEmpty",
 			name = "Show On Empty",
 			description = "Configures whether or not to show the total when inventory is empty."
@@ -264,7 +275,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 22,
+			position = 30,
 			keyName = "showTooltip",
 			name = "Show Tooltip",
 			description = "Configures whether or not to show the total tooltip."
@@ -275,7 +286,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
     @ConfigItem(
-			position = 23,
+			position = 32,
             keyName = "goldDrops",
             name = "Show Gold Drops",
             description = "Show each profit increase or decrease as an XP drop (only works in profit/loss mode)."
@@ -286,7 +297,7 @@ public interface InventoryTotalConfig extends Config
     }
 
 	@ConfigItem(
-			position = 24,
+			position = 34,
 			keyName = "ignoredItems",
 			name = "Ignored Items",
 			description = "Ignore these items in your inventory (applies after banking)."
