@@ -55,8 +55,6 @@ public class U_LogBasket extends ChargedItem
         this.triggers_items = new TriggerItem[]{
             new TriggerItem(ItemID.LOG_BASKET),
             new TriggerItem(ItemID.OPEN_LOG_BASKET),
-            new TriggerItem(ItemID.FORESTRY_BASKET),
-            new TriggerItem(ItemID.OPEN_FORESTRY_BASKET),
         };
 		this.triggers_chat_messages = new TriggerChatMessage[]{
             new TriggerChatMessage("(Your|The) basket is empty.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
@@ -116,8 +114,6 @@ public class U_LogBasket extends ChargedItem
 		this.triggers_item_containers = new TriggerItemContainer[]{
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open log basket").menuOption("Fill").addDifference(),
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Log basket").menuOption("Fill").addDifference(),
-			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open forestry basket").menuOption("Fill").addDifference(),
-			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Forestry basket").menuOption("Fill").addDifference(),
 		};
 	}
 
