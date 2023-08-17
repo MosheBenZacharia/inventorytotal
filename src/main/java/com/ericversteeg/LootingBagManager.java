@@ -76,8 +76,6 @@ public class LootingBagManager
 	private ScheduledExecutorService executor;
 
 	private Map<Integer, Integer> bagItems = null;
-	// private int freeSlots = -1;
-	// private long value = -1;
 	private int lastLootingBagUseOn = -2;
 
 	private PickupAction lastPickUpAction;

@@ -167,5 +167,6 @@ public class U_FishBarrel extends ChargedItem
 			new TriggerMenuOption("Open fish sack barrel", "Empty").extraConsumer((message) -> { super.emptyOrClear(); }),
 			new TriggerMenuOption("Fish sack barrel", "Empty").extraConsumer((message) -> { super.emptyOrClear(); }),
 		};
+		this.supportsWidgetOnWidget = true;
 	}
 }

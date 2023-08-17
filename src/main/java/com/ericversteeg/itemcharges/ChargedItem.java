@@ -7,6 +7,7 @@ import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.MenuAction;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
@@ -75,12 +76,14 @@ public class ChargedItem {
 	@Nullable protected TriggerReset[] triggers_resets;
 	@Nullable protected TriggerItemContainer[] triggers_item_containers;
 	@Nullable protected TriggerMenuOption[] triggers_menu_options;
+	protected boolean supportsWidgetOnWidget = false;
 
 	private boolean in_equipment;
 	private boolean in_inventory;
 	private final List<String[]> menu_entries = new ArrayList<>();
 	private int animation = -1;
 	private int graphic = -1;
+	private int lastUseOnMeTick = -2;
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
 	private Map<Integer, Integer> itemQuantities = null;
@@ -184,6 +187,21 @@ public class ChargedItem {
 			for (Item afterItem : after)
 			{
 				differenceMap.merge(afterItem.getId(), -1, Integer::sum);
+			}
+		}
+		if (event.getContainerId() == InventoryID.INVENTORY.getId())
+		{
+			if (itemQuantities != null && supportsWidgetOnWidget &&
+				(lastUseOnMeTick == client.getTickCount() || lastUseOnMeTick + 1 == client.getTickCount()))
+			{
+				for (Integer itemId : differenceMap.keySet())
+				{
+					Integer count = differenceMap.get(itemId);
+					if (count > 0)
+					{
+						addItems(itemId, count);
+					}
+				}
 			}
 		}
 
@@ -595,6 +613,27 @@ public class ChargedItem {
 
 
 	public void onMenuOptionClicked(final MenuOptionClicked event) {
+
+		if (event.getMenuAction() == MenuAction.WIDGET_TARGET_ON_WIDGET && this.supportsWidgetOnWidget) {
+			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+			if (itemContainer == null)
+				return;
+			Item itemA = itemContainer.getItem(client.getSelectedWidget().getIndex());
+			if (itemA == null) 
+				return;
+			int itemAId = itemA.getId();
+			Item itemB = itemContainer.getItem(event.getWidget().getIndex());
+			if (itemB == null) 
+				return;
+			int itemBId = itemB.getId();
+
+			boolean usedItemOnMe = this.item_id == itemAId || this.item_id == itemBId;
+			if (usedItemOnMe)
+			{
+				lastUseOnMeTick = client.getTickCount();
+			}
+		}
+
 		final String menu_target = event.getMenuTarget().replaceAll("</?col.*?>", "");
 		final String menu_option = event.getMenuOption();
 

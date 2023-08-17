@@ -115,6 +115,7 @@ public class U_LogBasket extends ChargedItem
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Open log basket").menuOption("Fill").addDifference(),
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Log basket").menuOption("Fill").addDifference(),
 		};
+		this.supportsWidgetOnWidget = true;
 	}
 
 	private Integer tryFindItemIdFromName(String name)
