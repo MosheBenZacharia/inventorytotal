@@ -22,6 +22,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 @PluginDescriptor(
@@ -38,6 +39,9 @@ public class InventoryTotalPlugin extends Plugin
 	static final int NO_PROFIT_LOSS_TIME = -1;
 	static final int RUNEPOUCH_ITEM_ID = 12791;
 	static final int DIVINE_RUNEPOUCH_ITEM_ID = 27281;
+
+	@Inject
+	private ScheduledExecutorService executor;
 
 	@Inject
 	private InventoryTotalOverlay overlay;
@@ -106,7 +110,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		overlayManager.add(overlay);
 
-		runData = new InventoryTotalRunData();
+		runData = getSavedData();
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 		eventBus.register(lootingBagManager);
 		eventBus.register(weaponChargesManager);
@@ -125,16 +129,6 @@ public class InventoryTotalPlugin extends Plugin
 		eventBus.unregister(chargedItemManager);
 		weaponChargesManager.shutDown();
 		chargedItemManager.shutDown();
-	}
-
-	@Subscribe
-	public void onRuneScapeProfileChanged(RuneScapeProfileChanged e)
-	{
-		profileKey = configManager.getRSProfileKey();
-		if (profileKey != null)
-		{
-			runData = getSavedData();
-		}
 	}
 
 	@Subscribe
@@ -665,18 +659,17 @@ public class InventoryTotalPlugin extends Plugin
 			return;
 		}
 
-		String profile = configManager.getRSProfileKey();
-
-		String json = gson.toJson(runData);
-		configManager.setConfiguration(InventoryTotalConfig.GROUP, profile, "inventory_total_data", json);
-
-		lastWriteSaveTime = Instant.now().toEpochMilli();
+		executor.execute(() ->
+		{
+			String json = gson.toJson(runData);
+			configManager.setConfiguration(InventoryTotalConfig.GROUP, "inventory_total_data", json);
+			lastWriteSaveTime = Instant.now().toEpochMilli();
+		});
 	}
 
 	private InventoryTotalRunData getSavedData()
 	{
-		String profile = configManager.getRSProfileKey();
-		String json = configManager.getConfiguration(InventoryTotalConfig.GROUP, profile, "inventory_total_data");
+		String json = configManager.getConfiguration(InventoryTotalConfig.GROUP, "inventory_total_data");
 
 		InventoryTotalRunData savedData = gson.fromJson(json, InventoryTotalRunData.class);
 
