@@ -891,7 +891,7 @@ public class WeaponChargesManager
 
 	/// API for InventoryTotalPlugin
 
-	private  Map<Integer, Integer> emptyMap = new HashMap<>();
+	private  Map<Integer, Float> emptyMap = new HashMap<>();
 
 	public boolean isChargeableWeapon(Integer itemId)
 	{
@@ -929,9 +929,9 @@ public class WeaponChargesManager
 	}
 
 	//avoid GC
-	private  Map<Integer, Integer> blowpipeMap = new HashMap<>();
+	private  Map<Integer, Float> blowpipeMap = new HashMap<>();
 
-	public Map<Integer, Integer> getChargeComponents(Integer itemId)
+	public Map<Integer, Float> getChargeComponents(Integer itemId)
 	{
 		ChargedWeapon weapon = null;
 		for (ChargedWeapon chargedWeapon : ChargedWeapon.values()) {
@@ -952,8 +952,8 @@ public class WeaponChargesManager
 			Float dartCount = getDartsLeft();
 			Float scaleCount = getScalesLeft();
 			DartType dartType = getDartType();
-			blowpipeMap.put(dartType.itemId, dartCount.intValue());
-			blowpipeMap.put(ItemID.ZULRAHS_SCALES, scaleCount.intValue());
+			blowpipeMap.put(dartType.itemId, dartCount);
+			blowpipeMap.put(ItemID.ZULRAHS_SCALES, scaleCount);
 			return blowpipeMap;
 		}
 		return weapon.getChargeComponents(getCharges(weapon));

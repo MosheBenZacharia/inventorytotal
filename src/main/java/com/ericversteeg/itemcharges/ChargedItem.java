@@ -86,7 +86,7 @@ public class ChargedItem {
 	private int lastUseOnMeTick = -2;
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
-	private Map<Integer, Integer> itemQuantities = null;
+	private Map<Integer, Float> itemQuantities = null;
 
 	@Nullable public Integer negative_full_charges;
 	public boolean zero_charges_is_positive = false;
@@ -129,9 +129,9 @@ public class ChargedItem {
 		onItemQuantitiesModified();
 	}
 
-	protected void addItems(Integer itemId, Integer count)
+	protected void addItems(Integer itemId, Float count)
 	{
-		itemQuantities.merge(itemId, count, Integer::sum);
+		itemQuantities.merge(itemId, count, Float::sum);
 		onItemQuantitiesModified();
 	}
 
@@ -139,12 +139,12 @@ public class ChargedItem {
 	{
 		if (itemQuantities == null)
 			return 0;
-		Integer itemCount = 0;
-		for	(Integer quantity : itemQuantities.values())
+		Float itemCount = 0f;
+		for	(Float quantity : itemQuantities.values())
 		{
 			itemCount += quantity;
 		}
-		return itemCount;
+		return Math.round(itemCount);
 	}
 
 	public boolean hasChargeData()
@@ -155,7 +155,7 @@ public class ChargedItem {
 	}
 
 	//should be overriden by derived class if they are using charges (should work like weapon charges)
-	public Map<Integer,Integer> getItemQuantities()
+	public Map<Integer, Float> getItemQuantities()
 	{
 		return this.itemQuantities;
 	}
@@ -199,7 +199,7 @@ public class ChargedItem {
 					Integer count = differenceMap.get(itemId);
 					if (count > 0)
 					{
-						addItems(itemId, count);
+						addItems(itemId, (float) count);
 					}
 				}
 			}
@@ -248,7 +248,7 @@ public class ChargedItem {
 						Integer count = differenceMap.get(itemId);
 						if (count > 0)
 						{
-							addItems(itemId, count);
+							addItems(itemId, (float) count);
 						}
 					}
 					break;

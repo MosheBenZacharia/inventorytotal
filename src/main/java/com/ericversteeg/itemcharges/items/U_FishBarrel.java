@@ -104,7 +104,7 @@ public class U_FishBarrel extends ChargedItem
 						{
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
 							lastFishCaught = fishId;
-							super.addItems(fishId, 1);
+							super.addItems(fishId, 1f);
 						}
 					}
 					else
@@ -119,7 +119,7 @@ public class U_FishBarrel extends ChargedItem
 					
 					if (lastFishCaught != null)
 					{
-						super.addItems(lastFishCaught, 1);
+						super.addItems(lastFishCaught, 1f);
 					}
 					else
 					{
@@ -141,7 +141,7 @@ public class U_FishBarrel extends ChargedItem
 						if (FISH_TYPES_BY_NAME.containsKey(fishName))
 						{
 							Integer fishId = FISH_TYPES_BY_NAME.get(fishName);
-							super.addItems(fishId, fishAmount);
+							super.addItems(fishId, (float) fishAmount);
 						}
 						else
 						{

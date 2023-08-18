@@ -168,7 +168,7 @@ public class ChargedItemManager {
 
 	/// API for InventoryTotalPlugin
 
-	private  Map<Integer, Integer> emptyMap = new HashMap<>();
+	private  Map<Integer, Float> emptyMap = new HashMap<>();
 
 	public boolean isChargeableItem(Integer itemId)
 	{
@@ -197,7 +197,7 @@ public class ChargedItemManager {
 		return chargedItem.hasChargeData();
 	}
 
-	public Map<Integer, Integer> getItemQuantities(Integer itemId)
+	public Map<Integer, Float> getItemQuantities(Integer itemId)
 	{
 		ChargedItem chargedItem = getChargedItem(itemId);
 		if (chargedItem == null)

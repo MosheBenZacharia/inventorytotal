@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+
+import com.ericversteeg.InventoryTotalPlugin;
+
 import lombok.Getter;
 import net.runelite.api.ItemID;
 import net.runelite.client.util.Text;
@@ -161,12 +164,12 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 
-			chargeComponents.put(ItemID.DEATH_RUNE, charges);
-			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
-			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
-			chargeComponents.put(ItemID.COINS_995, charges * 10);
+			chargeComponents.put(ItemID.DEATH_RUNE, (float) charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, (float) charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, (float) charges * 5);
+			chargeComponents.put(ItemID.COINS_995, (float) charges * 10);
 		})
 	),
 	TRIDENT_OF_THE_SWAMP(new ChargedWeaponBuilder()
@@ -190,12 +193,12 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 
-			chargeComponents.put(ItemID.DEATH_RUNE, charges);
-			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
-			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
-			chargeComponents.put(ItemID.ZULRAHS_SCALES, charges);
+			chargeComponents.put(ItemID.DEATH_RUNE, (float) charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, (float) charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, (float) charges * 5);
+			chargeComponents.put(ItemID.ZULRAHS_SCALES, (float) charges);
 		})
 	),
 	TRIDENT_OF_THE_SEAS_E(new ChargedWeaponBuilder()
@@ -213,12 +216,12 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 
-			chargeComponents.put(ItemID.DEATH_RUNE, charges);
-			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
-			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
-			chargeComponents.put(ItemID.COINS_995, charges * 10);
+			chargeComponents.put(ItemID.DEATH_RUNE, (float) charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, (float) charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, (float) charges * 5);
+			chargeComponents.put(ItemID.COINS_995, (float) charges * 10);
 		})
 	),
 	TRIDENT_OF_THE_SWAMP_E(new ChargedWeaponBuilder()
@@ -242,12 +245,12 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 
-			chargeComponents.put(ItemID.DEATH_RUNE, charges);
-			chargeComponents.put(ItemID.CHAOS_RUNE, charges);
-			chargeComponents.put(ItemID.FIRE_RUNE, charges * 5);
-			chargeComponents.put(ItemID.ZULRAHS_SCALES, charges);
+			chargeComponents.put(ItemID.DEATH_RUNE, (float) charges);
+			chargeComponents.put(ItemID.CHAOS_RUNE, (float) charges);
+			chargeComponents.put(ItemID.FIRE_RUNE, (float) charges * 5);
+			chargeComponents.put(ItemID.ZULRAHS_SCALES, (float) charges);
 		})
 	),
 	//this can actually reach 20k charges if you combine two of them...
@@ -262,7 +265,11 @@ public enum ChargedWeapon
 		)
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
-			//TODO: support fractional components
+			Integer charges = params.currentCharges;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float whips = charges / 10000f;
+			if (whips > InventoryTotalPlugin.roundAmount)
+				chargeComponents.put(ItemID.ABYSSAL_WHIP, whips);
 		})
 	),
 	/* chally
@@ -298,9 +305,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			//Assume cheapest cost per charge
-			chargeComponents.put(ItemID.COINS_995, charges * 60);
+			chargeComponents.put(ItemID.COINS_995, charges * 60f);
 
 			//TODO: config for user to decide if they are using crystal shards vs paying ilfeen,
 			// and see if i can find varbit for how many times ilfeen has recharged (since that affects cost per charge)
@@ -342,10 +349,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int pages = charges / 20;
-			if (pages > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float pages = charges / 20f;
+			if (pages > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.BURNT_PAGE, pages);
 		})
 	),
@@ -377,10 +383,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int pages = charges / 20;
-			if (pages > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float pages = charges / 20f;
+			if (pages > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.SOAKED_PAGE, pages);
 		})
 	),
@@ -457,12 +462,11 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int vials = charges / 100;
-			if (vials > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float vials = charges / 100f;
+			if (vials > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.VIAL_OF_BLOOD, vials);
-			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3);
+			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3f);
 		})
 	),
 	/* blood fury
@@ -560,9 +564,7 @@ public enum ChargedWeapon
 		)
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
-			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3);
+			params.chargeComponents.put(ItemID.BLOOD_RUNE, params.currentCharges * 3f);
 		})
 	),
 	/* arclight
@@ -601,10 +603,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int shards = charges / 333;
-			if (shards > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float shards = charges / 333f;
+			if (shards > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.ANCIENT_SHARD, shards);
 		})
 	),
@@ -654,7 +655,7 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("craws_bow")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	WEBWEAVER(new ChargedWeaponBuilder()
 		.chargedItemIds(27655 /*WEBWEAVER_BOW*/)
@@ -665,7 +666,7 @@ public enum ChargedWeapon
 		.configKeyName("webweaver_bow")
 		.settingsConfigKey("craws_bow")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	/* Vigorra's chainmace
 		message overlap:
@@ -679,7 +680,7 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("viggoras_chainmace")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	URSINE (new ChargedWeaponBuilder()
 		.chargedItemIds(27660 /*URSINE_CHAINMACE*/)
@@ -690,7 +691,7 @@ public enum ChargedWeapon
 		.configKeyName("ursine_chainmace")
 		.settingsConfigKey("viggoras_chainmace")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	/* Thammaron's sceptre
 		message overlap:
@@ -704,7 +705,7 @@ public enum ChargedWeapon
 		.rechargeAmount(16_000)
 		.configKeyName("thammarons_sceptre")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	ACCURSED(new ChargedWeaponBuilder()
 		.chargedItemIds(27665 /*ACCURSED_SCEPTRE*/, 27679 /*ACCURSED_SCEPTRE_A*/)
@@ -718,7 +719,7 @@ public enum ChargedWeapon
 		.configKeyName("accursed_sceptre")
 		.settingsConfigKey("thammarons_sceptre")
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.REVENANT_ETHER, (float) params.currentCharges); })
 	),
 	/*
 	check:
@@ -737,9 +738,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			//Assume cheapest cost per charge
-			chargeComponents.put(ItemID.COINS_995, charges * 72);
+			chargeComponents.put(ItemID.COINS_995, charges * 72f);
 
 			//TODO: config for user to decide if they are using crystal shards vs paying ilfeen,
 			// and see if i can find varbit for how many times ilfeen has recharged (since that affects cost per charge)
@@ -766,11 +767,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int shards = charges / 100;
-			if (shards > 0)
-				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+			float shards = charges / 100f;
+			if (shards > InventoryTotalPlugin.roundAmount)
+				params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
 	/*
@@ -792,10 +791,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int shards = charges / 100;
-			if (shards > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float shards = charges / 100f;
+			if (shards > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
@@ -811,10 +809,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int shards = charges / 100;
-			if (shards > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float shards = charges / 100f;
+			if (shards > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
@@ -830,10 +827,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			//TODO: support fractional components
-			int shards = charges / 100;
-			if (shards > 0)
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			float shards = charges / 100f;
+			if (shards > InventoryTotalPlugin.roundAmount)
 				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
@@ -894,7 +890,7 @@ public enum ChargedWeapon
 			)
 		)
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
-				{ params.chargeComponents.put(ItemID.ZULRAHS_SCALES, params.currentCharges); })
+				{ params.chargeComponents.put(ItemID.ZULRAHS_SCALES, (float) params.currentCharges); })
 	),
 	/* Tumeken's shadow
 		https://github.com/geheur/weapon-charges/issues/14 log here.
@@ -977,9 +973,9 @@ public enum ChargedWeapon
 		.updateChargeComponents((UpdateChargeComponentsParams params) ->
 		{
 			Integer charges = params.currentCharges;
-			Map<Integer, Integer> chargeComponents = params.chargeComponents;
-			chargeComponents.put(ItemID.SOUL_RUNE, charges * 2);
-			chargeComponents.put(ItemID.CHAOS_RUNE, charges * 5);
+			Map<Integer, Float> chargeComponents = params.chargeComponents;
+			chargeComponents.put(ItemID.SOUL_RUNE, charges * 2f);
+			chargeComponents.put(ItemID.CHAOS_RUNE, charges * 5f);
 		})
 	),
 	/**
@@ -1060,7 +1056,7 @@ public enum ChargedWeapon
 	private class UpdateChargeComponentsParams
 	{
 		Integer currentCharges;
-		Map<Integer, Integer> chargeComponents = new HashMap<>();
+		Map<Integer, Float> chargeComponents = new HashMap<>();
 	}
 
 	private static class ChargedWeaponBuilder {
@@ -1166,7 +1162,7 @@ public enum ChargedWeapon
 		this.updateParams = new UpdateChargeComponentsParams();
 	}
 
-	public Map<Integer, Integer> getChargeComponents(Integer charges)
+	public Map<Integer, Float> getChargeComponents(Integer charges)
 	{
 		this.updateParams.currentCharges = charges;
 		this.updateParams.chargeComponents.clear();

@@ -37,6 +37,7 @@ public class InventoryTotalPlugin extends Plugin
 	static final int NO_PROFIT_LOSS_TIME = -1;
 	static final int RUNEPOUCH_ITEM_ID = 12791;
 	static final int DIVINE_RUNEPOUCH_ITEM_ID = 27281;
+	public static final float roundAmount = 0.1f;
 
 	@Inject
 	private ScheduledExecutorService executor;
@@ -289,18 +290,18 @@ public class InventoryTotalPlugin extends Plugin
 
 	private void addChargedWeaponComponents(Map<Integer, Float> qtyMap)
 	{
-		// Map<Integer, Float> chargedWeaponComponents = getChargedWeaponComponentQtyMap(qtyMap.keySet());
-		// for (int itemId: chargedWeaponComponents.keySet()) {
-		// 	qtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Float::sum);
-		// }
+		Map<Integer, Float> chargedWeaponComponents = getChargedWeaponComponentQtyMap(qtyMap.keySet());
+		for (int itemId: chargedWeaponComponents.keySet()) {
+			qtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Float::sum);
+		}
 	}
 
 	private void addChargedItemComponents(Map<Integer, Float> qtyMap)
 	{
-		// Map<Integer, Float> chargedItemComponents = getChargedItemQtyMap(qtyMap.keySet());
-		// for (int itemId: chargedItemComponents.keySet()) {
-		// 	qtyMap.merge(itemId, chargedItemComponents.get(itemId), Float::sum);
-		// }
+		Map<Integer, Float> chargedItemComponents = getChargedItemQtyMap(qtyMap.keySet());
+		for (int itemId: chargedItemComponents.keySet()) {
+			qtyMap.merge(itemId, chargedItemComponents.get(itemId), Float::sum);
+		}
 	}
 
 	long getEquipmentTotal(boolean isNewRun)
@@ -327,17 +328,17 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//avoid GC
-	private Map<Integer, Integer> chargedWeaponComponentQtyMap = new HashMap<>();
-	private Map<Integer, Integer> getChargedWeaponComponentQtyMap(Set<Integer> itemIdsToCheck)
+	private Map<Integer, Float> chargedWeaponComponentQtyMap = new HashMap<>();
+	private Map<Integer, Float> getChargedWeaponComponentQtyMap(Set<Integer> itemIdsToCheck)
 	{
 		chargedWeaponComponentQtyMap.clear();
 		for (int itemId: itemIdsToCheck) {
 			if (weaponChargesManager.isChargeableWeapon(itemId) && weaponChargesManager.hasChargeData(itemId))
 			{
-				Map<Integer, Integer> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
+				Map<Integer, Float> chargeComponents = weaponChargesManager.getChargeComponents(itemId);
 				for (Integer chargeComponentItemId: chargeComponents.keySet())
 				{
-					chargedWeaponComponentQtyMap.merge(chargeComponentItemId, chargeComponents.get(chargeComponentItemId), Integer::sum);
+					chargedWeaponComponentQtyMap.merge(chargeComponentItemId, chargeComponents.get(chargeComponentItemId), Float::sum);
 				}
 			}
 		}
@@ -345,17 +346,17 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//avoid GC
-	private Map<Integer, Integer> chargedItemQtyMap = new HashMap<>();
-	private Map<Integer, Integer> getChargedItemQtyMap(Set<Integer> itemIdsToCheck)
+	private Map<Integer, Float> chargedItemQtyMap = new HashMap<>();
+	private Map<Integer, Float> getChargedItemQtyMap(Set<Integer> itemIdsToCheck)
 	{
 		chargedItemQtyMap.clear();
 		for (int itemId: itemIdsToCheck) {
 			if (chargedItemManager.isChargeableItem(itemId) && chargedItemManager.hasChargeData(itemId))
 			{
-				Map<Integer, Integer> itemContents = chargedItemManager.getItemQuantities(itemId);
+				Map<Integer, Float> itemContents = chargedItemManager.getItemQuantities(itemId);
 				for (Integer itemContentId: itemContents.keySet())
 				{
-					chargedItemQtyMap.merge(itemContentId, itemContents.get(itemContentId), Integer::sum);
+					chargedItemQtyMap.merge(itemContentId, itemContents.get(itemContentId), Float::sum);
 				}
 			}
 		}

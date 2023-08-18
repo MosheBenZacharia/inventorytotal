@@ -69,12 +69,12 @@ public class U_LogBasket extends ChargedItem
 						Integer itemId = tryFindItemIdFromName(logName);
 						if (itemId != null)
 						{
-							super.addItems(itemId, 1);
+							super.addItems(itemId, 1f);
 							if (getItemCount() < CAPACITY)
 							{
 								if (lastNatureOfferingTickCount == client.getTickCount())
 								{
-									super.addItems(itemId, 1);
+									super.addItems(itemId, 1f);
 								}
 							}
 						}
@@ -102,7 +102,7 @@ public class U_LogBasket extends ChargedItem
 						String name = matcher.group(2).toLowerCase();
 						Integer itemId = tryFindItemIdFromName(name);
 						if (itemId != null)
-							super.addItems(itemId, amount);
+							super.addItems(itemId, (float) amount);
 					}
 					catch (NumberFormatException e)
 					{
