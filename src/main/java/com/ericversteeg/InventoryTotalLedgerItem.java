@@ -2,14 +2,14 @@ package com.ericversteeg;
 
 public class InventoryTotalLedgerItem {
     private final String description;
-    private int qty;
-    private final int amount;
+    private float qty;
+    private final int price;
 
-    public InventoryTotalLedgerItem(String description, int qty, int amount)
+    public InventoryTotalLedgerItem(String description, float qty, int price)
     {
         this.description = description;
         this.qty = qty;
-        this.amount = amount;
+        this.price = price;
     }
 
     public String getDescription()
@@ -17,17 +17,17 @@ public class InventoryTotalLedgerItem {
         return description;
     }
 
-    public int getQty()
+    public float getQty()
     {
         return qty;
     }
 
-    public int getAmount()
+    public int getPrice()
     {
-        return amount;
+        return price;
     }
 
-    public void addQuantityDifference(int qtyDifference)
+    public void addQuantityDifference(float qtyDifference)
     {
         qty += qtyDifference;
     }

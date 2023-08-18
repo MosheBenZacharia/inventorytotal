@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.Arrays;
@@ -63,7 +64,7 @@ class InventoryTotalOverlay extends Overlay
 	private boolean postNewRun = false;
 	private long newRunTime = 0;
 	
-	private int lastGpPerHour;
+	private long lastGpPerHour;
 	private long lastGpPerHourUpdateTime;
 
 	private BufferedImage coinsImage;
@@ -164,21 +165,17 @@ class InventoryTotalOverlay extends Overlay
 		plugin.getRunData().itemQtys.clear();
 
 		// totals
-		int [] inventoryTotals = plugin.getInventoryTotals(false);
+		long inventoryTotal = plugin.getInventoryTotal(false);
+		long equipmentTotal = plugin.getEquipmentTotal(false);
 
-		int inventoryTotal = inventoryTotals[InventoryTotalPlugin.TOTAL_GP_INDEX];
-		int equipmentTotal = plugin.getEquipmentTotal(false);
 
-		int inventoryQty = inventoryTotals[InventoryTotalPlugin.TOTAL_QTY_INDEX];
-
-		int totalGp = inventoryTotal;
+		long totalGp = inventoryTotal;
 		if (plugin.getState() == InventoryTotalState.RUN && plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
 		{
 			totalGp += equipmentTotal;
 		}
 
 		plugin.setTotalGp(totalGp);
-		plugin.setTotalQty(inventoryQty);
 
 		// after totals
 		if (newRun)
@@ -224,7 +221,7 @@ class InventoryTotalOverlay extends Overlay
 		int height = 20;
 
 		long total = plugin.getProfitGp();
-		String totalText = getTotalText(total);
+		String totalText = formatGp(total);
 
 		if (config.showGpPerHourOnOverlay() 
 			&& plugin.getMode() == InventoryTotalMode.PROFIT_LOSS
@@ -232,7 +229,7 @@ class InventoryTotalOverlay extends Overlay
 			 && !showInterstitial)
 		{
 			total = getGpPerHour(plugin.elapsedRunTime(), (int) total);
-			totalText = getGpPerHourString((int) total) + "/hr";
+			totalText = formatGp(total) + "/hr";
 		}
 
 		String formattedRunTime = getFormattedRunTime();
@@ -255,12 +252,12 @@ class InventoryTotalOverlay extends Overlay
 			}
 			else
 			{
-				totalText = getTotalText(plugin.getTotalGp());
+				totalText = formatGp(plugin.getTotalGp());
 			}
 		}
 
 		renderTotal(config, graphics, plugin, inventoryWidget,
-				plugin.getTotalQty(), total, totalText, runTimeText, height);
+				total, totalText, runTimeText, height);
 
 		return null;
 	}
@@ -292,7 +289,7 @@ class InventoryTotalOverlay extends Overlay
 	}
 
 	private void renderTotal(InventoryTotalConfig config, Graphics2D graphics, InventoryTotalPlugin plugin,
-							 Widget inventoryWidget, long totalQty, long total, String totalText,
+							 Widget inventoryWidget, long total, String totalText,
 							 String runTimeText, int height) {
 		
 		boolean showCoinStack = config.showCoinStack();
@@ -316,7 +313,7 @@ class InventoryTotalOverlay extends Overlay
 		}
 		numCoins = Math.abs(numCoins);
 
-		if ((totalQty == 0 && !config.showOnEmpty()) || (plugin.getState() == InventoryTotalState.BANK && !config.showWhileBanking())) {
+		if ((total == 0 && !config.showOnEmpty()) || (plugin.getState() == InventoryTotalState.BANK && !config.showWhileBanking())) {
 			return;
 		}
 
@@ -463,6 +460,17 @@ class InventoryTotalOverlay extends Overlay
 		}
 	}
 
+	private static final float roundAmount = 0.1f;
+	private static final float roundMultiplier = 1f/roundAmount;
+	
+	private String formatQuantity(float quantity)
+	{
+		quantity = Math.abs(quantity);
+		quantity = Math.round(quantity * roundMultiplier) / roundMultiplier;
+		String text = NumberFormat.getInstance(Locale.ENGLISH).format(quantity);
+		return text;
+	}
+
 	private void renderLedger(Graphics2D graphics)
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
@@ -475,19 +483,19 @@ class InventoryTotalOverlay extends Overlay
 			return;
 		}
 
-		ledger = ledger.stream().sorted(Comparator.comparingInt(o ->
-				-(o.getQty() * o.getAmount()))
+		ledger = ledger.stream().sorted(Comparator.comparingLong(o ->
+				-((long) o.getQty() * o.getPrice()))
 		).collect(Collectors.toList());
 
 		String [] descriptions = ledger.stream().map(item -> {
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = NumberFormat.getInstance(Locale.ENGLISH).format(Math.abs(item.getQty())) + " " + desc;
+				desc = formatQuantity(item.getQty()) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);
-		Integer [] prices = ledger.stream().map(item -> item.getQty() * item.getAmount()).toArray(Integer[]::new);
+		Long [] prices = ledger.stream().map(item -> (long) item.getQty() * item.getPrice()).toArray(Long[]::new);
 
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
 		if (descriptions.length == prices.length)
@@ -495,14 +503,14 @@ class InventoryTotalOverlay extends Overlay
 			for (int i = 0; i < descriptions.length; i++)
 			{
 				String desc = descriptions[i];
-				int price = prices[i];
+				long price = prices[i];
 				String rightText = formatNumber(price);
 				Color leftColor = Color.decode("#FFF7E3");
 				Color rightColor = price > 0 ? Color.GREEN : Color.WHITE;
 				ledgerEntries.add(new LedgerEntry(desc, leftColor, rightText, rightColor, false));
 			}
 		}
-		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
+		long total = ledger.stream().mapToLong(item -> (long) item.getQty() * item.getPrice()).sum();
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
 		if (plugin.needsLootingBagCheck())
 		{
@@ -563,8 +571,8 @@ class InventoryTotalOverlay extends Overlay
 		java.util.List<InventoryTotalLedgerItem> loss = ledger.stream().filter(item -> item.getQty() < 0)
 				.collect(Collectors.toList());
 
-		gain = gain.stream().sorted(Comparator.comparingInt(o -> -(o.getQty() * o.getAmount()))).collect(Collectors.toList());
-		loss = loss.stream().sorted(Comparator.comparingInt(o -> (o.getQty() * o.getAmount()))).collect(Collectors.toList());
+		gain = gain.stream().sorted(Comparator.comparingLong(o -> -((long) o.getQty() * o.getPrice()))).collect(Collectors.toList());
+		loss = loss.stream().sorted(Comparator.comparingLong(o -> ((long) o.getQty() * o.getPrice()))).collect(Collectors.toList());
 
 		ledger = new LinkedList<>();
 		ledger.addAll(gain);
@@ -579,11 +587,11 @@ class InventoryTotalOverlay extends Overlay
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = NumberFormat.getInstance(Locale.ENGLISH).format(Math.abs(item.getQty())) + " " + desc;
+				desc = formatQuantity(item.getQty()) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);
-		Integer [] prices = ledger.stream().map(item -> item.getQty() * item.getAmount()).toArray(Integer[]::new);
+		Long [] prices = ledger.stream().map(item -> (long) item.getQty() * item.getPrice()).toArray(Long[]::new);
 
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
 		if (descriptions.length == prices.length)
@@ -603,7 +611,7 @@ class InventoryTotalOverlay extends Overlay
 
 				prevDesc = desc;
 
-				int price = prices[i];
+				long price = prices[i];
 				String formattedPrice = formatNumber(price);
 				rightColor = priceToColor(price);
 
@@ -611,9 +619,9 @@ class InventoryTotalOverlay extends Overlay
 			}
 		}
 
-		int totalGain = gain.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
-		int totalLoss = loss.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
-		int total = ledger.stream().mapToInt(item -> item.getQty() * item.getAmount()).sum();
+		long totalGain = gain.stream().mapToLong(item -> (long) item.getQty() * item.getPrice()).sum();
+		long totalLoss = loss.stream().mapToLong(item -> (long) item.getQty() * item.getPrice()).sum();
+		long total = ledger.stream().mapToLong(item -> (long) item.getQty() * item.getPrice()).sum();
 		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
 		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
 		ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
@@ -621,8 +629,8 @@ class InventoryTotalOverlay extends Overlay
 		long runTime = plugin.elapsedRunTime();
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
 		{
-			int gpPerHour = getGpPerHour(runTime, total);
-			String gpPerHourString = getGpPerHourString(gpPerHour);
+			long gpPerHour = getGpPerHour(runTime, total);
+			String gpPerHourString = formatGp(gpPerHour);
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}
 		if (plugin.needsLootingBagCheck())
@@ -676,16 +684,7 @@ class InventoryTotalOverlay extends Overlay
 		renderLedgerEntries(ledgerEntries, x, y, rowW, rowH, sectionPadding, graphics);
 	}
 
-	private String getGpPerHourString(int gpPerHour)
-	{
-		//decimal stack only works on positive numbers
-		String decimalStack = QuantityFormatter.quantityToRSDecimalStack(Math.abs(gpPerHour));
-		if (gpPerHour < 0)
-			decimalStack = "-" + decimalStack;
-		return decimalStack;
-	}
-
-	private int getGpPerHour(long runTime, int total)
+	private long getGpPerHour(long runTime, long total)
 	{
 		//dont want to update too often
 		long timeNow = Instant.now().toEpochMilli();
@@ -694,21 +693,20 @@ class InventoryTotalOverlay extends Overlay
 			return lastGpPerHour;
 		}
 
-
 		float hours = ((float) runTime) / 3600000f;
-		int gpPerHour = (int) (total / hours);
+		long gpPerHour = (long) (total / hours);
 
 		lastGpPerHourUpdateTime = timeNow;
 		lastGpPerHour = gpPerHour;
 		return gpPerHour;
 	}
 
-	private String formatNumber(int number)
+	private String formatNumber(long number)
 	{
-		return NumberFormat.getInstance(Locale.ENGLISH).format(number);
+		return QuantityFormatter.formatNumber(number);
 	}
 
-	private Color priceToColor(int price)
+	private Color priceToColor(long price)
 	{
 		if (price > 0)
 		{
@@ -756,64 +754,20 @@ class InventoryTotalOverlay extends Overlay
 		}
 	}
 
-	private String getTotalText(long total)
+	private String formatGp(long total)
 	{
 		if (config.showExactGp())
 		{
-			return getExactFormattedGp(total);
+			return QuantityFormatter.formatNumber(total);
 		}
 		else
 		{
-			String totalText = getFormattedGp(total);
-			return totalText.replace(".0", "");
+			//decimal stack only works on positive numbers
+			String totalText = QuantityFormatter.quantityToStackSize(Math.abs(total));
+			if (total < 0)
+				totalText = "-" + totalText;
+			return totalText;
 		}
-	}
-
-	private String getFormattedGp(long total)
-	{
-		if (total >= 1000000000 || total <= -1000000000)
-		{
-			double bTotal = total / 1000000000.0;
-			return getTruncatedTotal(bTotal) + "B";
-		}
-		else
-		{
-			if (total >= 1000000 || total <= -1000000)
-			{
-				double mTotal = total / 1000000.0;
-				return getTruncatedTotal(mTotal) + "M";
-			}
-			else
-			{
-				if (total >= 1000 || total <= -1000)
-				{
-					double kTotal = total / 1000.0;
-					return getTruncatedTotal(kTotal) + "K";
-				}
-				else
-				{
-					return getExactFormattedGp(total);
-				}
-			}
-		}
-	}
-
-	private String getTruncatedTotal(double total)
-	{
-		String totalString = Double.toString(total);
-
-		int dotIndex = totalString.indexOf('.');
-		if (dotIndex < totalString.length() - 1)
-		{
-			return totalString.substring(0, dotIndex + 2);
-		}
-
-		return totalString;
-	}
-
-	private String getExactFormattedGp(long total)
-	{
-		return NumberFormat.getInstance(Locale.ENGLISH).format(total);
 	}
 
 	private String getFormattedRunTime()

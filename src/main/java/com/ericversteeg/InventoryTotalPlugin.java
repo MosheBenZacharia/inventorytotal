@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
 public class InventoryTotalPlugin extends Plugin
 {
 	static final int COINS = ItemID.COINS_995;
-	static final int TOTAL_GP_INDEX = 0;
-	static final int TOTAL_QTY_INDEX = 1;
 	static final int NO_PROFIT_LOSS_TIME = -1;
 	static final int RUNEPOUCH_ITEM_ID = 12791;
 	static final int DIVINE_RUNEPOUCH_ITEM_ID = 27281;
@@ -91,7 +89,6 @@ public class InventoryTotalPlugin extends Plugin
 
 	private long totalGp = 0;
 	private Long previousTotalGp = null;
-	private long totalQty = 0;
 
 	private long initialGp = 0;
 
@@ -182,8 +179,8 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		runData.initialItemQtys.clear();
 
-		int inventoryTotal = getInventoryTotals(true)[0];
-		int equipmentTotal = getEquipmentTotal(true);
+		long inventoryTotal = getInventoryTotal(true);
+		long equipmentTotal = getEquipmentTotal(true);
 
 		runData.profitLossInitialGp = inventoryTotal + equipmentTotal;
 
@@ -212,49 +209,42 @@ public class InventoryTotalPlugin extends Plugin
 		writeSavedData();
 	}
 
-	int [] getInventoryTotals(boolean isNewRun)
+	long getInventoryTotal(boolean isNewRun)
 	{
 		if (overlay.getInventoryItemContainer() == null)
 		{
-			return new int [2];
+			return 0l;
 		}
 
-		int totalQty = 0;
-		int totalGp = 0;
-		Map<Integer, Integer> qtyMap = getInventoryQtyMap();
+		long totalGp = 0;
+		Map<Integer, Float> qtyMap = getInventoryQtyMap();
 
 		for (Integer itemId: qtyMap.keySet())
 		{
-			int totalPrice;
+			long totalPrice;
 			int gePrice = getPrice(itemId);
-			int itemQty = qtyMap.get(itemId);
+			float itemQty = qtyMap.get(itemId);
 
 			if (itemId == COINS)
 			{
-				totalPrice = itemQty;
+				totalPrice = (long) itemQty;
 			}
 			else
 			{
-				totalPrice = itemQty * gePrice;
+				totalPrice = (long) (itemQty * gePrice);
 			}
 
 			totalGp += totalPrice;
-			totalQty += itemQty;
 			
 			updateRunData(isNewRun, itemId, itemQty, gePrice);
 		}
 
-		int[] totals = new int[2];
-
-		totals[TOTAL_GP_INDEX] = totalGp;
-		totals[TOTAL_QTY_INDEX] = totalQty;
-
-		return totals;
+		return totalGp;
 	}
 
 	//no GC
-	private Map<Integer, Integer> equipmentQtyMap = new HashMap<>();
-	private Map<Integer, Integer> getEquipmentQtyMap()
+	private Map<Integer, Float> equipmentQtyMap = new HashMap<>();
+	private Map<Integer, Float> getEquipmentQtyMap()
 	{
 		equipmentQtyMap.clear();
 
@@ -279,45 +269,54 @@ public class InventoryTotalPlugin extends Plugin
 				continue;
 			}
 
-			equipmentQtyMap.put(id - 512, 1);
+			equipmentQtyMap.put(id - 512, 1f);
 		}
 
 		if (ring != null)
 		{
-			equipmentQtyMap.put(ring.getId(), 1);
+			equipmentQtyMap.put(ring.getId(), 1f);
 		}
 
 		if (ammo != null)
 		{
-			equipmentQtyMap.put(ammo.getId(), ammo.getQuantity());
+			equipmentQtyMap.put(ammo.getId(), (float) ammo.getQuantity());
 		}
 
-		Map<Integer, Integer> chargedWeaponComponents = getChargedWeaponComponentQtyMap(equipmentQtyMap.keySet());
-		for (int itemId: chargedWeaponComponents.keySet()) {
-			equipmentQtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Integer::sum);
-		}
-		Map<Integer, Integer> chargedItemComponents = getChargedItemQtyMap(equipmentQtyMap.keySet());
-		for (int itemId: chargedItemComponents.keySet()) {
-			equipmentQtyMap.merge(itemId, chargedItemComponents.get(itemId), Integer::sum);
-		}
-
+		addChargedWeaponComponents(equipmentQtyMap);
+		addChargedItemComponents(equipmentQtyMap);
 		return equipmentQtyMap;
 	}
 
-	int getEquipmentTotal(boolean isNewRun)
+	private void addChargedWeaponComponents(Map<Integer, Float> qtyMap)
 	{
-		Map<Integer, Integer> equMap = getEquipmentQtyMap();
+		// Map<Integer, Float> chargedWeaponComponents = getChargedWeaponComponentQtyMap(qtyMap.keySet());
+		// for (int itemId: chargedWeaponComponents.keySet()) {
+		// 	qtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Float::sum);
+		// }
+	}
 
-		int eTotal = 0;
+	private void addChargedItemComponents(Map<Integer, Float> qtyMap)
+	{
+		// Map<Integer, Float> chargedItemComponents = getChargedItemQtyMap(qtyMap.keySet());
+		// for (int itemId: chargedItemComponents.keySet()) {
+		// 	qtyMap.merge(itemId, chargedItemComponents.get(itemId), Float::sum);
+		// }
+	}
+
+	long getEquipmentTotal(boolean isNewRun)
+	{
+		Map<Integer, Float> equMap = getEquipmentQtyMap();
+
+		long eTotal = 0;
 		for (int itemId: equMap.keySet())
 		{
-			int qty = equMap.get(itemId);
+			float qty = equMap.get(itemId);
 			int gePrice = getPrice(itemId);
 			if (itemId == COINS)
 			{
 				gePrice = 1;
 			}
-			int totalPrice = qty * gePrice;
+			long totalPrice = (long) (qty * gePrice);
 
 			eTotal += totalPrice;
 
@@ -372,7 +371,7 @@ public class InventoryTotalPlugin extends Plugin
 			return new LinkedList<>();
 		}
 
-		Map<Integer, Integer> qtyMap = getInventoryQtyMap();
+		Map<Integer, Float> qtyMap = getInventoryQtyMap();
 
 		for (Integer itemId: qtyMap.keySet())
 		{
@@ -380,24 +379,24 @@ public class InventoryTotalPlugin extends Plugin
 
 			String itemName = itemComposition.getName();
 
-			Integer qty = qtyMap.get(itemId);
+			Float qty = qtyMap.get(itemId);
 
-			Integer total = runData.itemPrices.get(itemId);
-			if (itemId == COINS || total == null)
+			Integer price = runData.itemPrices.get(itemId);
+			if (itemId == COINS || price == null)
 			{
-				total = 1;
+				price = 1;
 			}
 
-			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, total));
+			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, price));
 		}
 
 		return ledgerItems;
 	}
 
 	//avoid GC
-	private Map<Integer, Integer> inventoryQtyMap = new HashMap<>();
+	private Map<Integer, Float> inventoryQtyMap = new HashMap<>();
 
-	Map<Integer, Integer> getInventoryQtyMap()
+	Map<Integer, Float> getInventoryQtyMap()
 	{
 		inventoryQtyMap.clear();
 		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
@@ -416,7 +415,6 @@ public class InventoryTotalPlugin extends Plugin
 			allItems.addAll(lootingBagManager.getLootingBagContents());
 		}
 		
-
 		for (Item item: allItems) {
 			int itemId = item.getId();
 
@@ -433,17 +431,11 @@ public class InventoryTotalPlugin extends Plugin
 			final boolean isNoted = itemComposition.getNote() != -1;
 			final int realItemId = isNoted ? itemComposition.getLinkedNoteId() : itemId;
 
-			inventoryQtyMap.merge(realItemId, item.getQuantity(), Integer::sum);
+			inventoryQtyMap.merge(realItemId, (float) item.getQuantity(), Float::sum);
 		}
 
-		Map<Integer, Integer> chargedWeaponComponents = getChargedWeaponComponentQtyMap(inventoryQtyMap.keySet());
-		for (int itemId: chargedWeaponComponents.keySet()) {
-			inventoryQtyMap.merge(itemId, chargedWeaponComponents.get(itemId), Integer::sum);
-		}
-		Map<Integer, Integer> chargedItemComponents = getChargedItemQtyMap(inventoryQtyMap.keySet());
-		for (int itemId: chargedItemComponents.keySet()) {
-			inventoryQtyMap.merge(itemId, chargedItemComponents.get(itemId), Integer::sum);
-		}
+		addChargedWeaponComponents(inventoryQtyMap);
+		addChargedItemComponents(inventoryQtyMap);
 
 		return inventoryQtyMap;
 	}
@@ -491,7 +483,7 @@ public class InventoryTotalPlugin extends Plugin
 				} 
 			}
 		}
-		Map<Integer, Integer> equMap = getEquipmentQtyMap();
+		Map<Integer, Float> equMap = getEquipmentQtyMap();
 		for (Integer itemId : equMap.keySet())
 		{
 			if (weaponChargesManager.isChargeableWeapon(itemId) && !weaponChargesManager.hasChargeData(itemId))
@@ -510,10 +502,10 @@ public class InventoryTotalPlugin extends Plugin
 	List<InventoryTotalLedgerItem> getProfitLossLedger()
 	{
 		Map<Integer, Integer> prices = runData.itemPrices;
-		Map<Integer, Integer> initialQtys = runData.initialItemQtys;
-		Map<Integer, Integer> qtys = runData.itemQtys;
+		Map<Integer, Float> initialQtys = runData.initialItemQtys;
+		Map<Integer, Float> qtys = runData.itemQtys;
 
-		Map<Integer, Integer> qtyDifferences = new HashMap<>();
+		Map<Integer, Float> qtyDifferences = new HashMap<>();
 
 		HashSet<Integer> combinedQtyKeys = new HashSet<>();
 		combinedQtyKeys.addAll(qtys.keySet());
@@ -521,17 +513,17 @@ public class InventoryTotalPlugin extends Plugin
 
 		for (Integer itemId: combinedQtyKeys)
 		{
-			Integer initialQty = initialQtys.get(itemId);
-			Integer qty = qtys.get(itemId);
+			Float initialQty = initialQtys.get(itemId);
+			Float qty = qtys.get(itemId);
 
 			if (initialQty == null)
 			{
-				initialQty = 0;
+				initialQty = 0f;
 			}
 
 			if (qty == null)
 			{
-				qty = 0;
+				qty = 0f;
 			}
 
 			qtyDifferences.put(itemId, qty - initialQty);
@@ -549,7 +541,7 @@ public class InventoryTotalPlugin extends Plugin
 				price = 1;
 			}
 
-			Integer qtyDifference = qtyDifferences.get(itemId);
+			Float qtyDifference = qtyDifferences.get(itemId);
 
 			List<InventoryTotalLedgerItem> filteredList = ledgerItems.stream().filter(
 					item -> item.getDescription().equals(itemComposition.getName())).collect(Collectors.toList()
@@ -600,7 +592,7 @@ public class InventoryTotalPlugin extends Plugin
 		return runepouchItems;
 	}
 
-	void updateRunData(boolean isNewRun, int itemId, int itemQty, int gePrice)
+	void updateRunData(boolean isNewRun, int itemId, float itemQty, int gePrice)
 	{
 		if (itemId != COINS && !runData.itemPrices.containsKey(itemId))
 		{
@@ -750,16 +742,6 @@ public class InventoryTotalPlugin extends Plugin
 	public long getTotalGp()
 	{
 		return totalGp;
-	}
-
-	void setTotalQty(long totalQty)
-	{
-		this.totalQty = totalQty;
-	}
-
-	public long getTotalQty()
-	{
-		return totalQty;
 	}
 
 	public InventoryTotalRunData getRunData()
