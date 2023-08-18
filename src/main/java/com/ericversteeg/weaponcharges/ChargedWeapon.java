@@ -268,8 +268,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float whips = charges / 10000f;
-			if (whips > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.ABYSSAL_WHIP, whips);
+			chargeComponents.put(ItemID.ABYSSAL_WHIP, whips);
 		})
 	),
 	/* chally
@@ -351,8 +350,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float pages = charges / 20f;
-			if (pages > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.BURNT_PAGE, pages);
+			chargeComponents.put(ItemID.BURNT_PAGE, pages);
 		})
 	),
 	/* Tome of water:
@@ -385,8 +383,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float pages = charges / 20f;
-			if (pages > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.SOAKED_PAGE, pages);
+			chargeComponents.put(ItemID.SOAKED_PAGE, pages);
 		})
 	),
 	/* scythe
@@ -464,8 +461,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float vials = charges / 100f;
-			if (vials > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.VIAL_OF_BLOOD, vials);
+			chargeComponents.put(ItemID.VIAL_OF_BLOOD, vials);
 			chargeComponents.put(ItemID.BLOOD_RUNE, charges * 3f);
 		})
 	),
@@ -605,8 +601,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float shards = charges / 333f;
-			if (shards > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.ANCIENT_SHARD, shards);
+			chargeComponents.put(ItemID.ANCIENT_SHARD, shards);
 		})
 	),
 	/* Ether Weapon common
@@ -768,8 +763,7 @@ public enum ChargedWeapon
 		{
 			Integer charges = params.currentCharges;
 			float shards = charges / 100f;
-			if (shards > InventoryTotalPlugin.roundAmount)
-				params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+			params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
 	/*
@@ -793,8 +787,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float shards = charges / 100f;
-			if (shards > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+			chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
 	CRYSTAL_BODY(new ChargedWeaponBuilder()
@@ -811,8 +804,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float shards = charges / 100f;
-			if (shards > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+			chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
 	CRYSTAL_LEGS(new ChargedWeaponBuilder()
@@ -829,8 +821,7 @@ public enum ChargedWeapon
 			Integer charges = params.currentCharges;
 			Map<Integer, Float> chargeComponents = params.chargeComponents;
 			float shards = charges / 100f;
-			if (shards > InventoryTotalPlugin.roundAmount)
-				chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+			chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
 	/* Serpentine Helmet:

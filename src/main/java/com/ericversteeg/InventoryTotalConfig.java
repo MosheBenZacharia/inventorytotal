@@ -23,7 +23,7 @@ public interface InventoryTotalConfig extends Config
 	)
 	default boolean enableProfitLoss()
 	{
-		return false;
+		return true;
 	}
 
 	@Alpha
@@ -227,7 +227,7 @@ public interface InventoryTotalConfig extends Config
 	)
 	default boolean showGpPerHourOnOverlay()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
