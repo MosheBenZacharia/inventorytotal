@@ -305,4 +305,12 @@ public interface InventoryTotalConfig extends Config
 	default String ignoredItems() {
 		return "Cannon barrels, Cannon base, Cannon furnace, Cannon stand";
 	}
+
+    @ConfigItem(
+            position = 50,
+            keyName = "Side Panel Position",
+            name = "Side Panel Position",
+            description = "Panel icon position, Lower # = higher pos, Higher # = lower pos "
+    )
+    default int sidePanelPosition() { return 6; }
 }

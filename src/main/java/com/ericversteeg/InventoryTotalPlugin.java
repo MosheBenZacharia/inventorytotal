@@ -5,6 +5,8 @@ import com.ericversteeg.itemcharges.ChargedItemManager;
 import com.ericversteeg.weaponcharges.WeaponChargesManager;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
+import java.awt.image.BufferedImage;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameTick;
@@ -17,6 +19,8 @@ import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
@@ -24,6 +28,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
+import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
 	name = "Inventory Total",
@@ -70,6 +75,9 @@ public class InventoryTotalPlugin extends Plugin
 	private LootingBagManager lootingBagManager;
 
 	@Inject
+	private SessionManager sessionManager;
+
+	@Inject
 	private EventBus eventBus;
 
 	@Inject
@@ -77,6 +85,12 @@ public class InventoryTotalPlugin extends Plugin
 
 	@Inject
 	private Gson gson;
+
+    @Inject
+    private ClientToolbar clientToolbar;
+
+    @Getter
+    private SessionPanel panel;
 
 	private String profileKey = "";
 
@@ -94,6 +108,9 @@ public class InventoryTotalPlugin extends Plugin
 	private long initialGp = 0;
 
 	private long lastWriteSaveTime = 0;
+	
+    private BufferedImage icon;
+    private NavigationButton navButton;
 
 	// from ClueScrollPlugin
 	private static final int[] RUNEPOUCH_AMOUNT_VARBITS = {
@@ -116,6 +133,8 @@ public class InventoryTotalPlugin extends Plugin
 		weaponChargesManager.startUp();
 		chargedItemManager.startUp();
 		lootingBagManager.startUp();
+		sessionManager.startUp();
+		buildSidePanel();
 	}
 
 	@Override
@@ -127,7 +146,17 @@ public class InventoryTotalPlugin extends Plugin
 		eventBus.unregister(chargedItemManager);
 		weaponChargesManager.shutDown();
 		chargedItemManager.shutDown();
+		sessionManager.shutDown();
 	}
+
+    private void buildSidePanel()
+    {
+        panel = (SessionPanel) injector.getInstance(SessionPanel.class);
+        panel.sidePanelInitializer();
+        icon = ImageUtil.loadImageResource(getClass(), "/gpperhour-icon.png");
+        navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(panel).build();
+        clientToolbar.addNavigation(navButton);
+    }
 
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired scriptPreFired)
@@ -137,6 +166,7 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
+		panel.updateTrips(sessionManager.getActiveTrips());
         //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
 
 		boolean isRun = this.state == InventoryTotalState.RUN;
@@ -197,15 +227,15 @@ public class InventoryTotalPlugin extends Plugin
 		writeSavedData();
 
 		overlay.hideInterstitial();
+		sessionManager.onTripStarted(runData);
 	}
 
 	void onBank()
 	{
-		runData.profitLossInitialGp = 0;
-		runData.itemPrices.clear();
-
+		runData.runEndTime = Instant.now().toEpochMilli();
+		sessionManager.onTripCompleted(runData);
+		runData = new InventoryTotalRunData();
 		initialGp = 0;
-		runData.runStartTime = 0;
 
 		writeSavedData();
 	}
@@ -500,11 +530,11 @@ public class InventoryTotalPlugin extends Plugin
 		return chargeableItemsNeedingCheck;
 	}
 
-	List<InventoryTotalLedgerItem> getProfitLossLedger()
+	List<InventoryTotalLedgerItem> getProfitLossLedger(InventoryTotalRunData data)
 	{
-		Map<Integer, Integer> prices = runData.itemPrices;
-		Map<Integer, Float> initialQtys = runData.initialItemQtys;
-		Map<Integer, Float> qtys = runData.itemQtys;
+		Map<Integer, Integer> prices = data.itemPrices;
+		Map<Integer, Float> initialQtys = data.initialItemQtys;
+		Map<Integer, Float> qtys = data.itemQtys;
 
 		Map<Integer, Float> qtyDifferences = new HashMap<>();
 

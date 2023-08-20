@@ -483,7 +483,7 @@ class InventoryTotalOverlay extends Overlay
 		}
 
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o ->
-				-((long) (o.getQty() * o.getPrice())))
+				-o.getCombinedValue())
 		).collect(Collectors.toList());
 
 		String [] descriptions = ledger.stream().map(item -> {
@@ -494,7 +494,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			return desc;
 		}).toArray(String[]::new);
-		Long [] prices = ledger.stream().map(item -> (long) (item.getQty() * item.getPrice())).toArray(Long[]::new);
+		Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
 
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
 		if (descriptions.length == prices.length)
@@ -509,7 +509,7 @@ class InventoryTotalOverlay extends Overlay
 				ledgerEntries.add(new LedgerEntry(desc, leftColor, rightText, rightColor, false));
 			}
 		}
-		long total = ledger.stream().mapToLong(item -> (long) (item.getQty() * item.getPrice())).sum();
+		long total = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
 		if (plugin.needsLootingBagCheck())
 		{
@@ -561,7 +561,7 @@ class InventoryTotalOverlay extends Overlay
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
 
-		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger().stream()
+		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(plugin.getRunData()).stream()
 				.filter(item -> Math.abs(item.getQty()) > InventoryTotalPlugin.roundAmount).collect(Collectors.toList());
 
 		java.util.List<InventoryTotalLedgerItem> gain = ledger.stream().filter(item -> item.getQty() > 0)
@@ -570,8 +570,8 @@ class InventoryTotalOverlay extends Overlay
 		java.util.List<InventoryTotalLedgerItem> loss = ledger.stream().filter(item -> item.getQty() < 0)
 				.collect(Collectors.toList());
 
-		gain = gain.stream().sorted(Comparator.comparingLong(o -> -((long) (o.getQty() * o.getPrice())))).collect(Collectors.toList());
-		loss = loss.stream().sorted(Comparator.comparingLong(o -> ((long) (o.getQty() * o.getPrice())))).collect(Collectors.toList());
+		gain = gain.stream().sorted(Comparator.comparingLong(o -> -o.getCombinedValue())).collect(Collectors.toList());
+		loss = loss.stream().sorted(Comparator.comparingLong(o -> o.getCombinedValue())).collect(Collectors.toList());
 
 		ledger = new LinkedList<>();
 		ledger.addAll(gain);
@@ -590,7 +590,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			return desc;
 		}).toArray(String[]::new);
-		Long [] prices = ledger.stream().map(item -> (long) (item.getQty() * item.getPrice())).toArray(Long[]::new);
+		Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
 
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
 		if (descriptions.length == prices.length)
@@ -618,17 +618,17 @@ class InventoryTotalOverlay extends Overlay
 			}
 		}
 
-		long totalGain = gain.stream().mapToLong(item -> (long) (item.getQty() * item.getPrice())).sum();
-		long totalLoss = loss.stream().mapToLong(item -> (long) (item.getQty() * item.getPrice())).sum();
-		long total = ledger.stream().mapToLong(item -> (long) (item.getQty() * item.getPrice())).sum();
+		long totalGain = gain.stream().mapToLong(item ->  item.getCombinedValue()).sum();
+		long totalLoss = loss.stream().mapToLong(item ->  item.getCombinedValue()).sum();
+		long netTotal = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
 		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
 		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
-		ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(total), priceToColor(total), false));
+		ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(netTotal), priceToColor(netTotal), false));
 
 		long runTime = plugin.elapsedRunTime();
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
 		{
-			long gpPerHour = getGpPerHour(runTime, total);
+			long gpPerHour = getGpPerHour(runTime, netTotal);
 			String gpPerHourString = formatGp(gpPerHour);
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}

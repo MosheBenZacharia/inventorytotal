@@ -31,4 +31,9 @@ public class InventoryTotalLedgerItem {
     {
         qty += qtyDifference;
     }
+
+    public long getCombinedValue()
+    {
+        return (long) (this.qty * this.price);
+    }
 }
