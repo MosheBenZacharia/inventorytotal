@@ -475,7 +475,7 @@ class InventoryTotalOverlay extends Overlay
 		FontMetrics fontMetrics = graphics.getFontMetrics();
 
 		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getInventoryLedger().stream()
-				.filter(item -> item.getQty() > InventoryTotalPlugin.roundAmount).collect(Collectors.toList());
+				.filter(item -> item.getQty() > (InventoryTotalPlugin.roundAmount/2f)).collect(Collectors.toList());
 
 		if (ledger.isEmpty() && !needsCheck())
 		{
@@ -562,7 +562,7 @@ class InventoryTotalOverlay extends Overlay
 		FontMetrics fontMetrics = graphics.getFontMetrics();
 
 		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(plugin.getRunData()).stream()
-				.filter(item -> Math.abs(item.getQty()) > InventoryTotalPlugin.roundAmount).collect(Collectors.toList());
+				.filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount/2f)).collect(Collectors.toList());
 
 		java.util.List<InventoryTotalLedgerItem> gain = ledger.stream().filter(item -> item.getQty() > 0)
 				.collect(Collectors.toList());
@@ -683,7 +683,7 @@ class InventoryTotalOverlay extends Overlay
 		renderLedgerEntries(ledgerEntries, x, y, rowW, rowH, sectionPadding, graphics);
 	}
 
-	private long getGpPerHour(long runTime, long total)
+	long getGpPerHour(long runTime, long total)
 	{
 		//dont want to update too often
 		long timeNow = Instant.now().toEpochMilli();
@@ -700,12 +700,12 @@ class InventoryTotalOverlay extends Overlay
 		return gpPerHour;
 	}
 
-	private String formatNumber(long number)
+	String formatNumber(long number)
 	{
 		return QuantityFormatter.formatNumber(number);
 	}
 
-	private Color priceToColor(long price)
+	Color priceToColor(long price)
 	{
 		if (price > 0)
 		{

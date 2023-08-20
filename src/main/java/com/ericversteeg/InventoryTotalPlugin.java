@@ -125,7 +125,6 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		overlayManager.add(overlay);
 
-		runData = getSavedData();
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 		eventBus.register(lootingBagManager);
 		eventBus.register(weaponChargesManager);
@@ -135,6 +134,10 @@ public class InventoryTotalPlugin extends Plugin
 		lootingBagManager.startUp();
 		sessionManager.startUp();
 		buildSidePanel();
+
+		runData = getSavedData();
+		sessionManager.onTripStarted(runData);
+		panel.updateTrips(sessionManager.getActiveTrips());
 	}
 
 	@Override
@@ -166,7 +169,6 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
-		panel.updateTrips(sessionManager.getActiveTrips());
         //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
 
 		boolean isRun = this.state == InventoryTotalState.RUN;
@@ -181,6 +183,8 @@ public class InventoryTotalPlugin extends Plugin
 		previousTotalGp = Long.valueOf(totalGp);
 		if(tickProfit == 0)
 			return;
+
+		panel.updateTrips(sessionManager.getActiveTrips());
 
 		// generate gold drop
 		if (config.goldDrops() && config.enableProfitLoss() && tickProfit != 0)
@@ -228,6 +232,7 @@ public class InventoryTotalPlugin extends Plugin
 
 		overlay.hideInterstitial();
 		sessionManager.onTripStarted(runData);
+		panel.updateTrips(sessionManager.getActiveTrips());
 	}
 
 	void onBank()
