@@ -95,8 +95,7 @@ public class SessionManager
 				}
 			}
 			long tripStartTime = runData.runStartTime;
-			long tripEndTime = runData.isInProgress() ? Instant.now().toEpochMilli()
-					: runData.runEndTime;
+			long tripEndTime = runData.isInProgress() ? Instant.now().toEpochMilli() : runData.runEndTime;
 			tripDurationSum += (tripEndTime - tripStartTime);
 			tripCount++;
 
@@ -110,14 +109,33 @@ public class SessionManager
 			log.error("couldn't find start session");
 			return null;
 		}
-		long sessionStartTime = getSessionStartTrip().runStartTime;
-		long sessionEndTime = (activeSessionEndId == null) ? Instant.now().toEpochMilli()
-				: (activeTrips.get(activeSessionEndId).isInProgress() ? Instant.now().toEpochMilli()
-						: activeTrips.get(activeSessionEndId).runEndTime);
+		long sessionStartTime = getSessionStartTime();
+		long sessionEndTime = getSessionEndTime();
 		long netTotal = gains + losses;
 		long avgTripDuration = (long) (tripDurationSum / ((float) tripCount));
 
 		return new SessionStats(sessionStartTime, sessionEndTime, gains, losses, netTotal, tripCount, avgTripDuration);
+	}
+
+	long getSessionStartTime()
+	{
+		if (activeSessionStartId == null)
+			return 0;
+		return getSessionStartTrip().runStartTime;
+	}
+
+	long getSessionEndTime()
+	{
+		return (activeSessionEndId == null) ? Instant.now().toEpochMilli()
+		: (activeTrips.get(activeSessionEndId).isInProgress() ? Instant.now().toEpochMilli()
+				: activeTrips.get(activeSessionEndId).runEndTime);
+	}
+
+	boolean isTimeInActiveSession(long time)
+	{
+		long startTime = getSessionStartTime();
+		long endTime = getSessionEndTime();
+		return time >= startTime && time <= endTime;
 	}
 
 	void setSessionStart(String id)
@@ -126,8 +144,8 @@ public class SessionManager
 		if (id != null)
 		{
 			InventoryTotalRunData startTrip = getSessionStartTrip();
-			InventoryTotalRunData endtrip = getSessionEndTrip();	
-			//order is messed up, just make end same as start
+			InventoryTotalRunData endtrip = getSessionEndTrip();
+			// order is messed up, just make end same as start
 			if (endtrip != null && endtrip.runStartTime < startTrip.runStartTime)
 			{
 				setSessionEnd(id);
@@ -141,8 +159,8 @@ public class SessionManager
 		if (id != null)
 		{
 			InventoryTotalRunData startTrip = getSessionStartTrip();
-			InventoryTotalRunData endtrip = getSessionEndTrip();	
-			//order is messed up, just make start same as end
+			InventoryTotalRunData endtrip = getSessionEndTrip();
+			// order is messed up, just make start same as end
 			if (startTrip != null && startTrip.runStartTime > endtrip.runStartTime)
 			{
 				setSessionStart(id);
@@ -166,8 +184,7 @@ public class SessionManager
 			if (activeTrips.size() == 0)
 			{
 				return null;
-			}
-			else
+			} else
 			{
 				List<InventoryTotalRunData> sortedData = getSortedTrips();
 				return sortedData.get(sortedData.size() - 1);
@@ -222,14 +239,16 @@ public class SessionManager
 
 		for (Integer startId : tripStart.keySet())
 		{
-			if (!tripEnd.containsKey(startId) || Math.abs(tripEnd.get(startId) - tripStart.get(startId)) > (InventoryTotalPlugin.roundAmount/2f))
+			if (!tripEnd.containsKey(startId) || Math
+					.abs(tripEnd.get(startId) - tripStart.get(startId)) > (InventoryTotalPlugin.roundAmount / 2f))
 			{
 				return true;
 			}
 		}
 		for (Integer endId : tripEnd.keySet())
 		{
-			if (!tripStart.containsKey(endId) || Math.abs(tripEnd.get(endId) - tripStart.get(endId)) > (InventoryTotalPlugin.roundAmount/2f))
+			if (!tripStart.containsKey(endId)
+					|| Math.abs(tripEnd.get(endId) - tripStart.get(endId)) > (InventoryTotalPlugin.roundAmount / 2f))
 			{
 				return true;
 			}

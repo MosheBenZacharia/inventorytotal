@@ -54,6 +54,7 @@ class SessionPanel extends PluginPanel
 	private static final String sessionTimeLabelPrefix = "Session Time: ";
 	private static final String tripCountLabelPrefix = "Trip Count: ";
 	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
+	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -165,6 +166,7 @@ class SessionPanel extends PluginPanel
 
 		int tripIndex = 0;
 		previousLedger = null;
+		previousRunData = null;
 		repeatCount = 0;
 		consecutiveRepeatCount = 0;
 		for (InventoryTotalRunData runData : runDataSorted)
@@ -206,6 +208,7 @@ class SessionPanel extends PluginPanel
 		}
 	}
 
+	InventoryTotalRunData previousRunData = null;
 	List<InventoryTotalLedgerItem> previousLedger = null;
 	int repeatCount = 0;
 	int consecutiveRepeatCount = 0;
@@ -229,14 +232,18 @@ class SessionPanel extends PluginPanel
 			TripPanelData tpData = getPanelData(tripIndex-repeatCount);
 			int startIndex = tripIndex - consecutiveRepeatCount;
 			int endIndex = tripIndex;
-			tpData.titlePanel.setContent("Trips "+ (startIndex+1) + "-" + (endIndex+1) +" (Identical)", "Started " + UIHelper.getTimeAgo(runData.runStartTime));
+			tpData.titlePanel.setContent("Trips "+ (startIndex+1) + "-" + (endIndex+1) +" (Identical)", "Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
+			updateButtonMiddle(tpData, runData);
+			updateButtonRight(tpData, runData);
 			return true;
 		}
 		consecutiveRepeatCount = 0;
 		previousLedger = ledger;
+		previousRunData = runData;
 				
 		TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 		TripStats tripStats = getTripStats(ledger);
+		tpData.setContentPanelBorder(sessionManager.isTimeInActiveSession(runData.runStartTime) ? tripActiveBorderColor : null);
 
 		tpData.masterPanel.setVisible(true);
 		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
@@ -259,6 +266,15 @@ class SessionPanel extends PluginPanel
 		{
 			sessionManager.setSessionStart(runData.identifier);
 		});
+		updateButtonMiddle(tpData, runData);
+		UIHelper.clearListeners(tpData.buttonRight);
+		updateButtonRight(tpData, runData);
+
+		return true;
+	}
+
+	void updateButtonMiddle(TripPanelData tpData, InventoryTotalRunData runData)
+	{
 		UIHelper.clearListeners(tpData.buttonMiddle);
 		tpData.buttonMiddle.setEnabled((sessionManager.getActiveSessionEndId() == null) ?
 			!runData.isInProgress() :
@@ -268,7 +284,10 @@ class SessionPanel extends PluginPanel
 		{
 			sessionManager.setSessionEnd(runData.identifier);
 		});
-		UIHelper.clearListeners(tpData.buttonRight);
+	}
+
+	void updateButtonRight(TripPanelData tpData, InventoryTotalRunData runData)
+	{
 		tpData.buttonRight.setEnabled(!runData.isInProgress());
 		tpData.buttonRight.setText("Delete");
 		tpData.buttonRight.addActionListener((event) ->
@@ -281,8 +300,6 @@ class SessionPanel extends PluginPanel
 				sessionManager.deleteSession(runData.identifier);
 			}
 		});
-
-		return true;
 	}
 
 	boolean ledgersMatch(List<InventoryTotalLedgerItem> ledgerOne, List<InventoryTotalLedgerItem> ledgerTwo)
@@ -362,6 +379,14 @@ class SessionPanel extends PluginPanel
 		JButton buttonLeft = new JButton("Left");
 		JButton buttonMiddle = new JButton("Middle");
 		JButton buttonRight = new JButton("Right");
+		JPanel contentPanel = new JPanel();
+
+		void setContentPanelBorder(Color color)
+		{
+			if (color == null)
+				color = new Color(57, 57, 57);
+			contentPanel.setBorder(new MatteBorder(1, 1, 1, 1, color));
+		}
 	}
 
 	private TripPanelData buildTripPanel()
@@ -378,6 +403,7 @@ class SessionPanel extends PluginPanel
 		JButton buttonLeft = data.buttonLeft;
 		JButton buttonMiddle = data.buttonMiddle;
 		JButton buttonRight = data.buttonRight;
+		JPanel contentPanel = data.contentPanel;
 
 		masterPanel.setLayout(new BorderLayout());
 		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
@@ -445,14 +471,12 @@ class SessionPanel extends PluginPanel
 		buttonRight.setFont(buttonRight.getFont().deriveFont(fontSize));
 		buttonPanel.add(buttonRight);
 
-		JPanel contentPanel = new JPanel();
 		contentPanel.setLayout(new GridLayout(3, 0, 0, 0));
-		// contentPanel.setPreferredSize(new Dimension(200, 400));
 		contentPanel.add(titlePanel);
 		contentPanel.add(lootHeaderButtonPanel);
 		contentPanel.add(buttonPanel);
 		contentPanel.setBackground(new Color(30, 30, 30));
-		contentPanel.setBorder(new MatteBorder(1, 1, 1, 1, new Color(57, 57, 57)));
+		data.setContentPanelBorder(null);
 
 		masterPanel.add(contentPanel, "North");
 
