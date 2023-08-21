@@ -24,6 +24,8 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
+
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,6 +62,7 @@ public class InventoryTotalPlugin extends Plugin
 	private OverlayManager overlayManager;
 
 	@Inject
+	@Getter
 	private Client client;
 
 	@Inject
@@ -137,7 +140,7 @@ public class InventoryTotalPlugin extends Plugin
 		sessionManager.startUp();
 		sessionManager.onTripStarted(runData);
 		buildSidePanel();
-		panel.updateTrips(sessionManager.getActiveTrips());
+		SwingUtilities.invokeLater(() -> panel.updateTrips());
 	}
 
 	@Override
@@ -170,7 +173,7 @@ public class InventoryTotalPlugin extends Plugin
     public void onGameTick(GameTick gameTick)
     {
 		//TODO: REMOVE (JUST HERE TO MAKE TESTING EASIER)
-		panel.updateTrips(sessionManager.getActiveTrips());
+		SwingUtilities.invokeLater(() -> panel.updateTrips());
 		
         //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
 		boolean isRun = this.state == InventoryTotalState.RUN;
@@ -186,7 +189,8 @@ public class InventoryTotalPlugin extends Plugin
 		if(tickProfit == 0)
 			return;
 
-		panel.updateTrips(sessionManager.getActiveTrips());
+		//TODO: re-enable this instead
+		// panel.updateTrips(sessionManager.getActiveTrips());
 
 		// generate gold drop
 		if (config.goldDrops() && config.enableProfitLoss() && tickProfit != 0)
@@ -537,9 +541,10 @@ public class InventoryTotalPlugin extends Plugin
 		return chargeableItemsNeedingCheck;
 	}
 
-	List<InventoryTotalLedgerItem> getProfitLossLedger(InventoryTotalRunData data)
+	static List<InventoryTotalLedgerItem> getProfitLossLedger(InventoryTotalRunData data)
 	{
 		Map<Integer, Integer> prices = data.itemPrices;
+		Map<Integer, String> names = data.itemNames;
 		Map<Integer, Float> initialQtys = data.initialItemQtys;
 		Map<Integer, Float> qtys = data.itemQtys;
 
@@ -571,7 +576,7 @@ public class InventoryTotalPlugin extends Plugin
 
 		for (Integer itemId: qtyDifferences.keySet())
 		{
-			String name = itemManager.getItemComposition(itemId).getName();
+			String name = names.get(itemId);
 			Integer price = prices.get(itemId);
 			if (price == null)
 			{
@@ -640,6 +645,8 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			runData.itemPrices.put(itemId, gePrice);
 		}
+
+		runData.itemNames.put(itemId, itemManager.getItemComposition(itemId).getName());
 
 		if (isNewRun)
 		{

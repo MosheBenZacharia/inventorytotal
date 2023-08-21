@@ -90,7 +90,8 @@ class SessionPanel extends PluginPanel
 			}
 			this.tripPanels.clear();
 
-			this.updateTrips(sessionManager.getActiveTrips());
+			log.info("is button pressed on client thread? " + (plugin.getClient().isClientThread()));
+			this.updateTrips();
 		});
 		this.sidePanel.add(button);
 
@@ -144,69 +145,66 @@ class SessionPanel extends PluginPanel
 		return sessionInfoPanel;
 	}
 
-	void updateTrips(Map<String, InventoryTotalRunData> trips)
+	void updateTrips()
 	{
-		SwingUtilities.invokeLater(() ->
+		Graphics graphics = getGraphics();
+		if (graphics == null)
+			return;
+		Map<String, InventoryTotalRunData> trips = sessionManager.getActiveTrips();
+
+		List<InventoryTotalRunData> runDataSorted = trips.values().stream()
+				.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
+
+		int tripIndex = 0;
+		previousLedger = null;
+		repeatCount = 0;
+		consecutiveRepeatCount = 0;
+		for (InventoryTotalRunData runData : runDataSorted)
 		{
-			if (tripPanels.size() < trips.size())
-			{
-				ensureTripPanelCount(trips.size());
-			}
-			clientThread.invokeLater(() ->
-			{
-				List<InventoryTotalRunData> runDataSorted = trips.values().stream()
-						.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
+			boolean validTrip = renderTrip(runData, tripIndex);
+			if (!validTrip)
+				continue;
 
-				// TODO: try combinining neighboring runData if the quantityDifferences
-				// match...?
-				int tripIndex = 0;
-				previousLedger = null;
-				for (InventoryTotalRunData runData : runDataSorted)
-				{
-					boolean validTrip = renderTrip(runData, tripIndex);
-					if (!validTrip)
-						continue;
+			tripIndex++;
+		}
+		for (int i = (tripIndex - repeatCount); i < tripPanels.size(); ++i)
+		{
+			tripPanels.get(i).masterPanel.setVisible(false);
+		}
 
-					tripIndex++;
-				}
-				for (int i = tripIndex; i < tripPanels.size(); ++i)
-				{
-					tripPanels.get(i).masterPanel.setVisible(false);
-				}
+		SessionStats stats = sessionManager.getActiveSessionStats();
+		if (stats == null)
+		{
+			gpPerHourLabel.setText(htmlLabel("GP/hr: ", "N/A"));
+			netTotalLabel.setText(htmlLabel("Net Total: ", "N/A"));
+			totalGainsLabel.setText(htmlLabel("Total Gains: ", "N/A"));
+			totalLossesLabel.setText(htmlLabel("Total Losses: ", "N/A"));
+			sessionTimeLabel.setText(htmlLabel("Session Time: ", "N/A"));
+			tripCountLabel.setText(htmlLabel("Trip Count: ", "N/A"));
+			avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
 
-				SessionStats stats = sessionManager.getActiveSessionStats();
-				if (stats == null)
-				{
-					gpPerHourLabel.setText(htmlLabel("GP/hr: ", "N/A"));
-					netTotalLabel.setText(htmlLabel("Net Total: ", "N/A"));
-					totalGainsLabel.setText(htmlLabel("Total Gains: ", "N/A"));
-					totalLossesLabel.setText(htmlLabel("Total Losses: ", "N/A"));
-					sessionTimeLabel.setText(htmlLabel("Session Time: ", "N/A"));
-					tripCountLabel.setText(htmlLabel("Trip Count: ", "N/A"));
-					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
-
-				} else
-				{
-					long runtime = stats.getSessionEndTime() - stats.getSessionStartTime();
-					sessionNameLabel.setText("Unnamed Session");
-					gpPerHourLabel.setText(htmlLabel("GP/hr: ",
-							UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())
-									+ "/hr"));
-					netTotalLabel.setText(
-							htmlLabel("Net Total: ", UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
-					totalGainsLabel.setText(
-							htmlLabel("Total Gains: ", UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
-					totalLossesLabel.setText(
-							htmlLabel("Total Losses: ", UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
-					sessionTimeLabel.setText(htmlLabel("Session Time: ", UIHelper.formatTime(runtime)));
-					tripCountLabel.setText(htmlLabel("Trip Count: ", Integer.toString(stats.getTripCount())));
-					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", UIHelper.formatTime(stats.getAvgTripDuration())));
-				}
-			});
-		});
+		} else
+		{
+			long runtime = stats.getSessionEndTime() - stats.getSessionStartTime();
+			sessionNameLabel.setText("Unnamed Session");
+			gpPerHourLabel.setText(htmlLabel("GP/hr: ",
+					UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())
+							+ "/hr"));
+			netTotalLabel.setText(
+					htmlLabel("Net Total: ", UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
+			totalGainsLabel.setText(
+					htmlLabel("Total Gains: ", UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
+			totalLossesLabel.setText(
+					htmlLabel("Total Losses: ", UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
+			sessionTimeLabel.setText(htmlLabel("Session Time: ", UIHelper.formatTime(runtime)));
+			tripCountLabel.setText(htmlLabel("Trip Count: ", Integer.toString(stats.getTripCount())));
+			avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", UIHelper.formatTime(stats.getAvgTripDuration())));
+		}
 	}
 
 	List<InventoryTotalLedgerItem> previousLedger = null;
+	int repeatCount = 0;
+	int consecutiveRepeatCount = 0;
 
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
@@ -227,30 +225,26 @@ class SessionPanel extends PluginPanel
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
 				.collect(Collectors.toList());
 
-		if (ledgersMatch(ledger, previousLedger))
+		if (!runData.isInProgress() && ledgersMatch(ledger, previousLedger))
 		{
-			TripPanelData tpData = tripPanels.get(tripIndex-1);
-			tpData.titlePanel.setContent("Trip repeated", "this was repeated");
-			return false;
+			consecutiveRepeatCount++;
+			repeatCount++;
+			TripPanelData tpData = getPanelData(tripIndex-repeatCount);
+			int startIndex = tripIndex - consecutiveRepeatCount;
+			int endIndex = tripIndex;
+			tpData.titlePanel.setContent("Trips "+ (startIndex+1) + "-" + (endIndex+1) +" (Identical)", "Started " + UIHelper.getTimeAgo(runData.runStartTime));
+			return true;
 		}
+		consecutiveRepeatCount = 0;
 		previousLedger = ledger;
 				
-		TripPanelData tpData = tripPanels.get(tripIndex);
+		TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 		TripStats tripStats = getTripStats(ledger);
 
 		tpData.masterPanel.setVisible(true);
 		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
 
-		FontMetrics fontMetrics;
-		try
-		{
-			fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
-		}
-		catch(Exception e)
-		{
-			log.error("getGraphics: " + getGraphics(), e);
-			return false;
-		}
+		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
 		tpData.bottomRightLabel
 				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
 		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp()) + "/hr"));
@@ -320,6 +314,12 @@ class SessionPanel extends PluginPanel
 		}
 
 		return true;
+	}
+
+	TripPanelData getPanelData(int index)
+	{
+		ensureTripPanelCount(index+1);
+		return tripPanels.get(index);
 	}
 
 	// build out the pool
