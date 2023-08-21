@@ -4,9 +4,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+import com.google.gson.Gson;
 
 public class InventoryTotalRunData {
-    String identifier = UUID.randomUUID().toString();
+    String identifier = null;
     long profitLossInitialGp = 0;
 	long runStartTime = 0;
     //if this is null the trip is in progress
@@ -26,4 +27,7 @@ public class InventoryTotalRunData {
     {
         return runEndTime == null;
     }
+
+    //its in the period between banking finished (onNewRun) and two ticks later when we call onPostNewRun
+    transient boolean showInterstitial;
 }

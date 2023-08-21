@@ -73,22 +73,21 @@ public class InventoryTotalPlugin extends Plugin
 
 	@Inject
 	private LootingBagManager lootingBagManager;
-
-	@Inject
-	private SessionManager sessionManager;
-
+	
 	@Inject
 	private EventBus eventBus;
-
+	
 	@Inject
 	private ConfigManager configManager;
-
+	
 	@Inject
 	private Gson gson;
-
+	
     @Inject
     private ClientToolbar clientToolbar;
 
+	@Getter
+	private SessionManager sessionManager;
     @Getter
     private SessionPanel panel;
 
@@ -132,11 +131,12 @@ public class InventoryTotalPlugin extends Plugin
 		weaponChargesManager.startUp();
 		chargedItemManager.startUp();
 		lootingBagManager.startUp();
-		sessionManager.startUp();
-		buildSidePanel();
 
 		runData = getSavedData();
+		sessionManager = new SessionManager(this);
+		sessionManager.startUp();
 		sessionManager.onTripStarted(runData);
+		buildSidePanel();
 		panel.updateTrips(sessionManager.getActiveTrips());
 	}
 
@@ -154,7 +154,7 @@ public class InventoryTotalPlugin extends Plugin
 
     private void buildSidePanel()
     {
-        panel = (SessionPanel) injector.getInstance(SessionPanel.class);
+        panel = new SessionPanel(this, config, itemManager, clientThread, sessionManager);
         panel.sidePanelInitializer();
         icon = ImageUtil.loadImageResource(getClass(), "/gpperhour-icon.png");
         navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(panel).build();
@@ -169,8 +169,10 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
+		//TODO: REMOVE (JUST HERE TO MAKE TESTING EASIER)
+		panel.updateTrips(sessionManager.getActiveTrips());
+		
         //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
-
 		boolean isRun = this.state == InventoryTotalState.RUN;
 		if (!isRun)
 			return;
@@ -201,8 +203,7 @@ public class InventoryTotalPlugin extends Plugin
 
 	void onNewRun()
 	{
-		overlay.showInterstitial();
-
+		runData.showInterstitial = true;
 		runData.runStartTime = Instant.now().toEpochMilli();
 		runData.ignoredItems = getIgnoredItems();
 
@@ -228,18 +229,17 @@ public class InventoryTotalPlugin extends Plugin
 			initialGp = 0;
 		}
 
+		runData.showInterstitial = false;
 		writeSavedData();
 
-		overlay.hideInterstitial();
 		sessionManager.onTripStarted(runData);
-		panel.updateTrips(sessionManager.getActiveTrips());
 	}
 
 	void onBank()
 	{
 		runData.runEndTime = Instant.now().toEpochMilli();
 		sessionManager.onTripCompleted(runData);
-		runData = new InventoryTotalRunData();
+		runData = createRunData();
 		initialGp = 0;
 
 		writeSavedData();
@@ -423,7 +423,7 @@ public class InventoryTotalPlugin extends Plugin
 				price = 1;
 			}
 
-			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, price));
+			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, price, itemId));
 		}
 
 		return ledgerItems;
@@ -565,13 +565,12 @@ public class InventoryTotalPlugin extends Plugin
 			qtyDifferences.put(itemId, qty - initialQty);
 		}
 
-		List<InventoryTotalLedgerItem> ledgerItems = new LinkedList<>();
+		Map<String, InventoryTotalLedgerItem> ledgerItems  = new HashMap<>();
 
 		for (Integer itemId: qtyDifferences.keySet())
 		{
-			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+			String name = itemManager.getItemComposition(itemId).getName();
 			Integer price = prices.get(itemId);
-
 			if (price == null)
 			{
 				price = 1;
@@ -579,24 +578,29 @@ public class InventoryTotalPlugin extends Plugin
 
 			Float qtyDifference = qtyDifferences.get(itemId);
 
-			List<InventoryTotalLedgerItem> filteredList = ledgerItems.stream().filter(
-					item -> item.getDescription().equals(itemComposition.getName())).collect(Collectors.toList()
-			);
-
-			if (!filteredList.isEmpty())
+			if (ledgerItems.containsKey(name))
 			{
-				filteredList.get(0).addQuantityDifference(qtyDifference);
+				ledgerItems.get(name).addQuantityDifference(qtyDifference);
 			}
 			else
 			{
 				if (price > 0)
 				{
-					ledgerItems.add(new InventoryTotalLedgerItem(itemComposition.getName(), qtyDifference, price));
+					ledgerItems.put(name, new InventoryTotalLedgerItem(name, qtyDifference, price, itemId));
 				}
 			}
 		}
 
-		return ledgerItems;
+		List<InventoryTotalLedgerItem> ledgerItemsFiltered = new LinkedList<>();
+		for (InventoryTotalLedgerItem item : ledgerItems.values())
+		{
+			if (Math.abs(item.getQty()) > (roundAmount/2f))
+			{
+				ledgerItemsFiltered.add(item);
+			}
+		}
+
+		return ledgerItemsFiltered;
 	}
 
 	//dont GC
@@ -703,9 +707,16 @@ public class InventoryTotalPlugin extends Plugin
 
 		if (savedData == null)
 		{
-			return new InventoryTotalRunData();
+			return createRunData();
 		}
 		return savedData;
+	}
+
+	private InventoryTotalRunData createRunData()
+	{
+		InventoryTotalRunData data = new InventoryTotalRunData();
+		data.identifier = UUID.randomUUID().toString();
+		return data;
 	}
 
 	private LinkedList<String> getIgnoredItems() {

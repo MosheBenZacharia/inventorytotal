@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -38,9 +39,6 @@ import net.runelite.client.util.QuantityFormatter;
 class InventoryTotalOverlay extends Overlay
 {
 	private static final int TEXT_Y_OFFSET = 17;
-	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
-	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
-	private static final String CHECK_LOOTING_BAG_TEXT = "Check Looting Bag";
 	private static final int HORIZONTAL_PADDING = 10;
 	private static final int BANK_CLOSE_DELAY = 1200;
 	private static final int imageSize = 15;
@@ -58,8 +56,6 @@ class InventoryTotalOverlay extends Overlay
 	private ItemContainer equipmentItemContainer;
 
 	private boolean onceBank = false;
-
-	private boolean showInterstitial = false;
 
 	private boolean postNewRun = false;
 	private long newRunTime = 0;
@@ -200,7 +196,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			else
 			{
-				hideInterstitial();
+				plugin.getRunData().showInterstitial = false;
 			}
 			postNewRun = false;
 		}
@@ -221,15 +217,15 @@ class InventoryTotalOverlay extends Overlay
 		int height = 20;
 
 		long total = plugin.getProfitGp();
-		String totalText = formatGp(total);
+		String totalText = UIHelper.formatGp(total, config.showExactGp());
 
 		if (config.showGpPerHourOnOverlay() 
 			&& plugin.getMode() == InventoryTotalMode.PROFIT_LOSS
 			 && plugin.getState() == InventoryTotalState.RUN
-			 && !showInterstitial)
+			 && !plugin.getRunData().showInterstitial)
 		{
 			total = getGpPerHour(plugin.elapsedRunTime(), (int) total);
-			totalText = formatGp(total) + "/hr";
+			totalText = UIHelper.formatGp(total, config.showExactGp()) + "/hr";
 		}
 
 		String formattedRunTime = getFormattedRunTime();
@@ -240,7 +236,7 @@ class InventoryTotalOverlay extends Overlay
 			runTimeText = " (" + formattedRunTime + ")";
 		}
 
-		if (showInterstitial)
+		if (plugin.getRunData().showInterstitial)
 		{
 			total = 0;
 
@@ -252,7 +248,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			else
 			{
-				totalText = formatGp(plugin.getTotalGp());
+				totalText = UIHelper.formatGp(plugin.getTotalGp(), config.showExactGp());
 			}
 		}
 
@@ -561,13 +557,12 @@ class InventoryTotalOverlay extends Overlay
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
 
-		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(plugin.getRunData()).stream()
-				.filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount/2f)).collect(Collectors.toList());
+		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(plugin.getRunData());
 
-		java.util.List<InventoryTotalLedgerItem> gain = ledger.stream().filter(item -> item.getQty() > 0)
+		List<InventoryTotalLedgerItem> gain = ledger.stream().filter(item -> item.getQty() > 0)
 				.collect(Collectors.toList());
 
-		java.util.List<InventoryTotalLedgerItem> loss = ledger.stream().filter(item -> item.getQty() < 0)
+		List<InventoryTotalLedgerItem> loss = ledger.stream().filter(item -> item.getQty() < 0)
 				.collect(Collectors.toList());
 
 		gain = gain.stream().sorted(Comparator.comparingLong(o -> -o.getCombinedValue())).collect(Collectors.toList());
@@ -629,7 +624,7 @@ class InventoryTotalOverlay extends Overlay
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
 		{
 			long gpPerHour = getGpPerHour(runTime, netTotal);
-			String gpPerHourString = formatGp(gpPerHour);
+			String gpPerHourString = UIHelper.formatGp(gpPerHour, config.showExactGp());
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}
 		if (plugin.needsLootingBagCheck())
@@ -692,12 +687,9 @@ class InventoryTotalOverlay extends Overlay
 			return lastGpPerHour;
 		}
 
-		float hours = ((float) runTime) / 3600000f;
-		long gpPerHour = (long) (total / hours);
-
 		lastGpPerHourUpdateTime = timeNow;
-		lastGpPerHour = gpPerHour;
-		return gpPerHour;
+		lastGpPerHour = UIHelper.getGpPerHour(runTime, total);
+		return lastGpPerHour;
 	}
 
 	String formatNumber(long number)
@@ -753,22 +745,6 @@ class InventoryTotalOverlay extends Overlay
 		}
 	}
 
-	private String formatGp(long total)
-	{
-		if (config.showExactGp())
-		{
-			return QuantityFormatter.formatNumber(total);
-		}
-		else
-		{
-			//decimal stack only works on positive numbers
-			String totalText = QuantityFormatter.quantityToStackSize(Math.abs(total));
-			if (total < 0)
-				totalText = "-" + totalText;
-			return totalText;
-		}
-	}
-
 	private String getFormattedRunTime()
 	{
 		if (!config.showRunTime())
@@ -781,21 +757,7 @@ class InventoryTotalOverlay extends Overlay
 			return null;
 		}
 
-		long totalSecs = runTime / 1000;
-		long totalMins = totalSecs / 60;
-
-		long hrs = totalMins / 60;
-		long mins = totalMins % 60;
-		long secs = totalSecs % 60;
-
-		if (hrs > 0)
-		{
-			return String.format(PROFIT_LOSS_TIME_FORMAT, hrs, mins, secs);
-		}
-		else
-		{
-			return String.format(PROFIT_LOSS_TIME_NO_HOURS_FORMAT, mins, secs);
-		}
+		return UIHelper.formatTime(runTime);
 	}
 
 	public ItemContainer getInventoryItemContainer()
@@ -806,15 +768,5 @@ class InventoryTotalOverlay extends Overlay
 	public ItemContainer getEquipmentItemContainer()
 	{
 		return equipmentItemContainer;
-	}
-
-	public void showInterstitial()
-	{
-		showInterstitial = true;
-	}
-
-	public void hideInterstitial()
-	{
-		showInterstitial = false;
 	}
 }

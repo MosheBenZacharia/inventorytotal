@@ -18,6 +18,8 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
+import com.google.common.collect.Sets;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -32,6 +34,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -46,28 +49,27 @@ class SessionPanel extends PluginPanel
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
+	private final ItemManager itemManager;
+	private final ClientThread clientThread;
+	private final SessionManager sessionManager;
 	private final JPanel sidePanel;
-
-	@Inject
-	private ItemManager itemManager;
-
-	@Inject
-	private ClientThread clientThread;
-
-	@Inject
-	private SessionManager sessionManager;
 
 	// Panels
 	private final JPanel titlePanel;
+	private final JPanel sessionInfoPanel;
 	private final List<TripPanelData> tripPanels = new LinkedList<>();
 
-	@Inject
-	SessionPanel(InventoryTotalPlugin plugin, InventoryTotalConfig config)
+	SessionPanel(InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager,
+			ClientThread clientThread, SessionManager sessionManager)
 	{
 		this.plugin = plugin;
 		this.config = config;
+		this.itemManager = itemManager;
+		this.clientThread = clientThread;
+		this.sessionManager = sessionManager;
 		this.sidePanel = new JPanel();
 		this.titlePanel = new JPanel();
+		this.sessionInfoPanel = new JPanel();
 	}
 
 	void sidePanelInitializer()
@@ -77,14 +79,17 @@ class SessionPanel extends PluginPanel
 		this.sidePanel.setLayout(new BoxLayout(this.sidePanel, BoxLayout.Y_AXIS));
 		this.sidePanel.add(this.buildTitlePanel());
 		this.sidePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+		this.sidePanel.add(buildSessionInfoPanel());
+
 		JButton button = new JButton("Rebuild");
-		button.addActionListener((o)->
+		button.addActionListener((o) ->
 		{
-			for(TripPanelData data : tripPanels)
+			for (TripPanelData data : tripPanels)
 			{
 				this.sidePanel.remove(data.masterPanel);
 			}
 			this.tripPanels.clear();
+
 			this.updateTrips(sessionManager.getActiveTrips());
 		});
 		this.sidePanel.add(button);
@@ -99,9 +104,44 @@ class SessionPanel extends PluginPanel
 		titlePanel.setLayout(new BorderLayout());
 		PluginErrorPanel errorPanel = new PluginErrorPanel();
 		errorPanel.setBorder(new EmptyBorder(2, 0, 3, 0));
-		errorPanel.setContent("GP Per Hour", "Tracks your GP/hr over various trips.");
+		errorPanel.setContent("GP/hr", "Tracks your GP/hr over various trips.");
 		titlePanel.add(errorPanel, "Center");
 		return titlePanel;
+	}
+
+	// (editable) - inventory setups for reference
+	private final JLabel sessionNameLabel = new JLabel("Unnamed Session");
+	private final JLabel gpPerHourLabel = new JLabel(htmlLabel("GP/hr: ", "N/A"));
+	private final JLabel netTotalLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
+	private final JLabel totalGainsLabel = new JLabel(htmlLabel("Total Gains: ", "N/A"));
+	private final JLabel totalLossesLabel = new JLabel(htmlLabel("Total Losses: ", "N/A"));
+	private final JLabel sessionTimeLabel = new JLabel(htmlLabel("Session Time: ", "N/A"));
+	private final JLabel tripCountLabel = new JLabel(htmlLabel("Trip Count: ", "N/A"));
+	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel("Avg Trip Duration: ", "N/A"));
+
+	private JPanel buildSessionInfoPanel()
+	{
+		sessionInfoPanel.setLayout(new BorderLayout());
+		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
+
+		JPanel sessionInfoSection = new JPanel(new GridBagLayout());
+		sessionInfoSection.setLayout(new GridLayout(8, 1, 0, 10));
+		sessionInfoSection.setBorder(new EmptyBorder(10, 5, 3, 0));
+
+		sessionNameLabel.setFont(FontManager.getRunescapeBoldFont());
+
+		sessionInfoSection.add(sessionNameLabel);
+		sessionInfoSection.add(gpPerHourLabel);
+		sessionInfoSection.add(netTotalLabel);
+		sessionInfoSection.add(totalGainsLabel);
+		sessionInfoSection.add(totalLossesLabel);
+		sessionInfoSection.add(sessionTimeLabel);
+		sessionInfoSection.add(tripCountLabel);
+		sessionInfoSection.add(avgTripDurationLabel);
+
+		sessionInfoPanel.add(sessionInfoSection, "West");
+
+		return sessionInfoPanel;
 	}
 
 	void updateTrips(Map<String, InventoryTotalRunData> trips)
@@ -112,26 +152,54 @@ class SessionPanel extends PluginPanel
 			{
 				ensureTripPanelCount(trips.size());
 			}
-			clientThread.invokeLater(()->
+			clientThread.invokeLater(() ->
 			{
 				List<InventoryTotalRunData> runDataSorted = trips.values().stream()
 						.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
-	
+
 				// TODO: try combinining neighboring runData if the quantityDifferences
 				// match...?
 				int tripIndex = 0;
 				for (InventoryTotalRunData runData : runDataSorted)
 				{
-					// ensureTripPanelCount(tripIndex + 1);
 					boolean validTrip = renderTrip(runData, tripIndex);
 					if (!validTrip)
 						continue;
-	
+
 					tripIndex++;
 				}
 				for (int i = tripIndex; i < tripPanels.size(); ++i)
 				{
 					tripPanels.get(i).masterPanel.setVisible(false);
+				}
+
+				SessionStats stats = sessionManager.getActiveSessionStats();
+				if (stats == null)
+				{
+					gpPerHourLabel.setText(htmlLabel("GP/hr: ", "N/A"));
+					netTotalLabel.setText(htmlLabel("Net Total: ", "N/A"));
+					totalGainsLabel.setText(htmlLabel("Total Gains: ", "N/A"));
+					totalLossesLabel.setText(htmlLabel("Total Losses: ", "N/A"));
+					sessionTimeLabel.setText(htmlLabel("Session Time: ", "N/A"));
+					tripCountLabel.setText(htmlLabel("Trip Count: ", "N/A"));
+					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
+
+				} else
+				{
+					long runtime = stats.getSessionEndTime() - stats.getSessionStartTime();
+					sessionNameLabel.setText("Unnamed Session");
+					gpPerHourLabel.setText(htmlLabel("GP/hr: ",
+							UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())
+									+ "/hr"));
+					netTotalLabel.setText(
+							htmlLabel("Net Total: ", UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
+					totalGainsLabel.setText(
+							htmlLabel("Total Gains: ", UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
+					totalLossesLabel.setText(
+							htmlLabel("Total Losses: ", UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
+					sessionTimeLabel.setText(htmlLabel("Session Time: ", UIHelper.formatTime(runtime)));
+					tripCountLabel.setText(htmlLabel("Trip Count: ", Integer.toString(stats.getTripCount())));
+					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
 				}
 			});
 		});
@@ -142,7 +210,7 @@ class SessionPanel extends PluginPanel
 		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(runData);
 
 		// filter out anything with no change or change that will get rounded to 0
-		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) >= InventoryTotalPlugin.roundAmount)
+		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount/2f))
 				.collect(Collectors.toList());
 
 		// if there's nothing worthwhile that happened in this trip we don't need to
@@ -157,23 +225,54 @@ class SessionPanel extends PluginPanel
 				.collect(Collectors.toList());
 
 		TripStats tripStats = getTripStats(ledger);
-		log.info("trip " + tripIndex);
-		log.info("net: " + tripStats.netTotal);
 
-		TripPanelData tripPanelData = tripPanels.get(tripIndex);
-		tripPanelData.masterPanel.setVisible(true);
+		TripPanelData tpData = tripPanels.get(tripIndex);
+		tpData.masterPanel.setVisible(true);
+		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
 
 		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
-		tripPanelData.bottomRightLabel
+		tpData.bottomRightLabel
 				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
-		// tripPanelData.bottomLeftLabel.setText(htmlLabel("???: ",
-		// doubleFormatNumber(convertToGpPerHour(kills,Kph))));
-		tripPanelData.topLeftLabel
+		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp()) + "/hr"));
+		tpData.topLeftLabel
 				.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
-		tripPanelData.topRightLabel
-				.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
-		tripPanelData.topRightLabel.setBorder(
-				new EmptyBorder(0, 535 - fontMetrics.stringWidth(tripPanelData.topLeftLabel.getText()), 0, 0));
+		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
+		tpData.topRightLabel
+				.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
+		tpData.titlePanel.setContent("Trip " + (tripIndex + 1), "Started " + UIHelper.getTimeAgo(runData.runStartTime));
+		// buttons
+		UIHelper.clearListeners(tpData.buttonLeft);
+		tpData.buttonLeft.setText("Set Start");
+		tpData.buttonLeft.addActionListener((event) ->
+		{
+			sessionManager.setSessionStart(runData.identifier);
+		});
+		UIHelper.clearListeners(tpData.buttonMiddle);
+		tpData.buttonMiddle.setText("Set End");
+		tpData.buttonMiddle.addActionListener((event) ->
+		{
+			sessionManager.setSessionEnd(runData.identifier);
+		});
+		UIHelper.clearListeners(tpData.buttonRight);
+		if (runData.isInProgress())
+		{
+			// cant delete active trip!!
+			tpData.buttonRight.setVisible(false);
+		} else
+		{
+			tpData.buttonRight.setVisible(true);
+			tpData.buttonRight.setText("Delete");
+			tpData.buttonRight.addActionListener((event) ->
+			{
+				int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?",
+						"Warning", JOptionPane.OK_CANCEL_OPTION);
+
+				if (confirm == 0)
+				{
+					sessionManager.deleteSession(runData.identifier);
+				}
+			});
+		}
 
 		return true;
 	}
@@ -210,13 +309,17 @@ class SessionPanel extends PluginPanel
 
 	private class TripPanelData
 	{
+		PluginErrorPanel titlePanel = new PluginErrorPanel();
 		JToggleButton lootHeaderButtonPanel = new JToggleButton();
 		JToggleButton hideItemButton = new JToggleButton();
 		JLabel topLeftLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
-		JLabel bottomLeftLabel = new JLabel(htmlLabel("???: ", "N/A"));
+		JLabel bottomLeftLabel = new JLabel(htmlLabel("GP/hr: ", "N/A"));
 		JLabel topRightLabel = new JLabel(htmlLabel("Gains: ", "N/A"));
 		JLabel bottomRightLabel = new JLabel(htmlLabel("Losses: ", "N/A"));
 		JPanel masterPanel = new JPanel();
+		JButton buttonLeft = new JButton("Left");
+		JButton buttonMiddle = new JButton("Middle");
+		JButton buttonRight = new JButton("Right");
 	}
 
 	private TripPanelData buildTripPanel()
@@ -229,15 +332,18 @@ class SessionPanel extends PluginPanel
 		JLabel bottomRightLabel = data.bottomRightLabel;
 		JLabel topRightLabel = data.topRightLabel;
 		JPanel masterPanel = data.masterPanel;
+		PluginErrorPanel titlePanel = data.titlePanel;
+		JButton buttonLeft = data.buttonLeft;
+		JButton buttonMiddle = data.buttonMiddle;
+		JButton buttonRight = data.buttonRight;
 
 		masterPanel.setLayout(new BorderLayout());
-		masterPanel.setBorder(new EmptyBorder(5,0,0,0));
+		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
 
 		JPanel bottomInfo = new JPanel();
 		JPanel topInfo = new JPanel();
 
-		PluginErrorPanel titlePanel = new PluginErrorPanel();
-		titlePanel.setBorder(new EmptyBorder(2, 0, 3, 0));
+		titlePanel.setBorder(new EmptyBorder(10, 0, 3, 0));
 		titlePanel.setContent("Trip 1", "Repeated 4 times...");
 
 		lootHeaderButtonPanel.setLayout(new GridLayout(2, 0, 0, 0));
@@ -284,11 +390,25 @@ class SessionPanel extends PluginPanel
 
 		lootHeaderButtonPanel.add(topInfo, "North");
 		lootHeaderButtonPanel.add(bottomInfo, "South");
-		
+
+		float fontSize = 16f;
+		EmptyBorder buttonBorder = new EmptyBorder(2, 2, 2, 2);
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new GridLayout(0, 3, 0, 0));
+		buttonLeft.setBorder(buttonBorder);
+		buttonLeft.setFont(buttonLeft.getFont().deriveFont(fontSize));
+		buttonPanel.add(buttonLeft);
+		buttonMiddle.setFont(buttonMiddle.getFont().deriveFont(fontSize));
+		buttonPanel.add(buttonMiddle);
+		buttonRight.setFont(buttonRight.getFont().deriveFont(fontSize));
+		buttonPanel.add(buttonRight);
+
 		JPanel contentPanel = new JPanel();
-		contentPanel.setPreferredSize(new Dimension(200, 80));
-		contentPanel.add(titlePanel, "North");
-		contentPanel.add(lootHeaderButtonPanel, "South");
+		contentPanel.setLayout(new GridLayout(3, 0, 0, 0));
+		// contentPanel.setPreferredSize(new Dimension(200, 400));
+		contentPanel.add(titlePanel);
+		contentPanel.add(lootHeaderButtonPanel);
+		contentPanel.add(buttonPanel);
 		contentPanel.setBackground(new Color(30, 30, 30));
 		contentPanel.setBorder(new MatteBorder(1, 1, 1, 1, new Color(57, 57, 57)));
 
