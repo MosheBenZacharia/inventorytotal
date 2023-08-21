@@ -29,6 +29,11 @@ public class InventoryTotalLedgerItem {
         return price;
     }
 
+    public int getItemId()
+    {
+        return itemId;
+    }
+
     public void addQuantityDifference(float qtyDifference)
     {
         qty += qtyDifference;

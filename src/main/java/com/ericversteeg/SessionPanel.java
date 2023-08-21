@@ -160,6 +160,7 @@ class SessionPanel extends PluginPanel
 				// TODO: try combinining neighboring runData if the quantityDifferences
 				// match...?
 				int tripIndex = 0;
+				previousLedger = null;
 				for (InventoryTotalRunData runData : runDataSorted)
 				{
 					boolean validTrip = renderTrip(runData, tripIndex);
@@ -205,6 +206,8 @@ class SessionPanel extends PluginPanel
 		});
 	}
 
+	List<InventoryTotalLedgerItem> previousLedger = null;
+
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
 		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(runData);
@@ -215,18 +218,26 @@ class SessionPanel extends PluginPanel
 
 		// if there's nothing worthwhile that happened in this trip we don't need to
 		// render it (unless it's our current trip which we always want to render)
-		if (ledger.isEmpty() && !runData.isInProgress())
-		{
-			return false;
-		}
+		// if (ledger.isEmpty() && !runData.isInProgress())
+		// {
+		// 	return false;
+		// }
 
 		// sort by profit descending
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
 				.collect(Collectors.toList());
 
+		if (ledgersMatch(ledger, previousLedger))
+		{
+			TripPanelData tpData = tripPanels.get(tripIndex-1);
+			tpData.titlePanel.setContent("Trip repeated", "this was repeated");
+			return false;
+		}
+		previousLedger = ledger;
+				
+		TripPanelData tpData = tripPanels.get(tripIndex);
 		TripStats tripStats = getTripStats(ledger);
 
-		TripPanelData tpData = tripPanels.get(tripIndex);
 		tpData.masterPanel.setVisible(true);
 		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
 
@@ -279,6 +290,34 @@ class SessionPanel extends PluginPanel
 				sessionManager.deleteSession(runData.identifier);
 			}
 		});
+
+		return true;
+	}
+
+	boolean ledgersMatch(List<InventoryTotalLedgerItem> ledgerOne, List<InventoryTotalLedgerItem> ledgerTwo)
+	{
+		if (ledgerOne == null || ledgerTwo == null)
+		{
+			return false;
+		}
+		if (ledgerOne.size() != ledgerTwo.size())
+		{
+			return false;
+		}
+		for (int i=0; i< ledgerOne.size(); ++i)
+		{
+			InventoryTotalLedgerItem itemOne = ledgerOne.get(i);
+			InventoryTotalLedgerItem itemTwo = ledgerTwo.get(i);
+
+			if(itemOne.getQty() != itemTwo.getQty())
+			{
+				return false;
+			}
+			if(itemOne.getItemId() != itemTwo.getItemId())
+			{
+				return false;
+			}
+		}
 
 		return true;
 	}
