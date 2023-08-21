@@ -25,6 +25,7 @@ class SessionStats
 	private final long totalLoss;
 	private final long netTotal;
 	private final int tripCount;
+	private final long avgTripDuration;
 }
 
 @Slf4j
@@ -34,7 +35,9 @@ public class SessionManager
 
 	@Getter
 	private Map<String, InventoryTotalRunData> activeTrips = new HashMap<>();
+	@Getter
 	private String activeSessionStartId;
+	@Getter
 	private String activeSessionEndId;
 
 	public SessionManager(InventoryTotalPlugin plugin)
@@ -68,7 +71,7 @@ public class SessionManager
 
 		long gains = 0;
 		long losses = 0;
-
+		long tripDurationSum = 0;
 		boolean foundStart = false;
 		int tripCount = 0;
 		for (InventoryTotalRunData runData : runDataSorted)
@@ -91,6 +94,10 @@ public class SessionManager
 					losses += value;
 				}
 			}
+			long tripStartTime = runData.runStartTime;
+			long tripEndTime = runData.isInProgress() ? Instant.now().toEpochMilli()
+					: runData.runEndTime;
+			tripDurationSum += (tripEndTime - tripStartTime);
 			tripCount++;
 
 			if (activeSessionEndId != null && activeSessionEndId.equals(runData.identifier))
@@ -98,29 +105,75 @@ public class SessionManager
 				break;
 			}
 		}
-		log.info("active trip count: " +activeTrips.size());
 		if (!foundStart)
 		{
 			log.error("couldn't find start session");
 			return null;
 		}
-		long sessionStartTime = activeTrips.get(activeSessionStartId).runStartTime;
+		long sessionStartTime = getSessionStartTrip().runStartTime;
 		long sessionEndTime = (activeSessionEndId == null) ? Instant.now().toEpochMilli()
 				: (activeTrips.get(activeSessionEndId).isInProgress() ? Instant.now().toEpochMilli()
 						: activeTrips.get(activeSessionEndId).runEndTime);
 		long netTotal = gains + losses;
+		long avgTripDuration = (long) (tripDurationSum / ((float) tripCount));
 
-		return new SessionStats(sessionStartTime, sessionEndTime, gains, losses, netTotal, tripCount);
+		return new SessionStats(sessionStartTime, sessionEndTime, gains, losses, netTotal, tripCount, avgTripDuration);
 	}
 
 	void setSessionStart(String id)
 	{
 		activeSessionStartId = id;
+		if (id != null)
+		{
+			InventoryTotalRunData startTrip = getSessionStartTrip();
+			InventoryTotalRunData endtrip = getSessionEndTrip();	
+			//order is messed up, just make end same as start
+			if (endtrip != null && endtrip.runStartTime < startTrip.runStartTime)
+			{
+				setSessionEnd(id);
+			}
+		}
 	}
 
 	void setSessionEnd(String id)
 	{
 		activeSessionEndId = id;
+		if (id != null)
+		{
+			InventoryTotalRunData startTrip = getSessionStartTrip();
+			InventoryTotalRunData endtrip = getSessionEndTrip();	
+			//order is messed up, just make start same as end
+			if (startTrip != null && startTrip.runStartTime > endtrip.runStartTime)
+			{
+				setSessionStart(id);
+			}
+		}
+	}
+
+	InventoryTotalRunData getSessionStartTrip()
+	{
+		if (activeSessionStartId == null)
+		{
+			return null;
+		}
+		return activeTrips.get(activeSessionStartId);
+	}
+
+	InventoryTotalRunData getSessionEndTrip()
+	{
+		if (activeSessionEndId == null)
+		{
+			if (activeTrips.size() == 0)
+			{
+				return null;
+			}
+			else
+			{
+				List<InventoryTotalRunData> sortedData = getSortedTrips();
+				return sortedData.get(sortedData.size() - 1);
+			}
+		}
+		return activeTrips.get(activeSessionEndId);
 	}
 
 	void deleteSession(String id)

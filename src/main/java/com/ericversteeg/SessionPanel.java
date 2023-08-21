@@ -199,7 +199,7 @@ class SessionPanel extends PluginPanel
 							htmlLabel("Total Losses: ", UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
 					sessionTimeLabel.setText(htmlLabel("Session Time: ", UIHelper.formatTime(runtime)));
 					tripCountLabel.setText(htmlLabel("Trip Count: ", Integer.toString(stats.getTripCount())));
-					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
+					avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", UIHelper.formatTime(stats.getAvgTripDuration())));
 				}
 			});
 		});
@@ -230,7 +230,16 @@ class SessionPanel extends PluginPanel
 		tpData.masterPanel.setVisible(true);
 		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
 
-		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
+		FontMetrics fontMetrics;
+		try
+		{
+			fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
+		}
+		catch(Exception e)
+		{
+			log.error("getGraphics: " + getGraphics(), e);
+			return false;
+		}
 		tpData.bottomRightLabel
 				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
 		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp()) + "/hr"));
@@ -242,37 +251,34 @@ class SessionPanel extends PluginPanel
 		tpData.titlePanel.setContent("Trip " + (tripIndex + 1), "Started " + UIHelper.getTimeAgo(runData.runStartTime));
 		// buttons
 		UIHelper.clearListeners(tpData.buttonLeft);
+		tpData.buttonLeft.setEnabled(!sessionManager.getActiveSessionStartId().equals(runData.identifier));
 		tpData.buttonLeft.setText("Set Start");
 		tpData.buttonLeft.addActionListener((event) ->
 		{
 			sessionManager.setSessionStart(runData.identifier);
 		});
 		UIHelper.clearListeners(tpData.buttonMiddle);
+		tpData.buttonMiddle.setEnabled((sessionManager.getActiveSessionEndId() == null) ?
+			!runData.isInProgress() :
+			!sessionManager.getActiveSessionEndId().equals(runData.identifier));
 		tpData.buttonMiddle.setText("Set End");
 		tpData.buttonMiddle.addActionListener((event) ->
 		{
 			sessionManager.setSessionEnd(runData.identifier);
 		});
 		UIHelper.clearListeners(tpData.buttonRight);
-		if (runData.isInProgress())
+		tpData.buttonRight.setEnabled(!runData.isInProgress());
+		tpData.buttonRight.setText("Delete");
+		tpData.buttonRight.addActionListener((event) ->
 		{
-			// cant delete active trip!!
-			tpData.buttonRight.setVisible(false);
-		} else
-		{
-			tpData.buttonRight.setVisible(true);
-			tpData.buttonRight.setText("Delete");
-			tpData.buttonRight.addActionListener((event) ->
-			{
-				int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?",
-						"Warning", JOptionPane.OK_CANCEL_OPTION);
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?",
+					"Warning", JOptionPane.OK_CANCEL_OPTION);
 
-				if (confirm == 0)
-				{
-					sessionManager.deleteSession(runData.identifier);
-				}
-			});
-		}
+			if (confirm == 0)
+			{
+				sessionManager.deleteSession(runData.identifier);
+			}
+		});
 
 		return true;
 	}
