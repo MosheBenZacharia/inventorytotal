@@ -46,6 +46,14 @@ import java.util.List;
 class SessionPanel extends PluginPanel
 {
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
+	private static final String sessionNameLabelPlaceholder = "Unnamed Session";
+	private static final String gpPerHourLabelPrefix = "GP/hr: ";
+	private static final String netTotalLabelPrefix = "Net Total: ";
+	private static final String totalGainsLabelPrefix = "Total Gains: ";
+	private static final String totalLossesLabelPrefix = "Total Losses: ";
+	private static final String sessionTimeLabelPrefix = "Session Time: ";
+	private static final String tripCountLabelPrefix = "Trip Count: ";
+	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -111,14 +119,14 @@ class SessionPanel extends PluginPanel
 	}
 
 	// (editable) - inventory setups for reference
-	private final JLabel sessionNameLabel = new JLabel("Unnamed Session");
-	private final JLabel gpPerHourLabel = new JLabel(htmlLabel("GP/hr: ", "N/A"));
-	private final JLabel netTotalLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
-	private final JLabel totalGainsLabel = new JLabel(htmlLabel("Total Gains: ", "N/A"));
-	private final JLabel totalLossesLabel = new JLabel(htmlLabel("Total Losses: ", "N/A"));
-	private final JLabel sessionTimeLabel = new JLabel(htmlLabel("Session Time: ", "N/A"));
-	private final JLabel tripCountLabel = new JLabel(htmlLabel("Trip Count: ", "N/A"));
-	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel("Avg Trip Duration: ", "N/A"));
+	private final JLabel sessionNameLabel = new JLabel(sessionNameLabelPlaceholder);
+	private final JLabel gpPerHourLabel = new JLabel(htmlLabel(gpPerHourLabelPrefix, "N/A"));
+	private final JLabel netTotalLabel = new JLabel(htmlLabel(netTotalLabelPrefix, "N/A"));
+	private final JLabel totalGainsLabel = new JLabel(htmlLabel(totalGainsLabelPrefix, "N/A"));
+	private final JLabel totalLossesLabel = new JLabel(htmlLabel(totalLossesLabelPrefix, "N/A"));
+	private final JLabel sessionTimeLabel = new JLabel(htmlLabel(sessionTimeLabelPrefix, "N/A"));
+	private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
+	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
 
 	private JPanel buildSessionInfoPanel()
 	{
@@ -175,30 +183,26 @@ class SessionPanel extends PluginPanel
 		SessionStats stats = sessionManager.getActiveSessionStats();
 		if (stats == null)
 		{
-			gpPerHourLabel.setText(htmlLabel("GP/hr: ", "N/A"));
-			netTotalLabel.setText(htmlLabel("Net Total: ", "N/A"));
-			totalGainsLabel.setText(htmlLabel("Total Gains: ", "N/A"));
-			totalLossesLabel.setText(htmlLabel("Total Losses: ", "N/A"));
-			sessionTimeLabel.setText(htmlLabel("Session Time: ", "N/A"));
-			tripCountLabel.setText(htmlLabel("Trip Count: ", "N/A"));
-			avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", "N/A"));
+			sessionNameLabel.setText(sessionNameLabelPlaceholder);
+			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix, "N/A"));
+			netTotalLabel.setText(htmlLabel(netTotalLabelPrefix, "N/A"));
+			totalGainsLabel.setText(htmlLabel(totalGainsLabelPrefix, "N/A"));
+			totalLossesLabel.setText(htmlLabel(totalLossesLabelPrefix, "N/A"));
+			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, "N/A"));
+			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
+			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
 
 		} else
 		{
 			long runtime = stats.getSessionEndTime() - stats.getSessionStartTime();
-			sessionNameLabel.setText("Unnamed Session");
-			gpPerHourLabel.setText(htmlLabel("GP/hr: ",
-					UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())
-							+ "/hr"));
-			netTotalLabel.setText(
-					htmlLabel("Net Total: ", UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
-			totalGainsLabel.setText(
-					htmlLabel("Total Gains: ", UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
-			totalLossesLabel.setText(
-					htmlLabel("Total Losses: ", UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
-			sessionTimeLabel.setText(htmlLabel("Session Time: ", UIHelper.formatTime(runtime)));
-			tripCountLabel.setText(htmlLabel("Trip Count: ", Integer.toString(stats.getTripCount())));
-			avgTripDurationLabel.setText(htmlLabel("Avg Trip Duration: ", UIHelper.formatTime(stats.getAvgTripDuration())));
+			sessionNameLabel.setText(sessionNameLabelPlaceholder);
+			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())							+ "/hr"));
+			netTotalLabel.setText(htmlLabel(netTotalLabelPrefix, UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
+			totalGainsLabel.setText(htmlLabel(totalGainsLabelPrefix, UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
+			totalLossesLabel.setText(htmlLabel(totalLossesLabelPrefix, UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
+			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, UIHelper.formatTime(runtime)));
+			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
+			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
 		}
 	}
 
@@ -213,13 +217,6 @@ class SessionPanel extends PluginPanel
 		// filter out anything with no change or change that will get rounded to 0
 		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount/2f))
 				.collect(Collectors.toList());
-
-		// if there's nothing worthwhile that happened in this trip we don't need to
-		// render it (unless it's our current trip which we always want to render)
-		// if (ledger.isEmpty() && !runData.isInProgress())
-		// {
-		// 	return false;
-		// }
 
 		// sort by profit descending
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
