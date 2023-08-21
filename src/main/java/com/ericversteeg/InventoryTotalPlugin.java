@@ -453,6 +453,8 @@ public class InventoryTotalPlugin extends Plugin
 		
 		for (Item item: allItems) {
 			int itemId = item.getId();
+			if(itemId == -1)
+				continue;
 
 			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
