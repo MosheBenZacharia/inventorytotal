@@ -52,6 +52,7 @@ class ActiveSessionPanel extends PluginPanel
 	private final ClientThread clientThread;
 	private final SessionManager sessionManager;
 	private final JPanel tripsPanel = new JPanel();
+	GridBagConstraints constraints = new GridBagConstraints();
 
 	// Panels
 	private final JPanel sessionInfoPanel;
@@ -72,31 +73,49 @@ class ActiveSessionPanel extends PluginPanel
 	{
 		this.setLayout(new BorderLayout());
 
-		JPanel panelElements = new JPanel();
-		panelElements.setLayout(new BoxLayout(panelElements, BoxLayout.Y_AXIS));
-		panelElements.setBorder(new EmptyBorder(0, 0, 0, 0));
-		panelElements.add(buildSessionInfoPanel());
+		/*  The main container, this holds the session info and trips */
+		JPanel container = new JPanel();
+		container.setLayout(new BorderLayout(0, 0));
+		container.setBorder(new EmptyBorder(0, 0, 0, 0));
+		container.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		JButton button = new JButton("Rebuild");
-		button.addActionListener((o) ->
-		{
-			for (TripPanelData data : tripPanels)
-			{
-				this.tripsPanel.remove(data.masterPanel);
-			}
-			this.tripPanels.clear();
+		tripsPanel.setLayout(new GridBagLayout());
+		tripsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-			this.updateTrips();
-		});
-		panelElements.add(button);
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+		constraints.weightx = 1;
+		constraints.gridx = 0;
+		constraints.gridy = 0;
 
-		tripsPanel.setLayout(new BoxLayout(this.tripsPanel, BoxLayout.Y_AXIS));
-		JScrollPane tripsScrollPane = new JScrollPane(tripsPanel);
-        tripsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        tripsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		panelElements.add(tripsScrollPane);
+		/* This panel wraps the trips panel and guarantees the scrolling behaviour */
+		JPanel wrapper = new JPanel(new BorderLayout());
+		wrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		wrapper.add(tripsPanel, BorderLayout.NORTH);
 
-		this.add(panelElements, BorderLayout.NORTH);
+		/*  The trips wrapper, this scrolling panel wraps the results container */
+		JScrollPane tripsWrapper = new JScrollPane(wrapper);
+		tripsWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		tripsWrapper.getVerticalScrollBar().setPreferredSize(new Dimension(12, 0));
+		tripsWrapper.getVerticalScrollBar().setBorder(new EmptyBorder(0, 5, 0, 0));
+		tripsWrapper.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+		container.add(buildSessionInfoPanel(), BorderLayout.NORTH);
+		container.add(tripsWrapper, BorderLayout.CENTER);
+
+		add(container, BorderLayout.CENTER);
+
+		// JButton button = new JButton("Rebuild");
+		// button.addActionListener((o) ->
+		// {
+		// 	for (TripPanelData data : tripPanels)
+		// 	{
+		// 		this.tripsPanel.remove(data.masterPanel);
+		// 	}
+		// 	this.tripPanels.clear();
+
+		// 	this.updateTrips();
+		// });
+		// panelElements.add(button);
 	}
 
 	// (editable) - inventory setups for reference
@@ -357,8 +376,9 @@ class ActiveSessionPanel extends PluginPanel
 	{
 		while (tripPanels.size() < size)
 		{
+			constraints.gridy = tripPanels.size();
 			TripPanelData data = buildTripPanel();
-			this.tripsPanel.add(data.masterPanel);
+			this.tripsPanel.add(data.masterPanel, constraints);
 			tripPanels.add(data);
 		}
 	}
