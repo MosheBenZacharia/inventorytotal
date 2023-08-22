@@ -59,7 +59,7 @@ public class SessionManager
 	private List<InventoryTotalRunData> getSortedTrips()
 	{
 		return activeTrips.values().stream().sorted(Comparator.comparingLong(o -> o.runStartTime))
-				.collect(Collectors.toList());
+			.collect(Collectors.toList());
 	}
 
 	SessionStats getActiveSessionStats()
@@ -91,7 +91,8 @@ public class SessionManager
 				if (value > 0)
 				{
 					gains += value;
-				} else
+				}
+				else
 				{
 					losses += value;
 				}
@@ -133,15 +134,17 @@ public class SessionManager
 	long getSessionStartTime()
 	{
 		if (activeSessionStartId == null)
+		{
 			return 0;
+		}
 		return getSessionStartTrip().runStartTime;
 	}
 
 	long getSessionEndTime()
 	{
 		return (activeSessionEndId == null) ? Instant.now().toEpochMilli()
-		: (activeTrips.get(activeSessionEndId).isInProgress() ? Instant.now().toEpochMilli()
-				: activeTrips.get(activeSessionEndId).runEndTime);
+			: (activeTrips.get(activeSessionEndId).isInProgress() ? Instant.now().toEpochMilli()
+			: activeTrips.get(activeSessionEndId).runEndTime);
 	}
 
 	boolean isTimeInActiveSession(long time)
@@ -197,7 +200,8 @@ public class SessionManager
 			if (activeTrips.size() == 0)
 			{
 				return null;
-			} else
+			}
+			else
 			{
 				List<InventoryTotalRunData> sortedData = getSortedTrips();
 				return sortedData.get(sortedData.size() - 1);
@@ -214,7 +218,8 @@ public class SessionManager
 			if (activeTrips.size() == 0)
 			{
 				activeSessionStartId = null;
-			} else
+			}
+			else
 			{
 				activeSessionStartId = getSortedTrips().get(0).identifier;
 			}
@@ -229,7 +234,9 @@ public class SessionManager
 	{
 		activeTrips.put(runData.identifier, runData);
 		if (activeSessionStartId == null)
+		{
 			activeSessionStartId = runData.identifier;
+		}
 	}
 
 	void onTripCompleted(InventoryTotalRunData runData)
@@ -253,7 +260,7 @@ public class SessionManager
 		for (Integer startId : tripStart.keySet())
 		{
 			if (!tripEnd.containsKey(startId) || Math
-					.abs(tripEnd.get(startId) - tripStart.get(startId)) > (InventoryTotalPlugin.roundAmount / 2f))
+				.abs(tripEnd.get(startId) - tripStart.get(startId)) > (InventoryTotalPlugin.roundAmount / 2f))
 			{
 				return true;
 			}
@@ -261,7 +268,7 @@ public class SessionManager
 		for (Integer endId : tripEnd.keySet())
 		{
 			if (!tripStart.containsKey(endId)
-					|| Math.abs(tripEnd.get(endId) - tripStart.get(endId)) > (InventoryTotalPlugin.roundAmount / 2f))
+				|| Math.abs(tripEnd.get(endId) - tripStart.get(endId)) > (InventoryTotalPlugin.roundAmount / 2f))
 			{
 				return true;
 			}

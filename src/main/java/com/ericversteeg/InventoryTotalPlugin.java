@@ -1,6 +1,5 @@
 package com.ericversteeg;
 
-import com.ericversteeg.itemcharges.ChargedItem;
 import com.ericversteeg.itemcharges.ChargedItemManager;
 import com.ericversteeg.weaponcharges.WeaponChargesManager;
 import com.google.gson.Gson;
@@ -15,7 +14,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -29,7 +27,6 @@ import javax.swing.SwingUtilities;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
@@ -91,10 +88,10 @@ public class InventoryTotalPlugin extends Plugin
 
 	@Getter
 	private SessionManager sessionManager;
-    @Getter
-    private SessionPanel panel;
 
-	private String profileKey = "";
+	private GPPerHourPanel gpPerHourPanel;
+	private ActiveSessionPanel activeSessionPanel;
+	private SessionHistoryPanel sessionHistoryPanel;
 
 	private InventoryTotalRunData runData;
 	private InventoryTotalGoldDrops goldDropsObject;
@@ -140,7 +137,15 @@ public class InventoryTotalPlugin extends Plugin
 		sessionManager.startUp();
 		sessionManager.onTripStarted(runData);
 		buildSidePanel();
-		SwingUtilities.invokeLater(() -> panel.updateTrips());
+		updatePanels();
+	}
+
+	void updatePanels()
+	{
+		if (navButton.isSelected() && gpPerHourPanel.isShowingActiveSession())
+		{
+			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
+		}
 	}
 
 	@Override
@@ -157,10 +162,15 @@ public class InventoryTotalPlugin extends Plugin
 
     private void buildSidePanel()
     {
-        panel = new SessionPanel(this, config, itemManager, clientThread, sessionManager);
-        panel.sidePanelInitializer();
+        activeSessionPanel = new ActiveSessionPanel(this, config, itemManager, clientThread, sessionManager);
+        activeSessionPanel.sidePanelInitializer();
+
+		sessionHistoryPanel = new SessionHistoryPanel();
+
+		gpPerHourPanel = new GPPerHourPanel(activeSessionPanel, sessionHistoryPanel);
+
         icon = ImageUtil.loadImageResource(getClass(), "/gpperhour-icon.png");
-        navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(panel).build();
+        navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(gpPerHourPanel).build();
         clientToolbar.addNavigation(navButton);
     }
 
@@ -175,10 +185,7 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
-		if(navButton.isSelected())
-		{
-			SwingUtilities.invokeLater(() -> panel.updateTrips());
-		}
+		updatePanels();
 		
 		if (this.state == InventoryTotalState.RUN && runData.isPaused && lastTickTime != null)
 		{
@@ -298,7 +305,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//no GC
-	private Map<Integer, Float> equipmentQtyMap = new HashMap<>();
+	private final Map<Integer, Float> equipmentQtyMap = new HashMap<>();
 	private Map<Integer, Float> getEquipmentQtyMap()
 	{
 		equipmentQtyMap.clear();
@@ -382,7 +389,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//avoid GC
-	private Map<Integer, Float> chargedWeaponComponentQtyMap = new HashMap<>();
+	private final Map<Integer, Float> chargedWeaponComponentQtyMap = new HashMap<>();
 	private Map<Integer, Float> getChargedWeaponComponentQtyMap(Set<Integer> itemIdsToCheck)
 	{
 		chargedWeaponComponentQtyMap.clear();
@@ -400,7 +407,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//avoid GC
-	private Map<Integer, Float> chargedItemQtyMap = new HashMap<>();
+	private final Map<Integer, Float> chargedItemQtyMap = new HashMap<>();
 	private Map<Integer, Float> getChargedItemQtyMap(Set<Integer> itemIdsToCheck)
 	{
 		chargedItemQtyMap.clear();
@@ -449,7 +456,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//avoid GC
-	private Map<Integer, Float> inventoryQtyMap = new HashMap<>();
+	private final Map<Integer, Float> inventoryQtyMap = new HashMap<>();
 
 	Map<Integer, Float> getInventoryQtyMap()
 	{
@@ -506,7 +513,7 @@ public class InventoryTotalPlugin extends Plugin
 			return false;
 
 		// only when the looting bag is in the inventory
-		if (Arrays.asList(itemContainer.getItems()).stream().anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
+		if (Arrays.stream(itemContainer.getItems()).anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
 		{
 			return lootingBagManager.needsCheck();
 		}
@@ -515,7 +522,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//no GC
-	private HashSet<String> chargeableItemsNeedingCheck = new HashSet<>();
+	private final HashSet<String> chargeableItemsNeedingCheck = new HashSet<>();
 
 	HashSet<String> getChargeableItemsNeedingCheck()
 	{
@@ -524,7 +531,7 @@ public class InventoryTotalPlugin extends Plugin
 			return chargeableItemsNeedingCheck;
 
 		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
-		//loop through container instead of getting qtyMap because we dont care about chargeable items in looting bag (actually can you even put something charged in a container? wouldnt be tradeable right?)
+		//loop through container instead of getting qtyMap because we don't care about chargeable items in looting bag (actually can you even put something charged in a container? wouldnt be tradeable right?)
 		if (itemContainer != null)
 		{
 			Item[] inventoryItems = itemContainer.getItems();
@@ -626,7 +633,7 @@ public class InventoryTotalPlugin extends Plugin
 	}
 
 	//dont GC
-	private List<Item> runepouchItems = new ArrayList<>(RUNEPOUCH_AMOUNT_VARBITS.length);
+	private final List<Item> runepouchItems = new ArrayList<>(RUNEPOUCH_AMOUNT_VARBITS.length);
 
 	// from ClueScrollPlugin
 	private List<Item> getRunepouchContents()

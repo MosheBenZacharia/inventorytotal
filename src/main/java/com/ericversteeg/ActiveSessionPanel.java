@@ -2,49 +2,32 @@ package com.ericversteeg;
 
 import java.util.LinkedList;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.PluginErrorPanel;
-import net.runelite.client.ui.components.ProgressBar;
-import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 import net.runelite.client.util.*;
 
-import javax.inject.Inject;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
-import com.google.common.collect.Sets;
-
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.text.DecimalFormat;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.List;
 
 @Slf4j
-class SessionPanel extends PluginPanel
+class ActiveSessionPanel extends PluginPanel
 {
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 	private static final String sessionNameLabelPlaceholder = "Active Session";
@@ -56,8 +39,9 @@ class SessionPanel extends PluginPanel
 	private static final String tripCountLabelPrefix = "Trip Count: ";
 	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
 	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
-    private static final ImageIcon PAUSE_ICON;
-    private static final ImageIcon PLAY_ICON;
+	private static final Color lineColor = new Color(220, 138, 0);
+	private static final ImageIcon PAUSE_ICON;
+	private static final ImageIcon PLAY_ICON;
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -67,12 +51,11 @@ class SessionPanel extends PluginPanel
 	private final JPanel sidePanel;
 
 	// Panels
-	private final JPanel titlePanel;
 	private final JPanel sessionInfoPanel;
 	private final List<TripPanelData> tripPanels = new LinkedList<>();
 
-	SessionPanel(InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager,
-			ClientThread clientThread, SessionManager sessionManager)
+	ActiveSessionPanel(InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager,
+					   ClientThread clientThread, SessionManager sessionManager)
 	{
 		this.plugin = plugin;
 		this.config = config;
@@ -80,16 +63,14 @@ class SessionPanel extends PluginPanel
 		this.clientThread = clientThread;
 		this.sessionManager = sessionManager;
 		this.sidePanel = new JPanel();
-		this.titlePanel = new JPanel();
 		this.sessionInfoPanel = new JPanel();
 	}
 
 	void sidePanelInitializer()
 	{
 		this.setLayout(new BorderLayout());
-		this.setBorder(new EmptyBorder(10, 10, 10, 10));
+		this.setBorder(new EmptyBorder(0, 0, 0, 0));
 		this.sidePanel.setLayout(new BoxLayout(this.sidePanel, BoxLayout.Y_AXIS));
-		this.sidePanel.add(this.buildTitlePanel());
 		this.sidePanel.add(Box.createRigidArea(new Dimension(0, 5)));
 		this.sidePanel.add(buildSessionInfoPanel());
 
@@ -108,18 +89,6 @@ class SessionPanel extends PluginPanel
 		this.sidePanel.add(button);
 
 		this.add(sidePanel, "North");
-	}
-
-	private JPanel buildTitlePanel()
-	{
-		titlePanel.setBorder(
-				new CompoundBorder(new EmptyBorder(5, 0, 0, 0), new MatteBorder(0, 0, 1, 0, new Color(37, 125, 141))));
-		titlePanel.setLayout(new BorderLayout());
-		PluginErrorPanel errorPanel = new PluginErrorPanel();
-		errorPanel.setBorder(new EmptyBorder(2, 0, 3, 0));
-		errorPanel.setContent("GP/hr", "Tracks your GP/hr over various trips.");
-		titlePanel.add(errorPanel, "Center");
-		return titlePanel;
 	}
 
 	// (editable) - inventory setups for reference
@@ -161,11 +130,13 @@ class SessionPanel extends PluginPanel
 	{
 		Graphics graphics = getGraphics();
 		if (graphics == null)
+		{
 			return;
+		}
 		Map<String, InventoryTotalRunData> trips = sessionManager.getActiveTrips();
 
 		List<InventoryTotalRunData> runDataSorted = trips.values().stream()
-				.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
+			.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
 
 		int tripIndex = 0;
 		previousLedger = null;
@@ -176,7 +147,9 @@ class SessionPanel extends PluginPanel
 		{
 			boolean validTrip = renderTrip(runData, tripIndex);
 			if (!validTrip)
+			{
 				continue;
+			}
 
 			tripIndex++;
 		}
@@ -197,10 +170,11 @@ class SessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
 
-		} else
+		}
+		else
 		{
 			sessionNameLabel.setText(sessionNameLabelPlaceholder);
-			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()), config.showExactGp())							+ "/hr"));
+			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix, UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()), config.showExactGp()) + "/hr"));
 			netTotalLabel.setText(htmlLabel(netTotalLabelPrefix, UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
 			totalGainsLabel.setText(htmlLabel(totalGainsLabelPrefix, UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
 			totalLossesLabel.setText(htmlLabel(totalLossesLabelPrefix, UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
@@ -220,21 +194,21 @@ class SessionPanel extends PluginPanel
 		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(runData);
 
 		// filter out anything with no change or change that will get rounded to 0
-		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount/2f))
-				.collect(Collectors.toList());
+		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
+			.collect(Collectors.toList());
 
 		// sort by profit descending
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
-				.collect(Collectors.toList());
+			.collect(Collectors.toList());
 
 		if (!runData.isInProgress() && ledgersMatch(ledger, previousLedger))
 		{
 			consecutiveRepeatCount++;
 			repeatCount++;
-			TripPanelData tpData = getPanelData(tripIndex-repeatCount);
+			TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 			int startIndex = tripIndex - consecutiveRepeatCount;
 			int endIndex = tripIndex;
-			tpData.titlePanel.setContent("Trips "+ (startIndex+1) + "-" + (endIndex+1) +" (Identical)", "Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
+			tpData.titlePanel.setContent("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)", "Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
 			updateButtonMiddle(tpData, runData);
 			updateButtonRight(tpData, runData);
 			updateButtonPause(tpData, runData);
@@ -243,7 +217,7 @@ class SessionPanel extends PluginPanel
 		consecutiveRepeatCount = 0;
 		previousLedger = ledger;
 		previousRunData = runData;
-				
+
 		TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 		TripStats tripStats = getTripStats(ledger);
 		tpData.setContentPanelBorder(sessionManager.isTimeInActiveSession(runData.runStartTime) ? tripActiveBorderColor : null);
@@ -253,13 +227,13 @@ class SessionPanel extends PluginPanel
 
 		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
 		tpData.bottomRightLabel
-				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
+			.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
 		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp()) + "/hr"));
 		tpData.topLeftLabel
-				.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
+			.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
 		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
 		tpData.topRightLabel
-				.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
+			.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
 		tpData.titlePanel.setContent("Trip " + (tripIndex + 1), "Started " + UIHelper.getTimeAgo(runData.runStartTime));
 		// buttons
 		UIHelper.clearListeners(tpData.buttonLeft);
@@ -299,7 +273,7 @@ class SessionPanel extends PluginPanel
 		tpData.buttonRight.addActionListener((event) ->
 		{
 			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?",
-					"Warning", JOptionPane.OK_CANCEL_OPTION);
+				"Warning", JOptionPane.OK_CANCEL_OPTION);
 
 			if (confirm == 0)
 			{
@@ -330,16 +304,16 @@ class SessionPanel extends PluginPanel
 		{
 			return false;
 		}
-		for (int i=0; i< ledgerOne.size(); ++i)
+		for (int i = 0; i < ledgerOne.size(); ++i)
 		{
 			InventoryTotalLedgerItem itemOne = ledgerOne.get(i);
 			InventoryTotalLedgerItem itemTwo = ledgerTwo.get(i);
 
-			if(itemOne.getQty() != itemTwo.getQty())
+			if (itemOne.getQty() != itemTwo.getQty())
 			{
 				return false;
 			}
-			if(itemOne.getItemId() != itemTwo.getItemId())
+			if (itemOne.getItemId() != itemTwo.getItemId())
 			{
 				return false;
 			}
@@ -350,7 +324,7 @@ class SessionPanel extends PluginPanel
 
 	TripPanelData getPanelData(int index)
 	{
-		ensureTripPanelCount(index+1);
+		ensureTripPanelCount(index + 1);
 		return tripPanels.get(index);
 	}
 
@@ -375,7 +349,8 @@ class SessionPanel extends PluginPanel
 			if (value > 0)
 			{
 				gains += value;
-			} else
+			}
+			else
 			{
 				losses += value;
 			}
@@ -402,7 +377,9 @@ class SessionPanel extends PluginPanel
 		void setContentPanelBorder(Color color)
 		{
 			if (color == null)
+			{
 				color = new Color(57, 57, 57);
+			}
 			contentPanel.setBorder(new MatteBorder(1, 1, 1, 1, color));
 		}
 	}
@@ -424,7 +401,7 @@ class SessionPanel extends PluginPanel
 		JPanel contentPanel = data.contentPanel;
 
 		masterPanel.setLayout(new BorderLayout());
-		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
+		masterPanel.setBorder(new EmptyBorder(5, 2, 0, 2));
 
 		JPanel bottomInfo = new JPanel();
 		JPanel topInfo = new JPanel();
@@ -502,15 +479,15 @@ class SessionPanel extends PluginPanel
 		return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
 	}
 
-    static
-    {
-        BufferedImage pausePNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-pause.png");
-        BufferedImage playPNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-play.png");
+	static
+	{
+		BufferedImage pausePNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-pause.png");
+		BufferedImage playPNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-play.png");
 
-        PAUSE_ICON = new ImageIcon(pausePNG);
-        PLAY_ICON = new ImageIcon(playPNG);
+		PAUSE_ICON = new ImageIcon(pausePNG);
+		PLAY_ICON = new ImageIcon(playPNG);
 
-    }
+	}
 
 	@RequiredArgsConstructor
 	@Data
