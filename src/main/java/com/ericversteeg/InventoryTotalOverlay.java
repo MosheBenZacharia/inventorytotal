@@ -456,16 +456,6 @@ class InventoryTotalOverlay extends Overlay
 		}
 	}
 
-	private static final float roundMultiplier = 1f/InventoryTotalPlugin.roundAmount;
-	
-	private String formatQuantity(float quantity)
-	{
-		quantity = Math.abs(quantity);
-		quantity = Math.round(quantity * roundMultiplier) / roundMultiplier;
-		String text = NumberFormat.getInstance(Locale.ENGLISH).format(quantity);
-		return text;
-	}
-
 	private void renderLedger(Graphics2D graphics)
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
@@ -486,7 +476,7 @@ class InventoryTotalOverlay extends Overlay
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = formatQuantity(item.getQty()) + " " + desc;
+				desc = UIHelper.formatQuantity(item.getQty(), true) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);
@@ -581,7 +571,7 @@ class InventoryTotalOverlay extends Overlay
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = formatQuantity(item.getQty()) + " " + desc;
+				desc = UIHelper.formatQuantity(item.getQty(), true) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);

@@ -54,7 +54,7 @@ class GPPerHourPanel extends PluginPanel
 		JPanel centerPanel = new JPanel();
 		this.setLayout(new BorderLayout());
 		centerPanel.add(tabGroup, BorderLayout.NORTH);
-		centerPanel. add(display, BorderLayout.CENTER);
+		centerPanel.add(display, BorderLayout.CENTER);
 
 		add(titlePanel, BorderLayout.NORTH);
 		add(centerPanel, BorderLayout.CENTER);

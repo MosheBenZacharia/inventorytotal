@@ -1,7 +1,9 @@
 package com.ericversteeg;
 
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
 
@@ -12,6 +14,19 @@ public class UIHelper
 	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
 	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
 
+	private static final float roundMultiplier = 1f/InventoryTotalPlugin.roundAmount;
+	
+	public static String formatQuantity(float quantity, boolean absolute)
+	{
+		if (absolute)
+		{
+			quantity = Math.abs(quantity);
+		}
+		quantity = Math.round(quantity * roundMultiplier) / roundMultiplier;
+		String text = NumberFormat.getInstance(Locale.ENGLISH).format(quantity);
+		return text;
+	}
+	
 	public static String getTimeAgo(long timestamp) {
 		long currentTime = Instant.now().toEpochMilli();
 		long timeDiff = currentTime - timestamp;
@@ -62,6 +77,13 @@ public class UIHelper
 			return String.format(PROFIT_LOSS_TIME_NO_HOURS_FORMAT, mins, secs);
 		}
 	}
+
+    public static String buildToolTip(String name, String quantity, String price, String combinedValue)
+    {
+        return "<html>" + name + " x " + quantity
+                + "<br/>Price: " + price
+                + "<br/>Total: " + combinedValue + "</html>";
+    }
 
 	public static long getGpPerHour(long runTime, long total)
 	{

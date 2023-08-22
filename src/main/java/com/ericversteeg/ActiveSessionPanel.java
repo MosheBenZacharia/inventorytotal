@@ -42,27 +42,28 @@ class ActiveSessionPanel extends PluginPanel
 	private static final Color lineColor = new Color(220, 138, 0);
 	private static final ImageIcon PAUSE_ICON;
 	private static final ImageIcon PLAY_ICON;
+    private static final int ITEMS_PER_ROW = 5;
+    private static final Dimension ITEM_SIZE = new Dimension(40, 40);
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
 	private final ItemManager itemManager;
 	private final ClientThread clientThread;
 	private final SessionManager sessionManager;
-	private final JPanel sidePanel;
+	private final JPanel tripsPanel = new JPanel();
 
 	// Panels
 	private final JPanel sessionInfoPanel;
 	private final List<TripPanelData> tripPanels = new LinkedList<>();
 
 	ActiveSessionPanel(InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager,
-					   ClientThread clientThread, SessionManager sessionManager)
+			ClientThread clientThread, SessionManager sessionManager)
 	{
 		this.plugin = plugin;
 		this.config = config;
 		this.itemManager = itemManager;
 		this.clientThread = clientThread;
 		this.sessionManager = sessionManager;
-		this.sidePanel = new JPanel();
 		this.sessionInfoPanel = new JPanel();
 	}
 
@@ -70,25 +71,27 @@ class ActiveSessionPanel extends PluginPanel
 	{
 		this.setLayout(new BorderLayout());
 		this.setBorder(new EmptyBorder(0, 0, 0, 0));
-		this.sidePanel.setLayout(new BoxLayout(this.sidePanel, BoxLayout.Y_AXIS));
-		this.sidePanel.add(Box.createRigidArea(new Dimension(0, 5)));
-		this.sidePanel.add(buildSessionInfoPanel());
+		this.add(buildSessionInfoPanel(), BorderLayout.NORTH);
 
 		JButton button = new JButton("Rebuild");
 		button.addActionListener((o) ->
 		{
 			for (TripPanelData data : tripPanels)
 			{
-				this.sidePanel.remove(data.masterPanel);
+				this.tripsPanel.remove(data.masterPanel);
 			}
 			this.tripPanels.clear();
 
 			log.info("is button pressed on client thread? " + (plugin.getClient().isClientThread()));
 			this.updateTrips();
 		});
-		this.sidePanel.add(button);
+		this.add(button, BorderLayout.CENTER);
 
-		this.add(sidePanel, "North");
+		tripsPanel.setLayout(new BoxLayout(this.tripsPanel, BoxLayout.Y_AXIS));
+		JScrollPane tripsScrollPane = new JScrollPane(tripsPanel);
+        tripsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        tripsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		this.add(tripsScrollPane, BorderLayout.SOUTH);
 	}
 
 	// (editable) - inventory setups for reference
@@ -136,7 +139,7 @@ class ActiveSessionPanel extends PluginPanel
 		Map<String, InventoryTotalRunData> trips = sessionManager.getActiveTrips();
 
 		List<InventoryTotalRunData> runDataSorted = trips.values().stream()
-			.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
+				.sorted(Comparator.comparingLong(o -> o.runStartTime)).collect(Collectors.toList());
 
 		int tripIndex = 0;
 		previousLedger = null;
@@ -170,17 +173,22 @@ class ActiveSessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
 
-		}
-		else
+		} else
 		{
 			sessionNameLabel.setText(sessionNameLabelPlaceholder);
-			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix, UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()), config.showExactGp()) + "/hr"));
-			netTotalLabel.setText(htmlLabel(netTotalLabelPrefix, UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
-			totalGainsLabel.setText(htmlLabel(totalGainsLabelPrefix, UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
-			totalLossesLabel.setText(htmlLabel(totalLossesLabelPrefix, UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
+			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,
+					UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()),
+							config.showExactGp()) + "/hr"));
+			netTotalLabel.setText(
+					htmlLabel(netTotalLabelPrefix, UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
+			totalGainsLabel.setText(
+					htmlLabel(totalGainsLabelPrefix, UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
+			totalLossesLabel.setText(
+					htmlLabel(totalLossesLabelPrefix, UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, UIHelper.formatTime(stats.getSessionRuntime())));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
-			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
+			avgTripDurationLabel
+					.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
 		}
 	}
 
@@ -195,11 +203,11 @@ class ActiveSessionPanel extends PluginPanel
 
 		// filter out anything with no change or change that will get rounded to 0
 		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
-			.collect(Collectors.toList());
+				.collect(Collectors.toList());
 
 		// sort by profit descending
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
-			.collect(Collectors.toList());
+				.collect(Collectors.toList());
 
 		if (!runData.isInProgress() && ledgersMatch(ledger, previousLedger))
 		{
@@ -208,7 +216,8 @@ class ActiveSessionPanel extends PluginPanel
 			TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 			int startIndex = tripIndex - consecutiveRepeatCount;
 			int endIndex = tripIndex;
-			tpData.titlePanel.setContent("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)", "Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
+			tpData.titlePanel.setContent("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)",
+					"Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
 			updateButtonMiddle(tpData, runData);
 			updateButtonRight(tpData, runData);
 			updateButtonPause(tpData, runData);
@@ -220,20 +229,24 @@ class ActiveSessionPanel extends PluginPanel
 
 		TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 		TripStats tripStats = getTripStats(ledger);
-		tpData.setContentPanelBorder(sessionManager.isTimeInActiveSession(runData.runStartTime) ? tripActiveBorderColor : null);
+		tpData.setContentPanelBorder(
+				sessionManager.isTimeInActiveSession(runData.runStartTime) ? tripActiveBorderColor : null);
 
 		tpData.masterPanel.setVisible(true);
-		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime) - runData.runStartTime;
+		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime)
+				- runData.runStartTime;
 
 		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
 		tpData.bottomRightLabel
-			.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
-		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp()) + "/hr"));
+				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
+		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ",
+				UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp())
+						+ "/hr"));
 		tpData.topLeftLabel
-			.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
+				.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
 		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
 		tpData.topRightLabel
-			.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
+				.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
 		tpData.titlePanel.setContent("Trip " + (tripIndex + 1), "Started " + UIHelper.getTimeAgo(runData.runStartTime));
 		// buttons
 		UIHelper.clearListeners(tpData.buttonLeft);
@@ -249,15 +262,16 @@ class ActiveSessionPanel extends PluginPanel
 		updateButtonRight(tpData, runData);
 		updateButtonPause(tpData, runData);
 
+		lootGrid(ledger, tpData);
+
 		return true;
 	}
 
 	void updateButtonMiddle(TripPanelData tpData, InventoryTotalRunData runData)
 	{
 		UIHelper.clearListeners(tpData.buttonMiddle);
-		tpData.buttonMiddle.setEnabled((sessionManager.getActiveSessionEndId() == null) ?
-			!runData.isInProgress() :
-			!sessionManager.getActiveSessionEndId().equals(runData.identifier));
+		tpData.buttonMiddle.setEnabled((sessionManager.getActiveSessionEndId() == null) ? !runData.isInProgress()
+				: !sessionManager.getActiveSessionEndId().equals(runData.identifier));
 		tpData.buttonMiddle.setText("Set End");
 		tpData.buttonMiddle.addActionListener((event) ->
 		{
@@ -272,8 +286,8 @@ class ActiveSessionPanel extends PluginPanel
 		tpData.buttonRight.setText("Delete");
 		tpData.buttonRight.addActionListener((event) ->
 		{
-			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?",
-				"Warning", JOptionPane.OK_CANCEL_OPTION);
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?", "Warning",
+					JOptionPane.OK_CANCEL_OPTION);
 
 			if (confirm == 0)
 			{
@@ -334,7 +348,7 @@ class ActiveSessionPanel extends PluginPanel
 		while (tripPanels.size() < size)
 		{
 			TripPanelData data = buildTripPanel();
-			this.sidePanel.add(data.masterPanel);
+			this.tripsPanel.add(data.masterPanel);
 			tripPanels.add(data);
 		}
 	}
@@ -349,8 +363,7 @@ class ActiveSessionPanel extends PluginPanel
 			if (value > 0)
 			{
 				gains += value;
-			}
-			else
+			} else
 			{
 				losses += value;
 			}
@@ -373,6 +386,8 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonMiddle = new JButton("Middle");
 		JButton buttonRight = new JButton("Right");
 		JPanel contentPanel = new JPanel();
+		JPanel lootPanel = new JPanel();
+		JPanel containerPanel = new JPanel();
 
 		void setContentPanelBorder(Color color)
 		{
@@ -399,6 +414,7 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonMiddle = data.buttonMiddle;
 		JButton buttonRight = data.buttonRight;
 		JPanel contentPanel = data.contentPanel;
+		JPanel lootPanel = data.lootPanel;
 
 		masterPanel.setLayout(new BorderLayout());
 		masterPanel.setBorder(new EmptyBorder(5, 2, 0, 2));
@@ -463,16 +479,87 @@ class ActiveSessionPanel extends PluginPanel
 		buttonPanel.add(buttonRight);
 		buttonPanel.setPreferredSize(new Dimension(0, 35));
 
+		lootPanel.setLayout(new BorderLayout());
+
 		contentPanel.setLayout(new BorderLayout());
 		contentPanel.add(titlePanel, BorderLayout.NORTH);
 		contentPanel.add(lootHeaderButtonPanel, BorderLayout.CENTER);
-		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+		contentPanel.add(lootPanel, BorderLayout.SOUTH);
 		contentPanel.setBackground(new Color(30, 30, 30));
 		data.setContentPanelBorder(null);
 
 		masterPanel.add(contentPanel, "North");
 
 		return data;
+	}
+
+	public void lootGrid(List<InventoryTotalLedgerItem> ledger, TripPanelData tpData)
+	{
+		JPanel containerCurrent = new JPanel();
+		int totalItems = ledger.size();
+
+		tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
+		containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
+
+		// Calculates how many rows need to be display to fit all items
+		final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
+		tpData.containerPanel.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
+		containerCurrent.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
+
+		// Create stacked items from the item list, calculates total price and then
+		// displays all the items in the UI.
+		for (InventoryTotalLedgerItem ledgerItem : ledger)
+		{
+			final JPanel slot = new JPanel();
+			slot.setLayout(new GridLayout(1, 1, 0, 0));
+			slot.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			slot.setPreferredSize(ITEM_SIZE);
+
+			final JLabel itemLabel = new JLabel();
+
+			itemLabel.setToolTipText(
+				UIHelper.buildToolTip(ledgerItem.getDescription(), UIHelper.formatQuantity(ledgerItem.getQty(), false),
+				 UIHelper.formatGp(ledgerItem.getPrice(), config.showExactGp()), UIHelper.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
+			itemLabel.setVerticalAlignment(SwingConstants.CENTER);
+			itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+			AsyncBufferedImage itemImage = itemManager.getImage(ledgerItem.getItemId(), (int) Math.ceil(Math.abs(ledgerItem.getQty())), Math.ceil(Math.abs(ledgerItem.getQty())) > 1);
+			itemImage.addTo(itemLabel);
+
+			slot.add(itemLabel);
+			containerCurrent.add(slot);
+		}
+		if (totalItems < 5 || totalItems % 5 != 0)
+		{
+			int extraBoxes;
+			if (totalItems % 5 != 0 && totalItems >= 5)
+			{
+				int i = totalItems;
+				while (i % 5 != 0)
+				{
+					i++;
+				}
+				extraBoxes = i - totalItems;
+			} else
+			{
+				extraBoxes = 5 - totalItems;
+			}
+			for (int i = 0; i < extraBoxes; i++)
+			{
+				final JPanel slot = new JPanel();
+				slot.setLayout(new GridLayout(1, 1, 0, 0));
+				slot.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				slot.setPreferredSize(ITEM_SIZE);
+
+				containerCurrent.add(slot);
+			}
+		}
+
+		tpData.lootPanel.remove(tpData.containerPanel);
+		tpData.containerPanel = containerCurrent;
+		tpData.lootPanel.add(tpData.containerPanel);
+		tpData.lootPanel.revalidate();
+		tpData.lootPanel.repaint();
 	}
 
 	static String htmlLabel(String key, String valueStr)
