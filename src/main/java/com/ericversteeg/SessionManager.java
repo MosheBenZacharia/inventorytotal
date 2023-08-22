@@ -84,7 +84,7 @@ public class SessionManager
 				continue;
 			}
 
-			List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(runData);
+			List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData);
 			for (InventoryTotalLedgerItem item : ledger)
 			{
 				long value = item.getCombinedValue();

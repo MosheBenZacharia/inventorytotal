@@ -223,7 +223,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
-		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(runData);
+		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData);
 
 		// filter out anything with no change or change that will get rounded to 0
 		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))

@@ -43,6 +43,12 @@ public class InventoryTotalPlugin extends Plugin
 	static final int DIVINE_RUNEPOUCH_ITEM_ID = 27281;
 	public static final float roundAmount = 0.1f;
 
+    // static item prices so that when ItemManager updates, the Profit / Loss value doesn't all of a sudden change
+    // this is cleared and repopulated at the start of each new run (after bank) and whenever new items hit the inventory
+    private static final Map<Integer, Integer> itemPrices = new HashMap<>();
+	//so we can do name lookups on the swing thread
+	private static final Map<Integer, String> itemNames = new HashMap<>();
+
 	@Inject
 	private ScheduledExecutorService executor;
 
@@ -443,7 +449,7 @@ public class InventoryTotalPlugin extends Plugin
 
 			Float qty = qtyMap.get(itemId);
 
-			Integer price = runData.itemPrices.get(itemId);
+			Integer price = itemPrices.get(itemId);
 			if (itemId == COINS || price == null)
 			{
 				price = 1;
@@ -565,8 +571,6 @@ public class InventoryTotalPlugin extends Plugin
 
 	static List<InventoryTotalLedgerItem> getProfitLossLedger(InventoryTotalRunData data)
 	{
-		Map<Integer, Integer> prices = data.itemPrices;
-		Map<Integer, String> names = data.itemNames;
 		Map<Integer, Float> initialQtys = data.initialItemQtys;
 		Map<Integer, Float> qtys = data.itemQtys;
 
@@ -598,8 +602,8 @@ public class InventoryTotalPlugin extends Plugin
 
 		for (Integer itemId: qtyDifferences.keySet())
 		{
-			String name = names.get(itemId);
-			Integer price = prices.get(itemId);
+			String name = itemNames.get(itemId);
+			Integer price = itemPrices.get(itemId);
 			if (price == null)
 			{
 				price = 1;
@@ -663,12 +667,12 @@ public class InventoryTotalPlugin extends Plugin
 
 	void updateRunData(boolean isNewRun, int itemId, float itemQty, int gePrice)
 	{
-		if (itemId != COINS && !runData.itemPrices.containsKey(itemId))
+		if (itemId != COINS && !itemPrices.containsKey(itemId))
 		{
-			runData.itemPrices.put(itemId, gePrice);
+			itemPrices.put(itemId, gePrice);
 		}
 
-		runData.itemNames.put(itemId, itemManager.getItemComposition(itemId).getName());
+		itemNames.put(itemId, itemManager.getItemComposition(itemId).getName());
 
 		if (isNewRun)
 		{
@@ -694,9 +698,9 @@ public class InventoryTotalPlugin extends Plugin
 
 	int getPrice(int itemId)
 	{
-		if (runData.itemPrices.containsKey(itemId))
+		if (itemPrices.containsKey(itemId))
 		{
-			return runData.itemPrices.get(itemId);
+			return itemPrices.get(itemId);
 		}
 		else
 		{

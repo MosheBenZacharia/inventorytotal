@@ -547,7 +547,7 @@ class InventoryTotalOverlay extends Overlay
 	{
 		FontMetrics fontMetrics = graphics.getFontMetrics();
 
-		List<InventoryTotalLedgerItem> ledger = plugin.getProfitLossLedger(plugin.getRunData());
+		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(plugin.getRunData());
 
 		List<InventoryTotalLedgerItem> gain = ledger.stream().filter(item -> item.getQty() > 0)
 				.collect(Collectors.toList());
