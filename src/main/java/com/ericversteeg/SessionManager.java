@@ -19,8 +19,7 @@ import net.runelite.client.plugins.Plugin;
 @Getter
 class SessionStats
 {
-	private final long sessionStartTime;
-	private final long sessionEndTime;
+	private final long sessionRuntime;
 	private final long totalGain;
 	private final long totalLoss;
 	private final long netTotal;
@@ -32,6 +31,7 @@ class SessionStats
 public class SessionManager
 {
 	private final InventoryTotalPlugin plugin;
+	private final InventoryTotalConfig config;
 
 	@Getter
 	private Map<String, InventoryTotalRunData> activeTrips = new HashMap<>();
@@ -40,9 +40,10 @@ public class SessionManager
 	@Getter
 	private String activeSessionEndId;
 
-	public SessionManager(InventoryTotalPlugin plugin)
+	public SessionManager(InventoryTotalPlugin plugin, InventoryTotalConfig config)
 	{
 		this.plugin = plugin;
+		this.config = config;
 	}
 
 	void startUp()
@@ -72,6 +73,7 @@ public class SessionManager
 		long gains = 0;
 		long losses = 0;
 		long tripDurationSum = 0;
+		long totalPauseTime = 0;
 		boolean foundStart = false;
 		int tripCount = 0;
 		for (InventoryTotalRunData runData : runDataSorted)
@@ -94,9 +96,11 @@ public class SessionManager
 					losses += value;
 				}
 			}
+			long tripPauseTime = runData.pauseTime;
 			long tripStartTime = runData.runStartTime;
 			long tripEndTime = runData.isInProgress() ? Instant.now().toEpochMilli() : runData.runEndTime;
-			tripDurationSum += (tripEndTime - tripStartTime);
+			tripDurationSum += (tripEndTime - tripStartTime) - tripPauseTime;
+			totalPauseTime += tripPauseTime;
 			tripCount++;
 
 			if (activeSessionEndId != null && activeSessionEndId.equals(runData.identifier))
@@ -109,12 +113,21 @@ public class SessionManager
 			log.error("couldn't find start session");
 			return null;
 		}
-		long sessionStartTime = getSessionStartTime();
-		long sessionEndTime = getSessionEndTime();
+		long sessionRuntime = 0;
+		if (config.ignoreBankTime())
+		{
+			sessionRuntime = tripDurationSum;
+		}
+		else
+		{
+			long sessionStartTime = getSessionStartTime();
+			long sessionEndTime = getSessionEndTime();
+			sessionRuntime = (sessionEndTime - sessionStartTime) - totalPauseTime;
+		}
 		long netTotal = gains + losses;
 		long avgTripDuration = (long) (tripDurationSum / ((float) tripCount));
 
-		return new SessionStats(sessionStartTime, sessionEndTime, gains, losses, netTotal, tripCount, avgTripDuration);
+		return new SessionStats(sessionRuntime, gains, losses, netTotal, tripCount, avgTripDuration);
 	}
 
 	long getSessionStartTime()

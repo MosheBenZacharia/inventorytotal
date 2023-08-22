@@ -136,7 +136,7 @@ public class InventoryTotalPlugin extends Plugin
 		lootingBagManager.startUp();
 
 		runData = getSavedData();
-		sessionManager = new SessionManager(this);
+		sessionManager = new SessionManager(this, config);
 		sessionManager.startUp();
 		sessionManager.onTripStarted(runData);
 		buildSidePanel();
@@ -169,16 +169,34 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		goldDropsObject.onScriptPreFired(scriptPreFired);
 	}
+
+	private Long lastTickTime = null;
+	
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
-		//TODO: REMOVE (JUST HERE TO MAKE TESTING EASIER)
-		SwingUtilities.invokeLater(() -> panel.updateTrips());
+		if(navButton.isSelected())
+		{
+			SwingUtilities.invokeLater(() -> panel.updateTrips());
+		}
 		
-        //1. If profit total changed generate gold drop (nice animation for showing gold earn or loss)
+		if (this.state == InventoryTotalState.RUN && runData.isPaused && lastTickTime != null)
+		{
+			runData.pauseTime += Instant.now().toEpochMilli() - lastTickTime;
+		}
+		lastTickTime = Instant.now().toEpochMilli();
+
+		checkGoldDrop();
+    }
+
+	// If profit total changed generate gold drop (nice animation for showing gold earn or loss)
+	void checkGoldDrop()
+	{
 		boolean isRun = this.state == InventoryTotalState.RUN;
+
 		if (!isRun)
 			return;
+
 		if (previousTotalGp == null)
 		{
 			previousTotalGp = Long.valueOf(totalGp);
@@ -189,15 +207,12 @@ public class InventoryTotalPlugin extends Plugin
 		if(tickProfit == 0)
 			return;
 
-		//TODO: re-enable this instead
-		// panel.updateTrips(sessionManager.getActiveTrips());
-
 		// generate gold drop
 		if (config.goldDrops() && config.enableProfitLoss() && tickProfit != 0)
 		{
 			goldDropsObject.requestGoldDrop(tickProfit);
 		}
-    }
+	}
 
 	@Provides
 	InventoryTotalConfig provideConfig(ConfigManager configManager)

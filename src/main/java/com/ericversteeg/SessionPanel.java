@@ -10,6 +10,7 @@ import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.PluginErrorPanel;
 import net.runelite.client.ui.components.ProgressBar;
+import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 import net.runelite.client.util.*;
 
 import javax.inject.Inject;
@@ -46,7 +47,7 @@ import java.util.List;
 class SessionPanel extends PluginPanel
 {
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
-	private static final String sessionNameLabelPlaceholder = "Unnamed Session";
+	private static final String sessionNameLabelPlaceholder = "Active Session";
 	private static final String gpPerHourLabelPrefix = "GP/hr: ";
 	private static final String netTotalLabelPrefix = "Net Total: ";
 	private static final String totalGainsLabelPrefix = "Total Gains: ";
@@ -55,6 +56,8 @@ class SessionPanel extends PluginPanel
 	private static final String tripCountLabelPrefix = "Trip Count: ";
 	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
 	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
+    private static final ImageIcon PAUSE_ICON;
+    private static final ImageIcon PLAY_ICON;
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -196,13 +199,12 @@ class SessionPanel extends PluginPanel
 
 		} else
 		{
-			long runtime = stats.getSessionEndTime() - stats.getSessionStartTime();
 			sessionNameLabel.setText(sessionNameLabelPlaceholder);
-			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,UIHelper.formatGp(UIHelper.getGpPerHour(runtime, stats.getNetTotal()), config.showExactGp())							+ "/hr"));
+			gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()), config.showExactGp())							+ "/hr"));
 			netTotalLabel.setText(htmlLabel(netTotalLabelPrefix, UIHelper.formatGp(stats.getNetTotal(), config.showExactGp())));
 			totalGainsLabel.setText(htmlLabel(totalGainsLabelPrefix, UIHelper.formatGp(stats.getTotalGain(), config.showExactGp())));
 			totalLossesLabel.setText(htmlLabel(totalLossesLabelPrefix, UIHelper.formatGp(stats.getTotalLoss(), config.showExactGp())));
-			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, UIHelper.formatTime(runtime)));
+			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, UIHelper.formatTime(stats.getSessionRuntime())));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
 		}
@@ -235,6 +237,7 @@ class SessionPanel extends PluginPanel
 			tpData.titlePanel.setContent("Trips "+ (startIndex+1) + "-" + (endIndex+1) +" (Identical)", "Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
 			updateButtonMiddle(tpData, runData);
 			updateButtonRight(tpData, runData);
+			updateButtonPause(tpData, runData);
 			return true;
 		}
 		consecutiveRepeatCount = 0;
@@ -265,10 +268,12 @@ class SessionPanel extends PluginPanel
 		tpData.buttonLeft.addActionListener((event) ->
 		{
 			sessionManager.setSessionStart(runData.identifier);
+			this.updateTrips();
 		});
 		updateButtonMiddle(tpData, runData);
 		UIHelper.clearListeners(tpData.buttonRight);
 		updateButtonRight(tpData, runData);
+		updateButtonPause(tpData, runData);
 
 		return true;
 	}
@@ -283,6 +288,7 @@ class SessionPanel extends PluginPanel
 		tpData.buttonMiddle.addActionListener((event) ->
 		{
 			sessionManager.setSessionEnd(runData.identifier);
+			this.updateTrips();
 		});
 	}
 
@@ -298,7 +304,19 @@ class SessionPanel extends PluginPanel
 			if (confirm == 0)
 			{
 				sessionManager.deleteSession(runData.identifier);
+				this.updateTrips();
 			}
+		});
+	}
+
+	void updateButtonPause(TripPanelData tpData, InventoryTotalRunData runData)
+	{
+		tpData.pauseButton.setVisible(runData.isInProgress());
+		tpData.pauseButton.setSelected(runData.isPaused);
+		tpData.pauseButton.addActionListener((event) ->
+		{
+			runData.isPaused = tpData.pauseButton.isSelected();
+			tpData.pauseButton.setSelected(runData.isPaused);
 		});
 	}
 
@@ -370,7 +388,7 @@ class SessionPanel extends PluginPanel
 	{
 		PluginErrorPanel titlePanel = new PluginErrorPanel();
 		JToggleButton lootHeaderButtonPanel = new JToggleButton();
-		JToggleButton hideItemButton = new JToggleButton();
+		JToggleButton pauseButton = new JToggleButton();
 		JLabel topLeftLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
 		JLabel bottomLeftLabel = new JLabel(htmlLabel("GP/hr: ", "N/A"));
 		JLabel topRightLabel = new JLabel(htmlLabel("Gains: ", "N/A"));
@@ -393,7 +411,7 @@ class SessionPanel extends PluginPanel
 	{
 		TripPanelData data = new TripPanelData();
 		JToggleButton lootHeaderButtonPanel = data.lootHeaderButtonPanel;
-		JToggleButton hideItemButton = data.hideItemButton;
+		JToggleButton pauseButton = data.pauseButton;
 		JLabel bottomLeftLabel = data.bottomLeftLabel;
 		JLabel topLeftLabel = data.topLeftLabel;
 		JLabel bottomRightLabel = data.bottomRightLabel;
@@ -411,8 +429,8 @@ class SessionPanel extends PluginPanel
 		JPanel bottomInfo = new JPanel();
 		JPanel topInfo = new JPanel();
 
-		titlePanel.setBorder(new EmptyBorder(10, 0, 3, 0));
-		titlePanel.setContent("Trip 1", "Repeated 4 times...");
+		titlePanel.setBorder(new EmptyBorder(10, 10, 3, 10));
+		titlePanel.setContent("Title", "Subtitle");
 
 		lootHeaderButtonPanel.setLayout(new GridLayout(2, 0, 0, 0));
 		bottomInfo.setLayout(new GridLayout(0, 2, 0, 0));
@@ -422,23 +440,19 @@ class SessionPanel extends PluginPanel
 
 		lootHeaderButtonPanel.setBorder(new EmptyBorder(4, 5, 0, 5));
 
-		// hideItemButton.setIcon(INVISABLE_ICON);
-		// hideItemButton.setSelectedIcon(VISIBLE_ICON);
+		pauseButton.setIcon(PAUSE_ICON);
+		pauseButton.setSelectedIcon(PLAY_ICON);
 
 		bottomLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		topLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		bottomRightLabel.setFont(FontManager.getRunescapeSmallFont());
 		topRightLabel.setFont(FontManager.getRunescapeSmallFont());
 
-		SwingUtil.removeButtonDecorations(hideItemButton);
+		SwingUtil.removeButtonDecorations(pauseButton);
 		SwingUtil.removeButtonDecorations(lootHeaderButtonPanel);
 		lootHeaderButtonPanel.setRolloverEnabled(false);
 
-		hideItemButton.setPreferredSize(new Dimension(20, 18));
-
-		// hideItemButton.addActionListener(e -> clientThread.invoke(() ->
-		// updateLootGrid(lootDisplayMap())));
-
+		pauseButton.setPreferredSize(new Dimension(20, 20));
 		// lootHeaderButtonPanel.addActionListener(e -> collapseLoot());
 
 		topLeftLabel.setForeground(Color.WHITE);
@@ -446,7 +460,7 @@ class SessionPanel extends PluginPanel
 		topInfo.setBorder(new EmptyBorder(0, 0, 0, 0));
 
 		topInfo.add(topLeftLabel, "West");
-		topInfo.add(hideItemButton, "East");
+		titlePanel.add(pauseButton, "East");
 
 		topRightLabel.setBorder(new EmptyBorder(0, 48, 0, 0));
 
@@ -487,6 +501,16 @@ class SessionPanel extends PluginPanel
 	{
 		return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
 	}
+
+    static
+    {
+        BufferedImage pausePNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-pause.png");
+        BufferedImage playPNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-play.png");
+
+        PAUSE_ICON = new ImageIcon(pausePNG);
+        PLAY_ICON = new ImageIcon(playPNG);
+
+    }
 
 	@RequiredArgsConstructor
 	@Data

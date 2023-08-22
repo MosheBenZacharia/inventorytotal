@@ -14,6 +14,7 @@ public class InventoryTotalRunData {
     Long runEndTime = null;
     //add to this while paused? then subtract when calculating duration
     long pauseTime = 0;
+    boolean isPaused = false;
 
     // static item prices so that when ItemManager updates, the Profit / Loss value doesn't all of a sudden change
     // this is cleared and repopulated at the start of each new run (after bank) and whenever new items hit the inventory

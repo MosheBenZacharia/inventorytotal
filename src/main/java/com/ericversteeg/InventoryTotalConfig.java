@@ -306,6 +306,17 @@ public interface InventoryTotalConfig extends Config
 		return "Cannon barrels, Cannon base, Cannon furnace, Cannon stand";
 	}
 
+
+	@ConfigItem(
+			position = 36,
+			keyName = "ignoreBankTime",
+			name = "Ignore Bank time",
+			description = "Don't count time with a bank UI open towards session time."
+	)
+	default boolean ignoreBankTime() {
+		return false;
+	}
+
     @ConfigItem(
             position = 50,
             keyName = "Side Panel Position",
