@@ -71,8 +71,11 @@ class ActiveSessionPanel extends PluginPanel
 	void sidePanelInitializer()
 	{
 		this.setLayout(new BorderLayout());
-		this.setBorder(new EmptyBorder(0, 0, 0, 0));
-		this.add(buildSessionInfoPanel(), BorderLayout.NORTH);
+
+		JPanel panelElements = new JPanel();
+		panelElements.setLayout(new BoxLayout(panelElements, BoxLayout.Y_AXIS));
+		panelElements.setBorder(new EmptyBorder(0, 0, 0, 0));
+		panelElements.add(buildSessionInfoPanel());
 
 		JButton button = new JButton("Rebuild");
 		button.addActionListener((o) ->
@@ -85,13 +88,15 @@ class ActiveSessionPanel extends PluginPanel
 
 			this.updateTrips();
 		});
-		this.add(button, BorderLayout.CENTER);
+		panelElements.add(button);
 
 		tripsPanel.setLayout(new BoxLayout(this.tripsPanel, BoxLayout.Y_AXIS));
 		JScrollPane tripsScrollPane = new JScrollPane(tripsPanel);
         tripsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tripsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		this.add(tripsScrollPane, BorderLayout.SOUTH);
+		panelElements.add(tripsScrollPane);
+
+		this.add(panelElements, BorderLayout.NORTH);
 	}
 
 	// (editable) - inventory setups for reference
@@ -106,7 +111,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	private JPanel buildSessionInfoPanel()
 	{
-		sessionInfoPanel.setLayout(new BorderLayout());
+		sessionInfoPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
 		JPanel sessionInfoSection = new JPanel(new GridBagLayout());
@@ -124,7 +129,7 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoSection.add(tripCountLabel);
 		sessionInfoSection.add(avgTripDurationLabel);
 
-		sessionInfoPanel.add(sessionInfoSection, "West");
+		sessionInfoPanel.add(sessionInfoSection);
 
 		return sessionInfoPanel;
 	}
