@@ -504,6 +504,7 @@ class ActiveSessionPanel extends PluginPanel
 		buttonLeft.setFont(buttonLeft.getFont().deriveFont(fontSize));
 		buttonPanel.add(buttonLeft);
 		buttonMiddle.setFont(buttonMiddle.getFont().deriveFont(fontSize));
+		buttonMiddle.setBorder(buttonBorder);
 		buttonPanel.add(buttonMiddle);
 		buttonRight.setFont(buttonRight.getFont().deriveFont(fontSize));
 		buttonPanel.add(buttonRight);
