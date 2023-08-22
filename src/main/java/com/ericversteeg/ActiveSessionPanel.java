@@ -461,8 +461,8 @@ class ActiveSessionPanel extends PluginPanel
 		topInfo.add(topRightLabel, "Center");
 		bottomInfo.add(bottomLeftLabel);
 		bottomInfo.add(bottomRightLabel);
-		topInfo.setBackground(new Color(30, 30, 30));
-		bottomInfo.setBackground(new Color(30, 30, 30));
+		topInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		bottomInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
 		lootHeaderButtonPanel.add(topInfo, "North");
 		lootHeaderButtonPanel.add(bottomInfo, "South");
@@ -482,11 +482,17 @@ class ActiveSessionPanel extends PluginPanel
 
 		lootPanel.setLayout(new BorderLayout());
 
+		JPanel topPanel = new JPanel();
+		topPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		topPanel.setLayout(new BorderLayout());
+		topPanel.add(titlePanel, BorderLayout.NORTH);
+		topPanel.add(lootHeaderButtonPanel, BorderLayout.SOUTH);
+
 		contentPanel.setLayout(new BorderLayout());
-		contentPanel.add(titlePanel, BorderLayout.NORTH);
-		contentPanel.add(lootHeaderButtonPanel, BorderLayout.CENTER);
-		contentPanel.add(lootPanel, BorderLayout.SOUTH);
-		contentPanel.setBackground(new Color(30, 30, 30));
+		contentPanel.add(topPanel, BorderLayout.NORTH);
+		contentPanel.add(lootPanel, BorderLayout.CENTER);
+		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+		contentPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		data.setContentPanelBorder(null);
 
 		masterPanel.add(contentPanel, "North");
@@ -499,8 +505,8 @@ class ActiveSessionPanel extends PluginPanel
 		JPanel containerCurrent = new JPanel();
 		int totalItems = ledger.size();
 
-		tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
-		containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
+		//tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
+		//containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
 
 		// Calculates how many rows need to be display to fit all items
 		final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
