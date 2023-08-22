@@ -104,18 +104,6 @@ class ActiveSessionPanel extends PluginPanel
 
 		add(container, BorderLayout.CENTER);
 
-		// JButton button = new JButton("Rebuild");
-		// button.addActionListener((o) ->
-		// {
-		// 	for (TripPanelData data : tripPanels)
-		// 	{
-		// 		this.tripsPanel.remove(data.masterPanel);
-		// 	}
-		// 	this.tripPanels.clear();
-
-		// 	this.updateTrips();
-		// });
-		// panelElements.add(button);
 	}
 
 	// (editable) - inventory setups for reference
@@ -130,7 +118,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	private JPanel buildSessionInfoPanel()
 	{
-		sessionInfoPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		sessionInfoPanel.setLayout(new BorderLayout());
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
 		JPanel sessionInfoSection = new JPanel(new GridBagLayout());
@@ -147,8 +135,20 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoSection.add(sessionTimeLabel);
 		sessionInfoSection.add(tripCountLabel);
 		sessionInfoSection.add(avgTripDurationLabel);
+		JButton button = new JButton("Rebuild");
+		button.addActionListener((o) ->
+		{
+			for (TripPanelData data : tripPanels)
+			{
+				this.tripsPanel.remove(data.masterPanel);
+			}
+			this.tripPanels.clear();
 
-		sessionInfoPanel.add(sessionInfoSection);
+			this.updateTrips();
+		});
+		
+		sessionInfoPanel.add(sessionInfoSection, BorderLayout.NORTH);
+		sessionInfoPanel.add(button, BorderLayout.CENTER);
 
 		return sessionInfoPanel;
 	}
@@ -447,7 +447,7 @@ class ActiveSessionPanel extends PluginPanel
 		JPanel lootPanel = data.lootPanel;
 
 		masterPanel.setLayout(new BorderLayout());
-		masterPanel.setBorder(new EmptyBorder(5, 2, 0, 2));
+		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
 
 		JPanel bottomInfo = new JPanel();
 		JPanel topInfo = new JPanel();

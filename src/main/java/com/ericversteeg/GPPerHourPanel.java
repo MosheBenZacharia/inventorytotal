@@ -41,7 +41,7 @@ class GPPerHourPanel extends PluginPanel
 
 		this.setLayout(new BorderLayout());
 		this.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		this.setBorder(new EmptyBorder(10, 10, 10, 10));
+		this.setBorder(new EmptyBorder(10, 5, 10, 5));
 
 		MaterialTab activeSessionTab = new MaterialTab("Active Session", tabGroup, activeSessionPanel);
 		sessionHistoryTab = new MaterialTab("Session History", tabGroup, sessionHistoryPanel);
