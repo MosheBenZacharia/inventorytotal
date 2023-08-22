@@ -39,7 +39,8 @@ class ActiveSessionPanel extends PluginPanel
 	private static final String tripCountLabelPrefix = "Trip Count: ";
 	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
 	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
-	private static final Color lineColor = new Color(220, 138, 0);
+	private static final Color redLootBackgroundColor = new Color(48, 15, 15);
+	private static final Color greenLootBackgroundColor = new Color(21, 43, 16);
 	private static final ImageIcon PAUSE_ICON;
 	private static final ImageIcon PLAY_ICON;
     private static final int ITEMS_PER_ROW = 5;
@@ -511,8 +512,9 @@ class ActiveSessionPanel extends PluginPanel
 		for (InventoryTotalLedgerItem ledgerItem : ledger)
 		{
 			final JPanel slot = new JPanel();
+			boolean wasGain = ledgerItem.getQty() > 0;
 			slot.setLayout(new GridLayout(1, 1, 0, 0));
-			slot.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			slot.setBackground(wasGain ? greenLootBackgroundColor : redLootBackgroundColor);
 			slot.setPreferredSize(ITEM_SIZE);
 
 			final JLabel itemLabel = new JLabel();
@@ -529,20 +531,20 @@ class ActiveSessionPanel extends PluginPanel
 			slot.add(itemLabel);
 			containerCurrent.add(slot);
 		}
-		if (totalItems < 5 || totalItems % 5 != 0)
+		if (totalItems < ITEMS_PER_ROW || totalItems % ITEMS_PER_ROW != 0)
 		{
 			int extraBoxes;
-			if (totalItems % 5 != 0 && totalItems >= 5)
+			if (totalItems % ITEMS_PER_ROW != 0 && totalItems >= ITEMS_PER_ROW)
 			{
 				int i = totalItems;
-				while (i % 5 != 0)
+				while (i % ITEMS_PER_ROW != 0)
 				{
 					i++;
 				}
 				extraBoxes = i - totalItems;
 			} else
 			{
-				extraBoxes = 5 - totalItems;
+				extraBoxes = ITEMS_PER_ROW - totalItems;
 			}
 			for (int i = 0; i < extraBoxes; i++)
 			{
