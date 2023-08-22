@@ -91,7 +91,6 @@ class ActiveSessionPanel extends PluginPanel
 		JScrollPane tripsScrollPane = new JScrollPane(tripsPanel);
         tripsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tripsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		tripsScrollPane.setPreferredSize(new Dimension(200, 600));
 		this.add(tripsScrollPane, BorderLayout.SOUTH);
 	}
 
