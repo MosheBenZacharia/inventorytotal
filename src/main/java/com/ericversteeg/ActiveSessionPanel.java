@@ -30,7 +30,7 @@ import java.util.List;
 class ActiveSessionPanel extends PluginPanel
 {
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
-	private static final String sessionNameLabelPlaceholder = "Active Session";
+	private static final String sessionNameLabelPlaceholder = "Session Stats";
 	private static final String gpPerHourLabelPrefix = "GP/hr: ";
 	private static final String netTotalLabelPrefix = "Net Total: ";
 	private static final String totalGainsLabelPrefix = "Total Gains: ";
@@ -461,11 +461,12 @@ class ActiveSessionPanel extends PluginPanel
 		buttonPanel.add(buttonMiddle);
 		buttonRight.setFont(buttonRight.getFont().deriveFont(fontSize));
 		buttonPanel.add(buttonRight);
+		buttonPanel.setPreferredSize(new Dimension(0, 35));
 
-		contentPanel.setLayout(new GridLayout(3, 0, 0, 0));
-		contentPanel.add(titlePanel);
-		contentPanel.add(lootHeaderButtonPanel);
-		contentPanel.add(buttonPanel);
+		contentPanel.setLayout(new BorderLayout());
+		contentPanel.add(titlePanel, BorderLayout.NORTH);
+		contentPanel.add(lootHeaderButtonPanel, BorderLayout.CENTER);
+		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
 		contentPanel.setBackground(new Color(30, 30, 30));
 		data.setContentPanelBorder(null);
 
