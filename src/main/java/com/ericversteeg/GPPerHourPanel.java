@@ -52,7 +52,6 @@ class GPPerHourPanel extends PluginPanel
 		tabGroup.select(activeSessionTab); // selects the default selected tab
 
 		JPanel centerPanel = new JPanel();
-		this.setLayout(new BorderLayout());
 		centerPanel.add(tabGroup, BorderLayout.NORTH);
 		centerPanel.add(display, BorderLayout.CENTER);
 
