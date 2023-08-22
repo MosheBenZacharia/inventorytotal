@@ -83,7 +83,6 @@ class ActiveSessionPanel extends PluginPanel
 			}
 			this.tripPanels.clear();
 
-			log.info("is button pressed on client thread? " + (plugin.getClient().isClientThread()));
 			this.updateTrips();
 		});
 		this.add(button, BorderLayout.CENTER);
@@ -92,6 +91,7 @@ class ActiveSessionPanel extends PluginPanel
 		JScrollPane tripsScrollPane = new JScrollPane(tripsPanel);
         tripsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tripsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		tripsScrollPane.setPreferredSize(new Dimension(200, 600));
 		this.add(tripsScrollPane, BorderLayout.SOUTH);
 	}
 
@@ -159,7 +159,7 @@ class ActiveSessionPanel extends PluginPanel
 		}
 		for (int i = (tripIndex - repeatCount); i < tripPanels.size(); ++i)
 		{
-			tripPanels.get(i).masterPanel.setVisible(false);
+			getPanelData(i).masterPanel.setVisible(false);
 		}
 
 		SessionStats stats = sessionManager.getActiveSessionStats();
@@ -248,7 +248,12 @@ class ActiveSessionPanel extends PluginPanel
 		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
 		tpData.topRightLabel
 				.setBorder(new EmptyBorder(0, 535 - fontMetrics.stringWidth(tpData.topLeftLabel.getText()), 0, 0));
-		tpData.titlePanel.setContent("Trip " + (tripIndex + 1), "Started " + UIHelper.getTimeAgo(runData.runStartTime));
+		String title = "Trip " + (tripIndex + 1);
+		if (runData.isInProgress())
+		{
+			title += " (Active)";
+		}
+		tpData.titlePanel.setContent(title, "Started " + UIHelper.getTimeAgo(runData.runStartTime));
 		// buttons
 		UIHelper.clearListeners(tpData.buttonLeft);
 		tpData.buttonLeft.setEnabled(!sessionManager.getActiveSessionStartId().equals(runData.identifier));
@@ -340,7 +345,7 @@ class ActiveSessionPanel extends PluginPanel
 	TripPanelData getPanelData(int index)
 	{
 		ensureTripPanelCount(index + 1);
-		return tripPanels.get(index);
+		return tripPanels.get((tripPanels.size()-1)-index);
 	}
 
 	// build out the pool
