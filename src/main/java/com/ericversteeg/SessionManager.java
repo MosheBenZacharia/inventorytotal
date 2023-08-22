@@ -25,6 +25,8 @@ class SessionStats
 	private final long netTotal;
 	private final int tripCount;
 	private final long avgTripDuration;
+	private final Map<Integer, Float> initialQtys;
+	private final Map<Integer, Float> qtys;
 }
 
 @Slf4j
@@ -76,6 +78,8 @@ public class SessionManager
 		long totalPauseTime = 0;
 		boolean foundStart = false;
 		int tripCount = 0;
+		Map<Integer, Float> initialQtys = new HashMap<>();
+		Map<Integer, Float> qtys = new HashMap<>();
 		for (InventoryTotalRunData runData : runDataSorted)
 		{
 			foundStart |= runData.identifier.equals(activeSessionStartId);
@@ -83,8 +87,16 @@ public class SessionManager
 			{
 				continue;
 			}
+			for (Integer initialId : runData.initialItemQtys.keySet())
+			{
+				initialQtys.merge(initialId, runData.initialItemQtys.get(initialId), Float::sum);
+			}
+			for (Integer itemId : runData.itemQtys.keySet())
+			{
+				qtys.merge(itemId, runData.itemQtys.get(itemId), Float::sum);
+			}
 
-			List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData);
+			List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData.initialItemQtys, runData.itemQtys);
 			for (InventoryTotalLedgerItem item : ledger)
 			{
 				long value = item.getCombinedValue();
@@ -128,7 +140,7 @@ public class SessionManager
 		long netTotal = gains + losses;
 		long avgTripDuration = (long) (tripDurationSum / ((float) tripCount));
 
-		return new SessionStats(sessionRuntime, gains, losses, netTotal, tripCount, avgTripDuration);
+		return new SessionStats(sessionRuntime, gains, losses, netTotal, tripCount, avgTripDuration, initialQtys, qtys);
 	}
 
 	long getSessionStartTime()

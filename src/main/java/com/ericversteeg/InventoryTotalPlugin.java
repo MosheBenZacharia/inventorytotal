@@ -569,11 +569,8 @@ public class InventoryTotalPlugin extends Plugin
 		return chargeableItemsNeedingCheck;
 	}
 
-	static List<InventoryTotalLedgerItem> getProfitLossLedger(InventoryTotalRunData data)
+	static List<InventoryTotalLedgerItem> getProfitLossLedger(Map<Integer, Float> initialQtys, Map<Integer, Float> qtys)
 	{
-		Map<Integer, Float> initialQtys = data.initialItemQtys;
-		Map<Integer, Float> qtys = data.itemQtys;
-
 		Map<Integer, Float> qtyDifferences = new HashMap<>();
 
 		HashSet<Integer> combinedQtyKeys = new HashSet<>();

@@ -115,6 +115,7 @@ class ActiveSessionPanel extends PluginPanel
 	private final JLabel sessionTimeLabel = new JLabel(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 	private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
 	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
+	private final LootPanelData sessionLootPanelData = new LootPanelData();
 
 	private JPanel buildSessionInfoPanel()
 	{
@@ -147,11 +148,16 @@ class ActiveSessionPanel extends PluginPanel
 			this.updateTrips();
 		});
 		
+		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
 		sessionInfoPanel.add(sessionInfoSection, BorderLayout.NORTH);
-		sessionInfoPanel.add(button, BorderLayout.CENTER);
+		sessionInfoPanel.add(sessionLootPanelData.lootPanel, BorderLayout.CENTER);
+		sessionInfoPanel.add(button, BorderLayout.SOUTH);
 
 		return sessionInfoPanel;
 	}
+
+	//avoid GC
+	private final List<InventoryTotalLedgerItem> emptyLedger = new LinkedList<>();
 
 	void updateTrips()
 	{
@@ -196,6 +202,7 @@ class ActiveSessionPanel extends PluginPanel
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
+			lootGrid(emptyLedger, null);
 
 		} else
 		{
@@ -213,6 +220,7 @@ class ActiveSessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
 			avgTripDurationLabel
 					.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
+			lootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()), sessionLootPanelData);
 		}
 	}
 
@@ -223,7 +231,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
-		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData);
+		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData.initialItemQtys, runData.itemQtys);
 
 		// filter out anything with no change or change that will get rounded to 0
 		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
@@ -291,7 +299,7 @@ class ActiveSessionPanel extends PluginPanel
 		updateButtonRight(tpData, runData);
 		updateButtonPause(tpData, runData);
 
-		lootGrid(ledger, tpData);
+		lootGrid(ledger, tpData.lootPanelData);
 
 		return true;
 	}
@@ -402,6 +410,12 @@ class ActiveSessionPanel extends PluginPanel
 		return new TripStats(gains, losses, net);
 	}
 
+	private class LootPanelData
+	{
+		JPanel lootPanel = new JPanel();
+		JPanel containerPanel = new JPanel();
+	}
+
 	private class TripPanelData
 	{
 		PluginErrorPanel titlePanel = new PluginErrorPanel();
@@ -416,8 +430,7 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonMiddle = new JButton("Middle");
 		JButton buttonRight = new JButton("Right");
 		JPanel contentPanel = new JPanel();
-		JPanel lootPanel = new JPanel();
-		JPanel containerPanel = new JPanel();
+		LootPanelData lootPanelData = new LootPanelData();
 
 		void setContentPanelBorder(Color color)
 		{
@@ -444,7 +457,7 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonMiddle = data.buttonMiddle;
 		JButton buttonRight = data.buttonRight;
 		JPanel contentPanel = data.contentPanel;
-		JPanel lootPanel = data.lootPanel;
+		JPanel lootPanel = data.lootPanelData.lootPanel;
 
 		masterPanel.setLayout(new BorderLayout());
 		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
@@ -530,7 +543,7 @@ class ActiveSessionPanel extends PluginPanel
 		return data;
 	}
 
-	public void lootGrid(List<InventoryTotalLedgerItem> ledger, TripPanelData tpData)
+	public void lootGrid(List<InventoryTotalLedgerItem> ledger, LootPanelData lootPanelData)
 	{
 		JPanel containerCurrent = new JPanel();
 		int totalItems = ledger.size();
@@ -540,7 +553,7 @@ class ActiveSessionPanel extends PluginPanel
 
 		// Calculates how many rows need to be display to fit all items
 		final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
-		tpData.containerPanel.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
+		lootPanelData.containerPanel.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
 		containerCurrent.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
 
 		// Create stacked items from the item list, calculates total price and then
@@ -593,11 +606,11 @@ class ActiveSessionPanel extends PluginPanel
 			}
 		}
 
-		tpData.lootPanel.remove(tpData.containerPanel);
-		tpData.containerPanel = containerCurrent;
-		tpData.lootPanel.add(tpData.containerPanel);
-		tpData.lootPanel.revalidate();
-		tpData.lootPanel.repaint();
+		lootPanelData.lootPanel.remove(lootPanelData.containerPanel);
+		lootPanelData.containerPanel = containerCurrent;
+		lootPanelData.lootPanel.add(lootPanelData.containerPanel);
+		lootPanelData.lootPanel.revalidate();
+		lootPanelData.lootPanel.repaint();
 	}
 
 	static String htmlLabel(String key, String valueStr)
