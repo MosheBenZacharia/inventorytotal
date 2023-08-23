@@ -67,7 +67,7 @@ class GPPerHourPanel extends PluginPanel
 		titlePanel.setLayout(new BorderLayout());
 		PluginErrorPanel errorPanel = new PluginErrorPanel();
 		errorPanel.setBorder(new EmptyBorder(2, 0, 10, 0));
-		errorPanel.setContent("GP/hr", "Tracks your GP/hr over various trips.");
+		errorPanel.setContent("GP Per Hour", "Tracks your GP/hr over various trips.");
 		titlePanel.add(errorPanel, "Center");
 		return titlePanel;
 	}
