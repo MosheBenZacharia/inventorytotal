@@ -15,20 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.plugins.Plugin;
 
-@RequiredArgsConstructor
-@Getter
-class SessionStats
-{
-	private final long sessionRuntime;
-	private final long totalGain;
-	private final long totalLoss;
-	private final long netTotal;
-	private final int tripCount;
-	private final long avgTripDuration;
-	private final Map<Integer, Float> initialQtys;
-	private final Map<Integer, Float> qtys;
-}
-
 @Slf4j
 public class SessionManager
 {
@@ -36,7 +22,7 @@ public class SessionManager
 	private final InventoryTotalConfig config;
 
 	@Getter
-	private Map<String, InventoryTotalRunData> activeTrips = new HashMap<>();
+	private final Map<String, InventoryTotalRunData> activeTrips = new HashMap<>();
 	@Getter
 	private String activeSessionStartId;
 	@Getter
