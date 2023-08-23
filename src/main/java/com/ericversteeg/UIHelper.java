@@ -3,6 +3,7 @@ package com.ericversteeg;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
@@ -27,6 +28,34 @@ public class UIHelper
 		return text;
 	}
 	
+	public static boolean ledgersMatch(List<InventoryTotalLedgerItem> ledgerOne, List<InventoryTotalLedgerItem> ledgerTwo)
+	{
+		if (ledgerOne == null || ledgerTwo == null)
+		{
+			return false;
+		}
+		if (ledgerOne.size() != ledgerTwo.size())
+		{
+			return false;
+		}
+		for (int i = 0; i < ledgerOne.size(); ++i)
+		{
+			InventoryTotalLedgerItem itemOne = ledgerOne.get(i);
+			InventoryTotalLedgerItem itemTwo = ledgerTwo.get(i);
+
+			if (itemOne.getQty() != itemTwo.getQty())
+			{
+				return false;
+			}
+			if (itemOne.getItemId() != itemTwo.getItemId())
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static String getTimeAgo(long timestamp) {
 		long currentTime = Instant.now().toEpochMilli();
 		long timeDiff = currentTime - timestamp;

@@ -43,8 +43,8 @@ class ActiveSessionPanel extends PluginPanel
 	private static final Color greenLootBackgroundColor = new Color(21, 43, 16);
 	private static final ImageIcon PAUSE_ICON;
 	private static final ImageIcon PLAY_ICON;
-    private static final int ITEMS_PER_ROW = 5;
-    private static final Dimension ITEM_SIZE = new Dimension(40, 40);
+	private static final int ITEMS_PER_ROW = 5;
+	private static final Dimension ITEM_SIZE = new Dimension(40, 40);
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -73,7 +73,7 @@ class ActiveSessionPanel extends PluginPanel
 	{
 		this.setLayout(new BorderLayout());
 
-		/*  The main container, this holds the session info and trips */
+		/* The main container, this holds the session info and trips */
 		JPanel container = new JPanel();
 		container.setLayout(new BorderLayout(0, 0));
 		container.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -92,7 +92,7 @@ class ActiveSessionPanel extends PluginPanel
 		wrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		wrapper.add(tripsPanel, BorderLayout.NORTH);
 
-		/*  The trips wrapper, this scrolling panel wraps the results container */
+		/* The trips wrapper, this scrolling panel wraps the results container */
 		JScrollPane tripsWrapper = new JScrollPane(wrapper);
 		tripsWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		tripsWrapper.getVerticalScrollBar().setPreferredSize(new Dimension(12, 0));
@@ -147,7 +147,7 @@ class ActiveSessionPanel extends PluginPanel
 
 			this.updateTrips();
 		});
-		
+
 		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
 		sessionInfoPanel.add(sessionInfoSection, BorderLayout.NORTH);
 		sessionInfoPanel.add(sessionLootPanelData.lootPanel, BorderLayout.CENTER);
@@ -156,7 +156,7 @@ class ActiveSessionPanel extends PluginPanel
 		return sessionInfoPanel;
 	}
 
-	//avoid GC
+	// avoid GC
 	private final List<InventoryTotalLedgerItem> emptyLedger = new LinkedList<>();
 
 	void updateTrips()
@@ -220,7 +220,8 @@ class ActiveSessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
 			avgTripDurationLabel
 					.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
-			lootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()), sessionLootPanelData);
+			lootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()),
+					sessionLootPanelData);
 		}
 	}
 
@@ -228,10 +229,12 @@ class ActiveSessionPanel extends PluginPanel
 	List<InventoryTotalLedgerItem> previousLedger = null;
 	int repeatCount = 0;
 	int consecutiveRepeatCount = 0;
+	long previousGpPerHour = 0;
 
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
-		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData.initialItemQtys, runData.itemQtys);
+		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData.initialItemQtys,
+				runData.itemQtys);
 
 		// filter out anything with no change or change that will get rounded to 0
 		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
@@ -241,23 +244,28 @@ class ActiveSessionPanel extends PluginPanel
 		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
 				.collect(Collectors.toList());
 
-		if (!runData.isInProgress() && ledgersMatch(ledger, previousLedger))
+		if (!runData.isInProgress() && UIHelper.ledgersMatch(ledger, previousLedger))
 		{
 			consecutiveRepeatCount++;
 			repeatCount++;
 			TripPanelData tpData = getPanelData(tripIndex - repeatCount);
+			TripStats tripStats = getTripStats(ledger);
 			int startIndex = tripIndex - consecutiveRepeatCount;
 			int endIndex = tripIndex;
+			long runtime =  runData.getRuntime();
 			tpData.titlePanel.setContent("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)",
 					"Started " + UIHelper.getTimeAgo(previousRunData.runStartTime));
+			long gpPerHour = UIHelper.getGpPerHour(runtime, tripStats.getNetTotal());
+			//average it into previous
+			gpPerHour = (long) (((previousGpPerHour * consecutiveRepeatCount) + gpPerHour) / ((float) consecutiveRepeatCount + 1));
+			tpData.bottomLeftLabel
+					.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, config.showExactGp()) + "/hr"));
 			updateButtonMiddle(tpData, runData);
 			updateButtonRight(tpData, runData);
 			updateButtonPause(tpData, runData);
+			previousGpPerHour = gpPerHour;
 			return true;
 		}
-		consecutiveRepeatCount = 0;
-		previousLedger = ledger;
-		previousRunData = runData;
 
 		TripPanelData tpData = getPanelData(tripIndex - repeatCount);
 		TripStats tripStats = getTripStats(ledger);
@@ -265,15 +273,14 @@ class ActiveSessionPanel extends PluginPanel
 				sessionManager.isTimeInActiveSession(runData.runStartTime) ? tripActiveBorderColor : null);
 
 		tpData.masterPanel.setVisible(true);
-		long runtime = (runData.runEndTime == null ? Instant.now().toEpochMilli() : runData.runEndTime)
-				- runData.runStartTime;
+		long runtime = runData.getRuntime();
 
 		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
 		tpData.bottomRightLabel
 				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
-		tpData.bottomLeftLabel.setText(htmlLabel("GP/hr: ",
-				UIHelper.formatGp(UIHelper.getGpPerHour(runtime, tripStats.getNetTotal()), config.showExactGp())
-						+ "/hr"));
+		long gpPerHour = UIHelper.getGpPerHour(runtime, tripStats.getNetTotal());
+		tpData.bottomLeftLabel
+				.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, config.showExactGp()) + "/hr"));
 		tpData.topLeftLabel
 				.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
 		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
@@ -300,6 +307,11 @@ class ActiveSessionPanel extends PluginPanel
 		updateButtonPause(tpData, runData);
 
 		lootGrid(ledger, tpData.lootPanelData);
+
+		consecutiveRepeatCount = 0;
+		previousLedger = ledger;
+		previousRunData = runData;
+		previousGpPerHour = gpPerHour;
 
 		return true;
 	}
@@ -345,38 +357,10 @@ class ActiveSessionPanel extends PluginPanel
 		});
 	}
 
-	boolean ledgersMatch(List<InventoryTotalLedgerItem> ledgerOne, List<InventoryTotalLedgerItem> ledgerTwo)
-	{
-		if (ledgerOne == null || ledgerTwo == null)
-		{
-			return false;
-		}
-		if (ledgerOne.size() != ledgerTwo.size())
-		{
-			return false;
-		}
-		for (int i = 0; i < ledgerOne.size(); ++i)
-		{
-			InventoryTotalLedgerItem itemOne = ledgerOne.get(i);
-			InventoryTotalLedgerItem itemTwo = ledgerTwo.get(i);
-
-			if (itemOne.getQty() != itemTwo.getQty())
-			{
-				return false;
-			}
-			if (itemOne.getItemId() != itemTwo.getItemId())
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	TripPanelData getPanelData(int index)
 	{
 		ensureTripPanelCount(index + 1);
-		return tripPanels.get((tripPanels.size()-1)-index);
+		return tripPanels.get((tripPanels.size() - 1) - index);
 	}
 
 	// build out the pool
@@ -548,8 +532,8 @@ class ActiveSessionPanel extends PluginPanel
 		JPanel containerCurrent = new JPanel();
 		int totalItems = ledger.size();
 
-		//tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
-		//containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
+		// tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
+		// containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
 
 		// Calculates how many rows need to be display to fit all items
 		final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
@@ -568,13 +552,15 @@ class ActiveSessionPanel extends PluginPanel
 
 			final JLabel itemLabel = new JLabel();
 
-			itemLabel.setToolTipText(
-				UIHelper.buildToolTip(ledgerItem.getDescription(), UIHelper.formatQuantity(ledgerItem.getQty(), false),
-				 UIHelper.formatGp(ledgerItem.getPrice(), config.showExactGp()), UIHelper.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
+			itemLabel.setToolTipText(UIHelper.buildToolTip(ledgerItem.getDescription(),
+					UIHelper.formatQuantity(ledgerItem.getQty(), false),
+					UIHelper.formatGp(ledgerItem.getPrice(), config.showExactGp()),
+					UIHelper.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
 			itemLabel.setVerticalAlignment(SwingConstants.CENTER);
 			itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-			AsyncBufferedImage itemImage = itemManager.getImage(ledgerItem.getItemId(), (int) Math.ceil(Math.abs(ledgerItem.getQty())), Math.ceil(Math.abs(ledgerItem.getQty())) > 1);
+			AsyncBufferedImage itemImage = itemManager.getImage(ledgerItem.getItemId(),
+					(int) Math.ceil(Math.abs(ledgerItem.getQty())), Math.ceil(Math.abs(ledgerItem.getQty())) > 1);
 			itemImage.addTo(itemLabel);
 
 			slot.add(itemLabel);

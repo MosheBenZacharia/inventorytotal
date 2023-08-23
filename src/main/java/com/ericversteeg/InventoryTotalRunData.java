@@ -1,5 +1,6 @@
 package com.ericversteeg;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -24,6 +25,12 @@ public class InventoryTotalRunData {
     boolean isInProgress()
     {
         return runEndTime == null;
+    }
+
+    long getRuntime()
+    {
+        return (runEndTime == null ? Instant.now().toEpochMilli() : runEndTime)
+				- runStartTime;
     }
 
     //its in the period between banking finished (onNewRun) and two ticks later when we call onPostNewRun
