@@ -14,6 +14,7 @@ public class UIHelper
 {
 	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
 	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
+	private static final NumberFormat englishFormat = NumberFormat.getInstance(Locale.ENGLISH);
 
 	private static final float roundMultiplier = 1f/InventoryTotalPlugin.roundAmount;
 	
@@ -24,7 +25,7 @@ public class UIHelper
 			quantity = Math.abs(quantity);
 		}
 		quantity = Math.round(quantity * roundMultiplier) / roundMultiplier;
-		String text = NumberFormat.getInstance(Locale.ENGLISH).format(quantity);
+		String text = englishFormat.format(quantity);
 		return text;
 	}
 	
