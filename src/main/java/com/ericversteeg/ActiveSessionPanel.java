@@ -50,12 +50,14 @@ class ActiveSessionPanel extends PluginPanel
 	private static final ImageIcon SESSIONINFO_STOP_ICON;
 	private static final ImageIcon SESSIONINFO_PLAY_ICON;
 	private static final ImageIcon SESSIONINFO_TRASH_ICON;
+	private static final ImageIcon SESSIONINFO_SAVE_ICON;
 	private static final ImageIcon SESSIONINFO_GEAR_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_REFRESH_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_WRENCH_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_STOP_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_PLAY_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_TRASH_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_SAVE_HOVER_ICON;
 	private static final int ITEMS_PER_ROW = 5;
 	private static final Dimension ITEM_SIZE = new Dimension(40, 40);
 
@@ -173,6 +175,24 @@ class ActiveSessionPanel extends PluginPanel
 			}
 		});
 		JLabel settingsButton = UIHelper.createIconButton(SESSIONINFO_GEAR_ICON, SESSIONINFO_GEAR_HOVER_ICON, "Open configuration", ()-> { clientThread.invokeLater(() -> {plugin.openConfiguration();});});
+		JLabel saveButton = UIHelper.createIconButton(SESSIONINFO_SAVE_ICON, SESSIONINFO_SAVE_HOVER_ICON, "Save session", ()-> { 
+
+			String name = JOptionPane.showInputDialog(this,
+				"Enter the name of this session.",
+				"Save Session",
+				JOptionPane.PLAIN_MESSAGE);
+
+			// cancel button was clicked
+			if (name == null)
+			{
+				return;
+			}
+			if (name.isEmpty())
+			{
+				name = "Unnamed Session";
+			}
+			plugin.saveSession(name);
+		});
 		JLabel debugButton = UIHelper.createIconButton(SESSIONINFO_WRENCH_ICON, SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
 		{
 			for (TripPanelData data : tripPanels)
@@ -189,6 +209,7 @@ class ActiveSessionPanel extends PluginPanel
 		iconButtons.add(refreshPricesButton);
 		iconButtons.add(deleteTripsButton);
 		iconButtons.add(settingsButton);
+		iconButtons.add(saveButton);
 		iconButtons.add(debugButton);
 
 		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
@@ -709,6 +730,9 @@ class ActiveSessionPanel extends PluginPanel
 		final BufferedImage trashIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-trash.png");
 		SESSIONINFO_TRASH_ICON = new ImageIcon(trashIcon);
 		SESSIONINFO_TRASH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(trashIcon, hoverAlphaOffset));
+		final BufferedImage saveIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-save.png");
+		SESSIONINFO_SAVE_ICON = new ImageIcon(saveIcon);
+		SESSIONINFO_SAVE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(saveIcon, hoverAlphaOffset));
 	}
 
 	@RequiredArgsConstructor

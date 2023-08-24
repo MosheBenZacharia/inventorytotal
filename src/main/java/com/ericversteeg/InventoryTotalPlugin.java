@@ -5,6 +5,8 @@ import com.ericversteeg.weaponcharges.WeaponChargesManager;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Type;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -143,6 +145,7 @@ public class InventoryTotalPlugin extends Plugin
 		lootingBagManager.startUp();
 
 		runData = getSavedData();
+		loadSessions();
 		sessionManager = new SessionManager(this, config);
 		sessionManager.startUp();
 		sessionManager.onTripStarted(runData);
@@ -765,6 +768,55 @@ public class InventoryTotalPlugin extends Plugin
 			return createRunData();
 		}
 		return savedData;
+	}
+
+	List<SessionStats> sessionHistory = new LinkedList<>();
+	List<String> savedSessionIdentifiers = null;
+
+	void saveSession(String name)
+	{
+		if (savedSessionIdentifiers == null)
+		{
+			log.error("can't save, hasn't loaded yet.");
+			return;
+		}
+		executor.execute(()->
+		{
+			SessionStats statsToSave = sessionManager.getActiveSessionStats();
+			statsToSave.sessionName = name;
+			statsToSave.sessionID = UUID.randomUUID().toString();
+			sessionHistory.add(statsToSave);
+
+			String json = gson.toJson(statsToSave);
+			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(statsToSave.sessionID), json);
+
+			savedSessionIdentifiers.add(statsToSave.sessionID);
+			saveSessionIdentifiers();
+		});
+	}
+
+	void saveSessionIdentifiers()
+	{
+		String json = gson.toJson(savedSessionIdentifiers);
+		configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.sessionIdentifiersKey, json);
+	}
+
+	void loadSessions()
+	{
+		executor.execute(()->
+		{
+			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();
+			savedSessionIdentifiers = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.sessionIdentifiersKey), listType);
+			if (savedSessionIdentifiers == null)
+			{
+				savedSessionIdentifiers = new LinkedList<>();
+			}
+			for (String sessionIdentifier : savedSessionIdentifiers)
+			{
+				SessionStats sessionStats = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
+				sessionHistory.add(sessionStats);
+			}
+		});
 	}
 
 	private InventoryTotalRunData createRunData()

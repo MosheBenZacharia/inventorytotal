@@ -14,6 +14,13 @@ public interface InventoryTotalConfig extends Config
 	String fish_barrel = "fish_barrel";
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
+	String sessionKey = "session_stats_";
+	String sessionIdentifiersKey = "session_ids";
+
+	static String getSessionKey(String identifier)
+	{
+		return sessionKey + identifier;
+	}
 
 	@ConfigItem(
 			position = 0,

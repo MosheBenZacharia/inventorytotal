@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 class SessionStats
 {
+	String sessionID;
+	String sessionName;
 	private final long sessionRuntime;
 	private final long totalGain;
 	private final long totalLoss;
