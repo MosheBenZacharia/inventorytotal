@@ -40,6 +40,7 @@ import net.runelite.api.events.ItemDespawned;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.kit.KitType;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -229,12 +230,31 @@ public class WeaponChargesManager
 			if (verboseLogging) log.info("pages checked. setting last used weapon to {}", lastUsedOnWeapon.toString());
 		}
 
+		checkWidgetOnWidget(event);
+	}
+
+	void checkWidgetOnWidget(MenuOptionClicked event)
+	{
 		if (event.getMenuAction() == MenuAction.WIDGET_TARGET_ON_WIDGET) {
 			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
-			Item itemUsed = itemContainer.getItem(client.getSelectedWidget().getIndex());
+			if (itemContainer == null)
+			{
+				return;
+			}
+			Widget selectedWidget = client.getSelectedWidget();
+			if (selectedWidget == null)
+			{
+				return;
+			}
+			Item itemUsed = itemContainer.getItem(selectedWidget.getIndex());
 			if (itemUsed == null) return;
 			int itemUsedId = itemUsed.getId();
-			Item itemUsedOn = itemContainer.getItem(event.getWidget().getIndex());
+			Widget eventWidget = event.getWidget();
+			if (eventWidget == null)
+			{
+				return;
+			}
+			Item itemUsedOn = itemContainer.getItem(eventWidget.getIndex());
 			if (itemUsedOn == null) return;
 			int itemUsedOnId = itemUsedOn.getId();
 			lastUsedOnWeapon = ChargedWeapon.getChargedWeaponFromId(itemUsedId);
