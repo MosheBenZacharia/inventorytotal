@@ -117,17 +117,24 @@ class InventoryTotalOverlay extends Overlay
 		{
 			isBank = true;
 		}
+		//Grand exchange can be open while inventory widget is closed, same functionality as above
+		Widget grandExchange = client.getWidget(WidgetInfo.GRAND_EXCHANGE_WINDOW_CONTAINER);
+		if (grandExchange != null && !grandExchange.isHidden())
+		{
+			isBank = true;
+		}
 
 		if (inventoryWidget == null || inventoryWidget.getCanvasLocation().getX() < 0 || inventoryWidget.isHidden())
 		{
 			Widget [] altInventoryWidgets = new Widget[]
 			{
+				//Bank
 				client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER),
-				//GE shouldn't count either
+				//GE
 				client.getWidget(WidgetInfo.GRAND_EXCHANGE_INVENTORY_ITEMS_CONTAINER),
-				//With equipment open
+				//Bank with equipment view open
 				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 4),
-				//With looting bag open
+				//Bank with looting bag open
 				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 5),
 				client.getWidget(WidgetInfo.DEPOSIT_BOX_INVENTORY_ITEMS_CONTAINER)
 			};
