@@ -375,7 +375,7 @@ class ActiveSessionPanel extends PluginPanel
 		if (runData.isInProgress())
 		{
 			tpData.buttonMiddle.setText("Continue");
-			tpData.buttonMiddle.setToolTipText("Allow the session to continue tracking new trips.");
+			tpData.buttonMiddle.setToolTipText("Include new trips in the active session.");
 			tpData.buttonMiddle.addActionListener((event) ->
 			{
 				sessionManager.setSessionEnd(null);
@@ -468,6 +468,7 @@ class ActiveSessionPanel extends PluginPanel
 	{
 		JPanel lootPanel = new JPanel();
 		JPanel containerPanel = new JPanel();
+		List<InventoryTotalLedgerItem> previousLedger = new LinkedList<InventoryTotalLedgerItem>();
 	}
 
 	private class TripPanelData
@@ -532,7 +533,7 @@ class ActiveSessionPanel extends PluginPanel
 
 		pauseButton.setIcon(PAUSE_ICON);
 		pauseButton.setSelectedIcon(PLAY_ICON);
-		pauseButton.setToolTipText("Set this trip as the start of the active session.");
+		pauseButton.setToolTipText("Pause time tracking for this trip.");
 
 		bottomLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		topLeftLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -600,6 +601,11 @@ class ActiveSessionPanel extends PluginPanel
 
 	public void lootGrid(List<InventoryTotalLedgerItem> ledger, LootPanelData lootPanelData)
 	{
+		if (UIHelper.ledgersMatch(ledger, lootPanelData.previousLedger))
+		{
+			return;
+		}
+		lootPanelData.previousLedger = ledger;
 		JPanel containerCurrent = new JPanel();
 		int totalItems = ledger.size();
 
