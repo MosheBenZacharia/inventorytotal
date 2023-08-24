@@ -787,6 +787,10 @@ public class InventoryTotalPlugin extends Plugin
 		executor.execute(()->
 		{
 			SessionStats statsToSave = sessionManager.getActiveSessionStats();
+			if (statsToSave == null)
+			{
+				return;
+			}
 			statsToSave.sessionName = name;
 			statsToSave.sessionID = UUID.randomUUID().toString();
 			statsToSave.sessionSaveTime = Instant.now().toEpochMilli();

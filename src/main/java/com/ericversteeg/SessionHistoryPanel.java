@@ -136,7 +136,7 @@ public class SessionHistoryPanel extends JPanel
 			ensurePanelCount(sessionIndex + 1);
 			renderHistoryPanel(sessions.get(sessionIndex), historyPanels.get(sessionIndex));
 		}
-		for(int i = sessionIndex; sessionIndex < historyPanels.size(); ++i)
+		for(int i = sessionIndex; i < historyPanels.size(); ++i)
 		{
 			historyPanels.get(i).masterPanel.setVisible(false);
 		}
