@@ -159,6 +159,10 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
+		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory())
+		{
+			SwingUtilities.invokeLater(() -> sessionHistoryPanel.updateSessions());
+		}
 	}
 
 	@Override
@@ -178,7 +182,7 @@ public class InventoryTotalPlugin extends Plugin
         activeSessionPanel = new ActiveSessionPanel(this, config, itemManager, clientThread, sessionManager);
         activeSessionPanel.sidePanelInitializer();
 
-		sessionHistoryPanel = new SessionHistoryPanel();
+		sessionHistoryPanel = new SessionHistoryPanel(this, config, itemManager, clientThread, sessionManager);
 
 		gpPerHourPanel = new GPPerHourPanel(activeSessionPanel, sessionHistoryPanel);
 
@@ -785,6 +789,7 @@ public class InventoryTotalPlugin extends Plugin
 			SessionStats statsToSave = sessionManager.getActiveSessionStats();
 			statsToSave.sessionName = name;
 			statsToSave.sessionID = UUID.randomUUID().toString();
+			statsToSave.sessionSaveTime = Instant.now().toEpochMilli();
 			sessionHistory.add(statsToSave);
 
 			String json = gson.toJson(statsToSave);

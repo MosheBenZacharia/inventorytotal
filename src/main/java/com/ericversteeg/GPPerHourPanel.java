@@ -77,6 +77,11 @@ class GPPerHourPanel extends PluginPanel
 		return activeSessionPanel.isShowing();
 	}
 
+	boolean isShowingSessionHistory()
+	{
+		return sessionHistoryPanel.isShowing();
+	}
+
 	void showActiveSession()
 	{
 		if (activeSessionPanel.isShowing())

@@ -39,8 +39,6 @@ class ActiveSessionPanel extends PluginPanel
 	private static final String tripCountLabelPrefix = "Trip Count: ";
 	private static final String avgTripDurationLabelPrefix = "Avg Trip Duration: ";
 	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
-	private static final Color redLootBackgroundColor = new Color(48, 15, 15);
-	private static final Color greenLootBackgroundColor = new Color(21, 43, 16);
 	private static final Color borderColor = new Color(57, 57, 57);
 	private static final ImageIcon PAUSE_ICON;
 	private static final ImageIcon PLAY_ICON;
@@ -58,8 +56,6 @@ class ActiveSessionPanel extends PluginPanel
 	private static final ImageIcon SESSIONINFO_PLAY_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_TRASH_HOVER_ICON;
 	private static final ImageIcon SESSIONINFO_SAVE_HOVER_ICON;
-	private static final int ITEMS_PER_ROW = 5;
-	private static final Dimension ITEM_SIZE = new Dimension(40, 40);
 
 	private final InventoryTotalConfig config;
 	private final InventoryTotalPlugin plugin;
@@ -131,7 +127,7 @@ class ActiveSessionPanel extends PluginPanel
 	private final JLabel sessionTimeLabel = new JLabel(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 	private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
 	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
-	private final LootPanelData sessionLootPanelData = new LootPanelData();
+	private final UIHelper.LootPanelData sessionLootPanelData = new UIHelper.LootPanelData();
 
 	private JPanel buildSessionInfoPanel()
 	{
@@ -273,7 +269,7 @@ class ActiveSessionPanel extends PluginPanel
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
-			lootGrid(emptyLedger, sessionLootPanelData);
+			UIHelper.updateLootGrid(emptyLedger, sessionLootPanelData, itemManager, config);
 
 		} else
 		{
@@ -291,8 +287,8 @@ class ActiveSessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
 			avgTripDurationLabel
 					.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
-			lootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()),
-					sessionLootPanelData);
+			UIHelper.updateLootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()),
+					sessionLootPanelData, itemManager, config);
 		}
 	}
 
@@ -378,7 +374,7 @@ class ActiveSessionPanel extends PluginPanel
 		updateButtonRight(tpData, runData, true);
 		updateButtonPause(tpData, runData);
 
-		lootGrid(ledger, tpData.lootPanelData);
+		UIHelper.updateLootGrid(ledger, tpData.lootPanelData, itemManager, config);
 
 		consecutiveRepeatCount = 0;
 		previousLedger = ledger;
@@ -451,6 +447,7 @@ class ActiveSessionPanel extends PluginPanel
 	TripPanelData getPanelData(int index)
 	{
 		ensureTripPanelCount(index + 1);
+		//render latest on top
 		return tripPanels.get((tripPanels.size() - 1) - index);
 	}
 
@@ -485,13 +482,6 @@ class ActiveSessionPanel extends PluginPanel
 		return new TripStats(gains, losses, net);
 	}
 
-	private class LootPanelData
-	{
-		JPanel lootPanel = new JPanel();
-		JPanel containerPanel = new JPanel();
-		List<InventoryTotalLedgerItem> previousLedger = new LinkedList<InventoryTotalLedgerItem>();
-	}
-
 	private class TripPanelData
 	{
 		PluginErrorPanel titlePanel = new PluginErrorPanel();
@@ -506,7 +496,7 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonMiddle = new JButton("Middle");
 		JButton buttonRight = new JButton("Right");
 		JPanel contentPanel = new JPanel();
-		LootPanelData lootPanelData = new LootPanelData();
+		UIHelper.LootPanelData lootPanelData = new UIHelper.LootPanelData();
 
 		void setContentPanelBorder(Color color)
 		{
@@ -618,83 +608,6 @@ class ActiveSessionPanel extends PluginPanel
 		masterPanel.add(contentPanel, "North");
 
 		return data;
-	}
-
-	public void lootGrid(List<InventoryTotalLedgerItem> ledger, LootPanelData lootPanelData)
-	{
-		if (UIHelper.ledgersMatch(ledger, lootPanelData.previousLedger))
-		{
-			return;
-		}
-		lootPanelData.previousLedger = ledger;
-		JPanel containerCurrent = new JPanel();
-		int totalItems = ledger.size();
-
-		// tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
-		// containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
-
-		// Calculates how many rows need to be display to fit all items
-		final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
-		lootPanelData.containerPanel.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
-		containerCurrent.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
-
-		// Create stacked items from the item list, calculates total price and then
-		// displays all the items in the UI.
-		for (InventoryTotalLedgerItem ledgerItem : ledger)
-		{
-			final JPanel slot = new JPanel();
-			boolean wasGain = ledgerItem.getQty() > 0;
-			slot.setLayout(new GridLayout(1, 1, 0, 0));
-			slot.setBackground(wasGain ? greenLootBackgroundColor : redLootBackgroundColor);
-			slot.setPreferredSize(ITEM_SIZE);
-
-			final JLabel itemLabel = new JLabel();
-
-			itemLabel.setToolTipText(UIHelper.buildToolTip(ledgerItem.getDescription(),
-					UIHelper.formatQuantity(ledgerItem.getQty(), false),
-					UIHelper.formatGp(ledgerItem.getPrice(), config.showExactGp()),
-					UIHelper.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
-			itemLabel.setVerticalAlignment(SwingConstants.CENTER);
-			itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-			AsyncBufferedImage itemImage = itemManager.getImage(ledgerItem.getItemId(),
-					(int) Math.ceil(Math.abs(ledgerItem.getQty())), Math.ceil(Math.abs(ledgerItem.getQty())) > 1);
-			itemImage.addTo(itemLabel);
-
-			slot.add(itemLabel);
-			containerCurrent.add(slot);
-		}
-		if (totalItems < ITEMS_PER_ROW || totalItems % ITEMS_PER_ROW != 0)
-		{
-			int extraBoxes;
-			if (totalItems % ITEMS_PER_ROW != 0 && totalItems >= ITEMS_PER_ROW)
-			{
-				int i = totalItems;
-				while (i % ITEMS_PER_ROW != 0)
-				{
-					i++;
-				}
-				extraBoxes = i - totalItems;
-			} else
-			{
-				extraBoxes = ITEMS_PER_ROW - totalItems;
-			}
-			for (int i = 0; i < extraBoxes; i++)
-			{
-				final JPanel slot = new JPanel();
-				slot.setLayout(new GridLayout(1, 1, 0, 0));
-				slot.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				slot.setPreferredSize(ITEM_SIZE);
-
-				containerCurrent.add(slot);
-			}
-		}
-
-		lootPanelData.lootPanel.remove(lootPanelData.containerPanel);
-		lootPanelData.containerPanel = containerCurrent;
-		lootPanelData.lootPanel.add(lootPanelData.containerPanel);
-		lootPanelData.lootPanel.revalidate();
-		lootPanelData.lootPanel.repaint();
 	}
 
 	static String htmlLabel(String key, String valueStr)

@@ -10,6 +10,7 @@ class SessionStats
 {
 	String sessionID;
 	String sessionName;
+	long sessionSaveTime;
 	private final long sessionRuntime;
 	private final long totalGain;
 	private final long totalLoss;
