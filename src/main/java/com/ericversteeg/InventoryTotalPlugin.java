@@ -14,12 +14,14 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
@@ -28,6 +30,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import net.runelite.client.util.ImageUtil;
+
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 
 @PluginDescriptor(
 	name = "Inventory Total",
@@ -308,6 +312,21 @@ public class InventoryTotalPlugin extends Plugin
 		}
 
 		return totalGp;
+	}
+	
+    public void openConfiguration() {
+		// We don't have access to the ConfigPlugin so let's just emulate an overlay click
+		this.eventBus.post(new OverlayMenuClicked(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, null, null), this.overlay));
+    }
+
+	public void refreshPrices()
+	{
+		List<Integer> itemIds = new LinkedList<>(itemPrices.keySet());
+		itemPrices.clear();
+		for(Integer itemId : itemIds)
+		{
+			itemPrices.put(itemId, getPrice(itemId));
+		}
 	}
 
 	//no GC
@@ -600,6 +619,10 @@ public class InventoryTotalPlugin extends Plugin
 		for (Integer itemId: qtyDifferences.keySet())
 		{
 			String name = itemNames.get(itemId);
+			if (name == null)
+			{
+				continue;
+			}
 			Integer price = itemPrices.get(itemId);
 			if (price == null)
 			{

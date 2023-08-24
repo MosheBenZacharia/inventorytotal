@@ -6,8 +6,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import javax.swing.JButton;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseAdapter;
 import net.runelite.client.util.QuantityFormatter;
 
 public class UIHelper
@@ -27,6 +33,36 @@ public class UIHelper
 		quantity = Math.round(quantity * roundMultiplier) / roundMultiplier;
 		String text = englishFormat.format(quantity);
 		return text;
+	}
+
+	public static JLabel createIconButton(ImageIcon defaultIcon, ImageIcon hoverIcon, String tooltipText, Runnable onClick)
+	{
+		JLabel label = new JLabel(defaultIcon);
+		label.setToolTipText(tooltipText);
+		label.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				if (SwingUtilities.isLeftMouseButton(e))
+				{
+					onClick.run();
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				label.setIcon(hoverIcon);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				label.setIcon(defaultIcon);
+			}
+		});
+		return label;
 	}
 	
 	public static boolean ledgersMatch(List<InventoryTotalLedgerItem> ledgerOne, List<InventoryTotalLedgerItem> ledgerTwo)
@@ -65,19 +101,18 @@ public class UIHelper
 			return "In the future";
 		}
 
-		long seconds = TimeUnit.MILLISECONDS.toSeconds(timeDiff);
-		long minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+		long minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiff) % 60;
 		long hours = TimeUnit.MILLISECONDS.toHours(timeDiff);
 		long days = TimeUnit.MILLISECONDS.toDays(timeDiff);
 		
         if (days > 0) {
             return days + " day" + (days > 1 ? "s" : "") + " ago";
         } else if (hours > 0) {
-            return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+            return hours + " hour" + (hours > 1 ? "s" : "") +" and " + minutes + " minute" + (minutes != 1 ? "s" : "") + " ago";
         } else if (minutes > 0) {
             return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
         } else {
-            return seconds + " second" + (seconds > 1 ? "s" : "") + " ago";
+            return "less than a minute ago";
         }
 	}
 

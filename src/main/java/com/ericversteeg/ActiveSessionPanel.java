@@ -41,8 +41,21 @@ class ActiveSessionPanel extends PluginPanel
 	private static final Color tripActiveBorderColor = new Color(37, 107, 31);
 	private static final Color redLootBackgroundColor = new Color(48, 15, 15);
 	private static final Color greenLootBackgroundColor = new Color(21, 43, 16);
+	private static final Color borderColor = new Color(57, 57, 57);
 	private static final ImageIcon PAUSE_ICON;
 	private static final ImageIcon PLAY_ICON;
+	private static final ImageIcon SESSIONINFO_GEAR_ICON;
+	private static final ImageIcon SESSIONINFO_REFRESH_ICON;
+	private static final ImageIcon SESSIONINFO_WRENCH_ICON;
+	private static final ImageIcon SESSIONINFO_STOP_ICON;
+	private static final ImageIcon SESSIONINFO_PLAY_ICON;
+	private static final ImageIcon SESSIONINFO_TRASH_ICON;
+	private static final ImageIcon SESSIONINFO_GEAR_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_REFRESH_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_WRENCH_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_STOP_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_PLAY_HOVER_ICON;
+	private static final ImageIcon SESSIONINFO_TRASH_HOVER_ICON;
 	private static final int ITEMS_PER_ROW = 5;
 	private static final Dimension ITEM_SIZE = new Dimension(40, 40);
 
@@ -106,7 +119,8 @@ class ActiveSessionPanel extends PluginPanel
 
 	}
 
-	// (editable) - inventory setups for reference
+	private JLabel startTrackingButton;
+	private JLabel stopTrackingButton;
 	private final JLabel sessionNameLabel = new JLabel(sessionNameLabelPlaceholder);
 	private final JLabel gpPerHourLabel = new JLabel(htmlLabel(gpPerHourLabelPrefix, "N/A"));
 	private final JLabel netTotalLabel = new JLabel(htmlLabel(netTotalLabelPrefix, "N/A"));
@@ -119,7 +133,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	private JPanel buildSessionInfoPanel()
 	{
-		sessionInfoPanel.setLayout(new BorderLayout());
+		sessionInfoPanel.setLayout(new BorderLayout(0, 5));
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
 		JPanel sessionInfoSection = new JPanel(new GridBagLayout());
@@ -136,24 +150,60 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoSection.add(sessionTimeLabel);
 		sessionInfoSection.add(tripCountLabel);
 		sessionInfoSection.add(avgTripDurationLabel);
-		JButton button = new JButton("Rebuild");
-		button.addActionListener((o) ->
+
+		//icon buttons
+		startTrackingButton = UIHelper.createIconButton(SESSIONINFO_PLAY_ICON, SESSIONINFO_PLAY_HOVER_ICON, "Start tracking new trips", ()-> { 
+			sessionManager.startTracking(); 
+			updateStopStartVisibility();
+		});
+		stopTrackingButton = UIHelper.createIconButton(SESSIONINFO_STOP_ICON, SESSIONINFO_STOP_HOVER_ICON, "Stop tracking new trips", ()-> { 
+			sessionManager.stopTracking();
+			updateStopStartVisibility();
+		});
+		updateStopStartVisibility();
+		JLabel refreshPricesButton = UIHelper.createIconButton(SESSIONINFO_REFRESH_ICON, SESSIONINFO_REFRESH_HOVER_ICON, "Refresh prices", ()-> { clientThread.invokeLater(() -> {plugin.refreshPrices();});});
+		JLabel deleteTripsButton = UIHelper.createIconButton(SESSIONINFO_TRASH_ICON, SESSIONINFO_TRASH_HOVER_ICON, "Delete all trips", ()-> { 
+
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete all trips?", "Warning",
+						JOptionPane.OK_CANCEL_OPTION);
+			if (confirm == 0)
+			{
+				sessionManager.deleteAllTrips();
+				this.updateTrips();
+			}
+		});
+		JLabel settingsButton = UIHelper.createIconButton(SESSIONINFO_GEAR_ICON, SESSIONINFO_GEAR_HOVER_ICON, "Open configuration", ()-> { clientThread.invokeLater(() -> {plugin.openConfiguration();});});
+		JLabel debugButton = UIHelper.createIconButton(SESSIONINFO_WRENCH_ICON, SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
 		{
 			for (TripPanelData data : tripPanels)
 			{
 				this.tripsPanel.remove(data.masterPanel);
 			}
 			this.tripPanels.clear();
-
 			this.updateTrips();
 		});
 
+		JPanel iconButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+		iconButtons.add(startTrackingButton);
+		iconButtons.add(stopTrackingButton);
+		iconButtons.add(refreshPricesButton);
+		iconButtons.add(deleteTripsButton);
+		iconButtons.add(settingsButton);
+		iconButtons.add(debugButton);
+
 		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
+		sessionLootPanelData.lootPanel.setBorder(new MatteBorder(1,1,1,1,borderColor));
 		sessionInfoPanel.add(sessionInfoSection, BorderLayout.NORTH);
 		sessionInfoPanel.add(sessionLootPanelData.lootPanel, BorderLayout.CENTER);
-		sessionInfoPanel.add(button, BorderLayout.SOUTH);
+		sessionInfoPanel.add(iconButtons, BorderLayout.SOUTH);
 
 		return sessionInfoPanel;
+	}
+
+	void updateStopStartVisibility()
+	{
+		startTrackingButton.setVisible(!sessionManager.isTracking());
+		stopTrackingButton.setVisible(sessionManager.isTracking());
 	}
 
 	// avoid GC
@@ -202,7 +252,7 @@ class ActiveSessionPanel extends PluginPanel
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
-			lootGrid(emptyLedger, null);
+			lootGrid(emptyLedger, sessionLootPanelData);
 
 		} else
 		{
@@ -261,7 +311,7 @@ class ActiveSessionPanel extends PluginPanel
 			tpData.bottomLeftLabel
 					.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, config.showExactGp()) + "/hr"));
 			updateButtonMiddle(tpData, runData);
-			updateButtonRight(tpData, runData);
+			updateButtonRight(tpData, runData, false);
 			updateButtonPause(tpData, runData);
 			previousGpPerHour = gpPerHour;
 			return true;
@@ -296,6 +346,7 @@ class ActiveSessionPanel extends PluginPanel
 		UIHelper.clearListeners(tpData.buttonLeft);
 		tpData.buttonLeft.setEnabled(!sessionManager.getActiveSessionStartId().equals(runData.identifier));
 		tpData.buttonLeft.setText("Set Start");
+		tpData.buttonLeft.setToolTipText("Set this trip as the start of the active session.");
 		tpData.buttonLeft.addActionListener((event) ->
 		{
 			sessionManager.setSessionStart(runData.identifier);
@@ -303,7 +354,7 @@ class ActiveSessionPanel extends PluginPanel
 		});
 		updateButtonMiddle(tpData, runData);
 		UIHelper.clearListeners(tpData.buttonRight);
-		updateButtonRight(tpData, runData);
+		updateButtonRight(tpData, runData, true);
 		updateButtonPause(tpData, runData);
 
 		lootGrid(ledger, tpData.lootPanelData);
@@ -321,26 +372,45 @@ class ActiveSessionPanel extends PluginPanel
 		UIHelper.clearListeners(tpData.buttonMiddle);
 		tpData.buttonMiddle.setEnabled((sessionManager.getActiveSessionEndId() == null) ? !runData.isInProgress()
 				: !sessionManager.getActiveSessionEndId().equals(runData.identifier));
-		tpData.buttonMiddle.setText("Set End");
-		tpData.buttonMiddle.addActionListener((event) ->
+		if (runData.isInProgress())
 		{
-			sessionManager.setSessionEnd(runData.identifier);
-			this.updateTrips();
-		});
+			tpData.buttonMiddle.setText("Continue");
+			tpData.buttonMiddle.setToolTipText("Allow the session to continue tracking new trips.");
+			tpData.buttonMiddle.addActionListener((event) ->
+			{
+				sessionManager.setSessionEnd(null);
+				this.updateTrips();
+			});
+		}
+		else
+		{
+			tpData.buttonMiddle.setText("Set End");
+			tpData.buttonMiddle.setToolTipText("Set this trip as the end of the active session.");
+			tpData.buttonMiddle.addActionListener((event) ->
+			{
+				sessionManager.setSessionEnd(runData.identifier);
+				this.updateTrips();
+			});
+		}
 	}
 
-	void updateButtonRight(TripPanelData tpData, InventoryTotalRunData runData)
+	void updateButtonRight(TripPanelData tpData, InventoryTotalRunData runData, boolean includeConfirmation)
 	{
 		tpData.buttonRight.setEnabled(!runData.isInProgress());
 		tpData.buttonRight.setText("Delete");
+		tpData.buttonRight.setToolTipText("Delete this trip.");
 		tpData.buttonRight.addActionListener((event) ->
 		{
-			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?", "Warning",
-					JOptionPane.OK_CANCEL_OPTION);
+			int confirm = 0;
+			if (includeConfirmation)
+			{
+				confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?", "Warning",
+						JOptionPane.OK_CANCEL_OPTION);
+			}
 
 			if (confirm == 0)
 			{
-				sessionManager.deleteSession(runData.identifier);
+				sessionManager.deleteTrip(runData.identifier);
 				this.updateTrips();
 			}
 		});
@@ -420,7 +490,7 @@ class ActiveSessionPanel extends PluginPanel
 		{
 			if (color == null)
 			{
-				color = new Color(57, 57, 57);
+				color = borderColor;
 			}
 			contentPanel.setBorder(new MatteBorder(1, 1, 1, 1, color));
 		}
@@ -462,6 +532,7 @@ class ActiveSessionPanel extends PluginPanel
 
 		pauseButton.setIcon(PAUSE_ICON);
 		pauseButton.setSelectedIcon(PLAY_ICON);
+		pauseButton.setToolTipText("Set this trip as the start of the active session.");
 
 		bottomLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		topLeftLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -505,7 +576,7 @@ class ActiveSessionPanel extends PluginPanel
 		buttonPanel.add(buttonMiddle);
 		buttonRight.setFont(buttonRight.getFont().deriveFont(fontSize));
 		buttonPanel.add(buttonRight);
-		buttonPanel.setPreferredSize(new Dimension(0, 35));
+		buttonPanel.setPreferredSize(new Dimension(0, 30));
 
 		lootPanel.setLayout(new BorderLayout());
 
@@ -612,6 +683,26 @@ class ActiveSessionPanel extends PluginPanel
 		PAUSE_ICON = new ImageIcon(pausePNG);
 		PLAY_ICON = new ImageIcon(playPNG);
 
+		//Session info tray
+		final float hoverAlphaOffset = .53f;
+		final BufferedImage importIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-gear.png");
+		SESSIONINFO_GEAR_ICON = new ImageIcon(importIcon);
+		SESSIONINFO_GEAR_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(importIcon, hoverAlphaOffset));
+		final BufferedImage refreshIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-refresh.png");
+		SESSIONINFO_REFRESH_ICON = new ImageIcon(refreshIcon);
+		SESSIONINFO_REFRESH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(refreshIcon, hoverAlphaOffset));
+		final BufferedImage wrenchIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-wrench.png");
+		SESSIONINFO_WRENCH_ICON = new ImageIcon(wrenchIcon);
+		SESSIONINFO_WRENCH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(wrenchIcon, hoverAlphaOffset));
+		final BufferedImage stopIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-stop.png");
+		SESSIONINFO_STOP_ICON = new ImageIcon(stopIcon);
+		SESSIONINFO_STOP_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(stopIcon, hoverAlphaOffset));
+		final BufferedImage playIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-play.png");
+		SESSIONINFO_PLAY_ICON = new ImageIcon(playIcon);
+		SESSIONINFO_PLAY_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(playIcon, hoverAlphaOffset));
+		final BufferedImage trashIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-trash.png");
+		SESSIONINFO_TRASH_ICON = new ImageIcon(trashIcon);
+		SESSIONINFO_TRASH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(trashIcon, hoverAlphaOffset));
 	}
 
 	@RequiredArgsConstructor

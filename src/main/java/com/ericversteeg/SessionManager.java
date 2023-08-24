@@ -27,6 +27,8 @@ public class SessionManager
 	private String activeSessionStartId;
 	@Getter
 	private String activeSessionEndId;
+	@Getter
+	private boolean isTracking = true;
 
 	public SessionManager(InventoryTotalPlugin plugin, InventoryTotalConfig config)
 	{
@@ -42,6 +44,34 @@ public class SessionManager
 	void shutDown()
 	{
 
+	}
+
+	void startTracking()
+	{
+		isTracking = true;
+		InventoryTotalRunData activeTrip = plugin.getRunData();
+		if (activeTrip != null && activeTrip.isInProgress())
+		{
+			onTripStarted(activeTrip);
+		}
+	}
+
+	void stopTracking()
+	{
+		isTracking = false;
+		//remove the active trip if there is one
+		String activeTripIdentifier = null;
+		for (InventoryTotalRunData trip : activeTrips.values())
+		{
+			if (trip.isInProgress())
+			{
+				activeTripIdentifier = trip.identifier;
+			}
+		}
+		if (activeTripIdentifier != null)
+		{
+			deleteTrip(activeTripIdentifier);
+		}
 	}
 
 	private List<InventoryTotalRunData> getSortedTrips()
@@ -208,7 +238,25 @@ public class SessionManager
 		return activeTrips.get(activeSessionEndId);
 	}
 
-	void deleteSession(String id)
+	void deleteAllTrips()
+	{
+		List<InventoryTotalRunData> allTrips = new LinkedList<>(activeTrips.values());
+		activeSessionStartId = null;
+		activeSessionEndId = null;
+		for(InventoryTotalRunData trip : allTrips)
+		{
+			if (trip.isInProgress())
+			{
+				activeSessionStartId = trip.identifier;
+			}
+			else
+			{
+				activeTrips.remove(trip.identifier);
+			}
+		}
+	}
+
+	void deleteTrip(String id)
 	{
 		activeTrips.remove(id);
 		if (activeSessionStartId == id)
@@ -230,6 +278,10 @@ public class SessionManager
 
 	void onTripStarted(InventoryTotalRunData runData)
 	{
+		if (!isTracking)
+		{
+			return;
+		}
 		activeTrips.put(runData.identifier, runData);
 		if (activeSessionStartId == null)
 		{
@@ -239,11 +291,15 @@ public class SessionManager
 
 	void onTripCompleted(InventoryTotalRunData runData)
 	{
+		if (!isTracking)
+		{
+			return;
+		}
 		// don't care about trips where nothing happened, can remove it from the history
 		if (!tripHadChange(runData.initialItemQtys, runData.itemQtys))
 		{
 			log.info("nothing changed, ignoring trip");
-			deleteSession(runData.identifier);
+			deleteTrip(runData.identifier);
 			return;
 		}
 	}

@@ -80,6 +80,7 @@ class InventoryTotalOverlay extends Overlay
 	@Inject
 	private InventoryTotalOverlay(Client client, InventoryTotalPlugin plugin, InventoryTotalConfig config, ItemManager itemManager, SpriteManager spriteManager)
 	{
+		super(plugin);
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 
