@@ -58,7 +58,7 @@ class InventoryTotalOverlay extends Overlay
 	private boolean onceBank = false;
 
 	private boolean postNewRun = false;
-	private long newRunTime = 0;
+	private long newRunTick = 0;
 	
 	private long lastGpPerHour;
 	private long lastGpPerHourUpdateTime;
@@ -187,15 +187,15 @@ class InventoryTotalOverlay extends Overlay
 			plugin.onNewRun();
 
 			postNewRun = true;
-			newRunTime = Instant.now().toEpochMilli();
+			newRunTick = client.getTickCount();
 		}
 		else if (plugin.getPreviousState() == InventoryTotalState.RUN && plugin.getState() == InventoryTotalState.BANK)
 		{
 			plugin.onBank();
 		}
 
-		// check post new run
-		if (postNewRun && (Instant.now().toEpochMilli() - newRunTime) > BANK_CLOSE_DELAY)
+		// check post new run, need to wait two ticks because if you withdraw something and close the bank right after it shows up one tick later
+		if (postNewRun && (client.getTickCount() - newRunTick) > 1)
 		{
 			//make sure user didn't open the bank back up in those two ticks
 			if (plugin.getState() == InventoryTotalState.RUN)
@@ -451,7 +451,7 @@ class InventoryTotalOverlay extends Overlay
 
 		RoundRectangle2D roundRectangle2D = new RoundRectangle2D.Double(x, y, width + 1, height + 1, cornerRadius, cornerRadius);
 		if (roundRectangle2D.contains(mouseX, mouseY) && plugin.getState() != InventoryTotalState.BANK
-				&& (Instant.now().toEpochMilli() - newRunTime) > (BANK_CLOSE_DELAY + 500) && config.showTooltip())
+				&& (client.getTickCount() - newRunTick) > 1 && config.showTooltip())
 		{
 			if (plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
 			{
