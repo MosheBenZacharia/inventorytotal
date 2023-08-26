@@ -6,10 +6,12 @@ import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -163,6 +165,19 @@ public class UIHelper
 		}
 	}
 
+	public static List<InventoryTotalLedgerItem> filterAndSortLedger(List<InventoryTotalLedgerItem> ledger)
+	{
+		// filter out anything with no change or change that will get rounded to 0
+		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
+				.collect(Collectors.toList());
+
+		// sort by profit descending
+		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
+				.collect(Collectors.toList());
+
+		return ledger;
+	}
+
     public static String buildToolTip(String name, String quantity, String price, String combinedValue)
     {
         return "<html>" + name + " x " + quantity
@@ -185,11 +200,7 @@ public class UIHelper
 		}
 		else
 		{
-			//decimal stack only works on positive numbers
-			String totalText = QuantityFormatter.quantityToStackSize(Math.abs(total));
-			if (total < 0)
-				totalText = "-" + totalText;
-			return totalText;
+			return QuantityFormatter.quantityToStackSize(total);
 		}
 	}
 

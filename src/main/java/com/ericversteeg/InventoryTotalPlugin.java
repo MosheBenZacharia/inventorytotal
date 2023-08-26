@@ -175,6 +175,7 @@ public class InventoryTotalPlugin extends Plugin
 		weaponChargesManager.shutDown();
 		chargedItemManager.shutDown();
 		sessionManager.shutDown();
+		clientToolbar.removeNavigation(navButton);
 	}
 
     private void buildSidePanel()
@@ -777,11 +778,11 @@ public class InventoryTotalPlugin extends Plugin
 	List<SessionStats> sessionHistory = new LinkedList<>();
 	List<String> savedSessionIdentifiers = null;
 
-	void saveSession(String name)
+	void saveNewSession(String name)
 	{
 		if (savedSessionIdentifiers == null)
 		{
-			log.error("can't save, hasn't loaded yet.");
+			log.error("can't save session, hasn't loaded sessions yet.");
 			return;
 		}
 		executor.execute(()->
@@ -804,6 +805,41 @@ public class InventoryTotalPlugin extends Plugin
 		});
 	}
 
+	//assume already exists
+	void overwriteSession(SessionStats sessionStats)
+	{
+		if(sessionStats == null)
+		{
+			return;
+		}
+		executor.execute(()->
+		{
+			String json = gson.toJson(sessionStats);
+			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
+		});
+	}
+
+	void deleteSession(SessionStats sessionStats)
+	{
+		if (savedSessionIdentifiers == null)
+		{
+			log.error("can't delete session, hasn't loaded sessions yet.");
+			return;
+		}
+		if (sessionStats == null)
+		{
+			return;
+		}
+		executor.execute(()->
+		{
+			sessionHistory.remove(sessionStats);
+			configManager.unsetConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionStats.sessionID));
+
+			savedSessionIdentifiers.remove(sessionStats.sessionID);
+			saveSessionIdentifiers();
+		});
+	}
+
 	void saveSessionIdentifiers()
 	{
 		String json = gson.toJson(savedSessionIdentifiers);
@@ -812,6 +848,8 @@ public class InventoryTotalPlugin extends Plugin
 
 	void loadSessions()
 	{
+		sessionHistory.clear();
+		savedSessionIdentifiers = null;
 		executor.execute(()->
 		{
 			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();

@@ -134,7 +134,7 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoPanel.setLayout(new BorderLayout(0, 5));
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
-		JPanel sessionInfoSection = new JPanel(new GridBagLayout());
+		JPanel sessionInfoSection = new JPanel();
 		sessionInfoSection.setLayout(new GridLayout(8, 1, 0, 10));
 		sessionInfoSection.setBorder(new EmptyBorder(10, 5, 3, 0));
 
@@ -187,7 +187,7 @@ class ActiveSessionPanel extends PluginPanel
 			{
 				name = "Unnamed Session";
 			}
-			plugin.saveSession(name);
+			plugin.saveNewSession(name);
 		});
 		JLabel debugButton = UIHelper.createIconButton(SESSIONINFO_WRENCH_ICON, SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
 		{
@@ -204,8 +204,8 @@ class ActiveSessionPanel extends PluginPanel
 		iconButtons.add(stopTrackingButton);
 		iconButtons.add(refreshPricesButton);
 		iconButtons.add(deleteTripsButton);
-		iconButtons.add(settingsButton);
 		iconButtons.add(saveButton);
+		iconButtons.add(settingsButton);
 		iconButtons.add(debugButton);
 
 		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
@@ -287,7 +287,7 @@ class ActiveSessionPanel extends PluginPanel
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
 			avgTripDurationLabel
 					.setText(htmlLabel(avgTripDurationLabelPrefix, UIHelper.formatTime(stats.getAvgTripDuration())));
-			UIHelper.updateLootGrid(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys()),
+			UIHelper.updateLootGrid(UIHelper.filterAndSortLedger(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
 					sessionLootPanelData, itemManager, config);
 		}
 	}
@@ -303,13 +303,7 @@ class ActiveSessionPanel extends PluginPanel
 		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(runData.initialItemQtys,
 				runData.itemQtys);
 
-		// filter out anything with no change or change that will get rounded to 0
-		ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
-				.collect(Collectors.toList());
-
-		// sort by profit descending
-		ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
-				.collect(Collectors.toList());
+		ledger = UIHelper.filterAndSortLedger(ledger);
 
 		if (!runData.isInProgress() && UIHelper.ledgersMatch(ledger, previousLedger))
 		{
@@ -325,8 +319,8 @@ class ActiveSessionPanel extends PluginPanel
 			long gpPerHour = UIHelper.getGpPerHour(runtime, tripStats.getNetTotal());
 			//average it into previous
 			gpPerHour = (long) (((previousGpPerHour * consecutiveRepeatCount) + gpPerHour) / ((float) consecutiveRepeatCount + 1));
-			tpData.bottomLeftLabel
-					.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, config.showExactGp()) + "/hr"));
+			tpData.topLeftLabel
+					.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, false) + "/hr"));
 			updateButtonMiddle(tpData, runData);
 			updateButtonRight(tpData, runData, false);
 			updateButtonPause(tpData, runData);
@@ -346,9 +340,9 @@ class ActiveSessionPanel extends PluginPanel
 		tpData.bottomRightLabel
 				.setText(htmlLabel("Losses: ", QuantityFormatter.quantityToStackSize(tripStats.totalLosses)));
 		long gpPerHour = UIHelper.getGpPerHour(runtime, tripStats.getNetTotal());
-		tpData.bottomLeftLabel
-				.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, config.showExactGp()) + "/hr"));
 		tpData.topLeftLabel
+				.setText(htmlLabel("GP/hr: ", UIHelper.formatGp(gpPerHour, false) + "/hr"));
+		tpData.bottomLeftLabel
 				.setText(htmlLabel("Net Total: ", QuantityFormatter.quantityToStackSize(tripStats.netTotal)));
 		tpData.topRightLabel.setText(htmlLabel("Gains: ", QuantityFormatter.quantityToStackSize(tripStats.totalGains)));
 		tpData.topRightLabel
