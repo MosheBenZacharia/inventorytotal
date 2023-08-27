@@ -158,6 +158,17 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		if (navButton.isSelected() && gpPerHourPanel.isShowingActiveSession())
 		{
+			if (this.runData != null)
+			{
+				for(Integer intialItemId : this.runData.initialItemQtys.keySet())
+				{
+					ensureNameAndPriceLoaded(intialItemId);
+				}
+				for(Integer itemId : this.runData.itemQtys.keySet())
+				{
+					ensureNameAndPriceLoaded(itemId);
+				}
+			}
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
 		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory() && sessionHistoryDirty)
