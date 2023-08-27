@@ -49,8 +49,12 @@ public class SessionManager
 	void startTracking()
 	{
 		isTracking = true;
+		if (plugin.getState() == InventoryTotalState.BANK)
+		{
+			return;
+		}
 		InventoryTotalRunData activeTrip = plugin.getRunData();
-		if (activeTrip != null && activeTrip.isInProgress())
+		if (activeTrip != null && !activeTrip.isBankDelay && activeTrip.isInProgress())
 		{
 			onTripStarted(activeTrip);
 		}

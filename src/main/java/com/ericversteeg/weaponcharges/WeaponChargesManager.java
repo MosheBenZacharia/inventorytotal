@@ -80,7 +80,7 @@ public class WeaponChargesManager
 	@Inject private KeyManager keyManager;
 	@Inject private DialogTracker dialogTracker;
 
-	private boolean verboseLogging = true;
+	private boolean verboseLogging = false;
 	private PickupAction lastPickUpAction;
 
 	public void startUp()

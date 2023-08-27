@@ -1,9 +1,9 @@
 package com.ericversteeg;
 
 import java.awt.event.KeyEvent;
-import javax.swing.JPanel;
 import java.util.LinkedList;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.input.KeyListener;
@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Locale;
@@ -178,9 +179,14 @@ public class SessionHistoryPanel extends JPanel
 			stats.sessionName = newName;
 			plugin.overwriteSession(stats);
 		});
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy    h:mm a", Locale.US);
-        String formattedDate = sdf.format(new Date(stats.sessionSaveTime));
-		panelData.title.setText(formattedDate);
+        SimpleDateFormat sdfLeft = new SimpleDateFormat("MMM dd, yyyy", Locale.US);
+        SimpleDateFormat sdfRight = new SimpleDateFormat("h:mm a", Locale.US);
+		Date date = new Date(stats.sessionSaveTime);
+        String formattedDateLeft = sdfLeft.format(date);
+        String formattedDateRight = sdfRight.format(date);
+		panelData.subtitleLeft.setText(formattedDateLeft);
+		panelData.subtitleRight.setText(formattedDateRight);
+
 		panelData.gpPerHourLabel.setText(htmlLabel(gpPerHourLabelPrefix,
 				UIHelper.formatGp(UIHelper.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()),
 				config.showExactGp()) + "/hr"));
@@ -216,7 +222,8 @@ public class SessionHistoryPanel extends JPanel
 	{
 		JPanel masterPanel = new JPanel();
 		EditableNameField nameField;
-		private final JLabel title = new JLabel("Title");
+		private final JLabel subtitleLeft = new JLabel("Left");
+		private final JLabel subtitleRight = new JLabel("Right");
 		private final JLabel durationLabel = new JLabel(htmlLabel(durationLabelPrefix, "N/A"));
 		private final JLabel gpPerHourLabel = new JLabel(htmlLabel(gpPerHourLabelPrefix, "N/A"));
 		private final JLabel netTotalLabel = new JLabel(htmlLabel(netTotalLabelPrefix, "N/A"));
@@ -228,41 +235,115 @@ public class SessionHistoryPanel extends JPanel
 
 		SessionHistoryPanelData(SessionHistoryPanel parentPanel)
 		{
-			masterPanel.setLayout(new BorderLayout(0,5));
-			masterPanel.setBorder(new MatteBorder(1,1,1,1, borderColor));
+			masterPanel.setLayout(new BorderLayout(0,0));
+			// masterPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			// masterPanel.setBorder(new MatteBorder(1,1,1,1, borderColor));
+
+			JLabel coinsLabel = new JLabel();
+			parentPanel.getCoinsImage(1000, (BufferedImage image) ->
+			{
+				coinsLabel.setIcon(new ImageIcon(image));
+			});
+
+			JLabel gpPerHourTabLabel = new JLabel();
+			gpPerHourTabLabel.setText("xxx/hr");
+			
+			RoundedPanel gpPerHourPanel = new RoundedPanel();
+			gpPerHourPanel.setLayout(new BorderLayout(10, 0));
+			gpPerHourPanel.setBorder(new EmptyBorder(0, 10,0,10));
+			gpPerHourPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			// gpPerHourPanel.setPreferredSize(new Dimension(100, 20));
+			gpPerHourPanel.add(coinsLabel, BorderLayout.WEST);
+			gpPerHourPanel.add(gpPerHourTabLabel, BorderLayout.CENTER);
+
+			JPanel gpPerHourWrapperPanel = new JPanel();
+			gpPerHourWrapperPanel.setLayout(new BorderLayout());
+			gpPerHourWrapperPanel.setBorder(new EmptyBorder(0,0,0,0));
+			gpPerHourWrapperPanel.add(gpPerHourPanel, BorderLayout.WEST);
+			
 
 			nameField = new EditableNameField(parentPanel, 50, ColorScheme.DARKER_GRAY_COLOR, null);
+			JLabel detailsLabel = new JLabel();
+			detailsLabel.setIcon(new ImageIcon(coinsImage));
+			JLabel deleteLabel = new JLabel();
+			deleteLabel.setIcon(new ImageIcon(coinsImage));
+			JPanel namePanel = new JPanel();
+			namePanel.setLayout(new BorderLayout(10, 0));
+			namePanel.setBorder(new EmptyBorder(0, 10,0,10));
+			namePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			namePanel.add(nameField, BorderLayout.WEST);
+			namePanel.add(detailsLabel, BorderLayout.CENTER);
+			namePanel.add(deleteLabel, BorderLayout.EAST);
+
+			// subtitleLeft.setFont(FontManager.getRunescapeBoldFont());
+			// subtitleRight.setFont(FontManager.getRunescapeBoldFont());
+
+			JPanel subtitlePanel = new JPanel();
+			subtitlePanel.setLayout(new BorderLayout());
+			subtitlePanel.setBorder(new EmptyBorder(5,10,5,10));
+			subtitlePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			subtitlePanel.add(subtitleLeft, BorderLayout.WEST);
+			subtitlePanel.add(subtitleRight, BorderLayout.EAST);
+
+			// JPanel infoWrapper = new JPanel();
+			// infoWrapper.setLayout(new BorderLayout(0,10));
+			// infoWrapper.setBorder(new EmptyBorder(5, 5, 5, 5));
+			// infoWrapper.add(title, BorderLayout.NORTH);
+			// infoWrapper.add(infoLabels, BorderLayout.CENTER);
+
+			//Always visible header area
+			JPanel headerPanel = new JPanel();
+			headerPanel.setLayout(new BorderLayout());
+			headerPanel.setBorder(new EmptyBorder(0,0,0,0));
+			headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			headerPanel.add(gpPerHourWrapperPanel, BorderLayout.NORTH);
+			headerPanel.add(namePanel, BorderLayout.CENTER);
+			headerPanel.add(subtitlePanel, BorderLayout.SOUTH);
+
+			//Expand/Delete buttons
+
+			// EmptyBorder buttonBorder = new EmptyBorder(2, 2, 2, 2);
+			// JPanel buttonPanel = new JPanel();
+			// buttonPanel.setLayout(new GridLayout(0, 2, 0, 0));
+			// JButton buttonLeft = new JButton("Left");
+			// buttonLeft.setBorder(buttonBorder);
+			// buttonPanel.add(buttonLeft);
+			// JButton buttonRight = new JButton("Right");
+			// buttonRight.setBorder(buttonBorder);
+			// buttonPanel.add(buttonRight);
+			// buttonPanel.setPreferredSize(new Dimension(0, 30));
 
 			JPanel infoLabels = new JPanel();
 			infoLabels.setLayout(new GridLayout(7, 1, 0, 8));
-			infoLabels.setBorder(new EmptyBorder(0, 0, 0, 0));
+			infoLabels.setBorder(new EmptyBorder(5, 10, 5, 10));
+			infoLabels.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-			infoLabels.add(durationLabel);
 			infoLabels.add(gpPerHourLabel);
 			infoLabels.add(netTotalLabel);
 			infoLabels.add(totalGainsLabel);
 			infoLabels.add(totalLossesLabel);
 			infoLabels.add(tripCountLabel);
 			infoLabels.add(avgTripDurationLabel);
-
-			JPanel infoWrapper = new JPanel();
-			infoWrapper.setLayout(new BorderLayout(0,10));
-			infoWrapper.setBorder(new EmptyBorder(5, 5, 5, 5));
-
-			title.setFont(FontManager.getRunescapeBoldFont());
-
-			infoWrapper.add(title, BorderLayout.NORTH);
-			infoWrapper.add(infoLabels, BorderLayout.CENTER);
-
+			infoLabels.add(durationLabel);
 
 			sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
 			// sessionLootPanelData.lootPanel.setBorder(new MatteBorder(1,1,1,1, borderColor));
 
-			// ???: time/date + delete button
-			masterPanel.add(nameField, BorderLayout.NORTH);
-			masterPanel.add(infoWrapper, BorderLayout.CENTER);
-			masterPanel.add(sessionLootPanelData.lootPanel, BorderLayout.SOUTH);
+			JPanel detailsPanel = new JPanel();
+			detailsPanel.setLayout(new BorderLayout());
+			detailsPanel.setBorder(new EmptyBorder(0,0,0,0));
+			detailsPanel.add(infoLabels, BorderLayout.NORTH);
+			detailsPanel.add(sessionLootPanelData.lootPanel, BorderLayout.SOUTH);
 
+
+			// ???: time/date + delete button
+			masterPanel.add(headerPanel, BorderLayout.NORTH);
+			// masterPanel.add(buttonPanel, BorderLayout.CENTER);
+			masterPanel.add(detailsPanel, BorderLayout.SOUTH);
+
+			//North: (editable name + date + gp/hr tab)
+			//Center: Expand/Delete buttons
+			//South: panel that hides/shows (details + loot grid)
 		}
 	}
 
@@ -281,5 +362,27 @@ public class SessionHistoryPanel extends JPanel
 	static String htmlLabel(String key, String valueStr)
 	{
 		return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
+	}
+
+	
+	private static BufferedImage coinsImage;
+	private static int lastCoinValue;
+	void getCoinsImage(int quantity, Consumer<BufferedImage> consumer)
+	{
+		//TODO: this needs a lot of work to be useful (each session will call this with differnet values)
+		if (coinsImage == null || quantity != lastCoinValue)
+		{
+			AsyncBufferedImage asyncImage = itemManager.getImage(ItemID.COINS_995, quantity, false);
+			asyncImage.onLoaded(()->
+			{
+				coinsImage = ImageUtil.resizeImage(asyncImage, 24, 24);
+				consumer.accept(coinsImage);
+				lastCoinValue = quantity;
+			});
+		}
+		else
+		{
+			consumer.accept(coinsImage);
+		}
 	}
 }

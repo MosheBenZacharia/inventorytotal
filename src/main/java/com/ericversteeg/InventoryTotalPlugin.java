@@ -159,9 +159,34 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
+		//TODO: only call this if something changed
 		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory())
 		{
+			for(SessionStats sessionStats : this.sessionHistory)
+			{
+				for(Integer intialItemId : sessionStats.getInitialQtys().keySet())
+				{
+					ensureNameAndPriceLoaded(intialItemId);
+				}
+				for(Integer itemId : sessionStats.getQtys().keySet())
+				{
+					ensureNameAndPriceLoaded(itemId);
+				}
+			}
 			SwingUtilities.invokeLater(() -> sessionHistoryPanel.updateSessions());
+		}
+	}
+
+	void ensureNameAndPriceLoaded(Integer itemId)
+	{
+		if (!InventoryTotalPlugin.itemNames.containsKey(itemId))
+		{
+			ItemComposition composition = itemManager.getItemComposition(itemId);
+			itemNames.put(itemId, composition.getName());
+		}
+		if (!InventoryTotalPlugin.itemPrices.containsKey(itemId))
+		{
+			itemPrices.put(itemId, getPrice(itemId));
 		}
 	}
 
@@ -247,7 +272,7 @@ public class InventoryTotalPlugin extends Plugin
 
 	void onNewRun()
 	{
-		runData.showInterstitial = true;
+		runData.isBankDelay = true;
 		runData.runStartTime = Instant.now().toEpochMilli();
 		runData.ignoredItems = getIgnoredItems();
 
@@ -273,7 +298,7 @@ public class InventoryTotalPlugin extends Plugin
 			initialGp = 0;
 		}
 
-		runData.showInterstitial = false;
+		runData.isBankDelay = false;
 		writeSavedData();
 
 		sessionManager.onTripStarted(runData);

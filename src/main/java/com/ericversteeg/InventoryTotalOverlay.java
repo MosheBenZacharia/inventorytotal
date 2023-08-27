@@ -204,7 +204,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			else
 			{
-				plugin.getRunData().showInterstitial = false;
+				plugin.getRunData().isBankDelay = false;
 			}
 			postNewRun = false;
 		}
@@ -230,7 +230,7 @@ class InventoryTotalOverlay extends Overlay
 		if (config.showGpPerHourOnOverlay() 
 			&& plugin.getMode() == InventoryTotalMode.PROFIT_LOSS
 			 && plugin.getState() == InventoryTotalState.RUN
-			 && !plugin.getRunData().showInterstitial)
+			 && !plugin.getRunData().isBankDelay)
 		{
 			total = getGpPerHour(plugin.elapsedRunTime(), (int) total);
 			totalText = UIHelper.formatGp(total, config.showExactGp()) + "/hr";
@@ -244,7 +244,7 @@ class InventoryTotalOverlay extends Overlay
 			runTimeText = " (" + formattedRunTime + ")";
 		}
 
-		if (plugin.getRunData().showInterstitial)
+		if (plugin.getRunData().isBankDelay)
 		{
 			total = 0;
 

@@ -34,5 +34,5 @@ public class InventoryTotalRunData {
     }
 
     //its in the period between banking finished (onNewRun) and two ticks later when we call onPostNewRun
-    transient boolean showInterstitial;
+    transient boolean isBankDelay;
 }
