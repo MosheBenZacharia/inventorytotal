@@ -20,9 +20,12 @@ public class RoundedPanel extends JPanel {
         g2d.fillRect(borderWidth+(arc/2), borderWidth, getWidth() - (2*borderWidth + arc), arc/2);
         g2d.fillRect(borderWidth, arc/2 + borderWidth, getWidth() - 2*borderWidth, getHeight() - (borderWidth + arc/2));
 
-        // g2d.setColor(getForeground());
-        // g2d.setStroke(new BasicStroke(borderWidth));
-        // g2d.drawRoundRect(borderWidth, borderWidth, getWidth() - 2 * borderWidth, getHeight() - borderWidth, arc, arc);
+        g2d.setColor(getForeground());
+        g2d.drawArc(borderWidth, borderWidth, arc, arc, 90, 90);
+        g2d.drawArc(getWidth() - (borderWidth + arc), borderWidth, arc, arc, 0, 90);
+        g2d.drawLine(borderWidth + arc/2, borderWidth, getWidth() - arc/2, borderWidth);
+        g2d.drawLine(borderWidth, arc/3 + borderWidth, borderWidth, getHeight() - (borderWidth));
+        g2d.drawLine(getWidth()- borderWidth-1, arc/3 + borderWidth, getWidth() - borderWidth-1, getHeight() - (borderWidth));
 
         g2d.dispose();
     }

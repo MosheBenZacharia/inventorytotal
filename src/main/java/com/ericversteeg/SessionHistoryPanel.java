@@ -146,7 +146,7 @@ public class SessionHistoryPanel extends JPanel
 		{
 			sessions = filterSessions(sessions, searchBar.getText());
 		}
-		sessions = sessions.stream().sorted(Comparator.comparingLong(o -> o.sessionSaveTime))
+		sessions = sessions.stream().sorted(Comparator.comparingLong(o -> -o.getSessionSaveTime()))
 				.collect(Collectors.toList());
 		int sessionIndex;
 		for (sessionIndex = 0; sessionIndex < sessions.size(); ++sessionIndex)
@@ -179,14 +179,21 @@ public class SessionHistoryPanel extends JPanel
 			plugin.overwriteSession(stats);
 		});
 		SimpleDateFormat sdfLeft = new SimpleDateFormat("MMM dd, yyyy   h:mm a", Locale.US);
-		Date date = new Date(stats.sessionSaveTime);
+		Date date = new Date(stats.getSessionSaveTime());
 		String formattedDateLeft = sdfLeft.format(date);
 		panelData.subtitleLeft.setText(formattedDateLeft);
 
-		String gpPerHour = UI.formatGp(UI.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal()),
+		long gpPerHourLong = UI.getGpPerHour(stats.getSessionRuntime(), stats.getNetTotal());
+		String gpPerHour = UI.formatGp(gpPerHourLong,
 				config.showExactGp()) + "/hr";
 
 		panelData.gpPerHourTabLabel.setText(gpPerHour);
+		int gpPerHourCoinsImage = Math.abs((int) gpPerHourLong);
+		gpPerHourCoinsImage /= 100;
+		getCoinsImage(gpPerHourCoinsImage, (BufferedImage image) ->
+		{
+			panelData.coinsLabel.setIcon(new ImageIcon(image));
+		}, stats);
 
 		panelData.detailsPanel.setVisible(stats.showDetails);
 
@@ -215,7 +222,13 @@ public class SessionHistoryPanel extends JPanel
 		};
 		panelData.onDeletePressed = () ->
 		{
-			clientThread.invokeLater(()-> plugin.deleteSession(stats));
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this session?", "Warning",
+			JOptionPane.OK_CANCEL_OPTION);
+
+			if (confirm == 0)
+			{
+				clientThread.invokeLater(()-> plugin.deleteSession(stats));
+			}
 		};
 	}
 
@@ -236,6 +249,7 @@ public class SessionHistoryPanel extends JPanel
 		final JLabel gpPerHourTabLabel;
 		final JPanel masterPanel = new JPanel();
 		final EditableNameField nameField;
+		private final JLabel coinsLabel = new JLabel();
 		private final JLabel subtitleLeft = new JLabel("Left");
 		private final JLabel durationLabel = new JLabel(htmlLabel(durationLabelPrefix, "N/A"));
 		private final JLabel gpPerHourLabel = new JLabel(htmlLabel(gpPerHourLabelPrefix, "N/A"));
@@ -252,12 +266,6 @@ public class SessionHistoryPanel extends JPanel
 		{
 			masterPanel.setLayout(new BorderLayout(0, 0));
 
-			JLabel coinsLabel = new JLabel();
-			parentPanel.getCoinsImage(1000, (BufferedImage image) ->
-			{
-				coinsLabel.setIcon(new ImageIcon(image));
-			});
-
 			gpPerHourTabLabel = new JLabel();
 			gpPerHourTabLabel.setText("xxx/hr");
 			gpPerHourTabLabel.setFont(FontManager.getRunescapeBoldFont());
@@ -266,12 +274,13 @@ public class SessionHistoryPanel extends JPanel
 			gpPerHourPanel.setLayout(new BorderLayout(5, 0));
 			gpPerHourPanel.setBorder(new EmptyBorder(3, 10, 3, 10));
 			gpPerHourPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			gpPerHourPanel.setForeground(borderColor);
 			gpPerHourPanel.add(coinsLabel, BorderLayout.WEST);
 			gpPerHourPanel.add(gpPerHourTabLabel, BorderLayout.CENTER);
 
 			JPanel gpPerHourWrapperPanel = new JPanel();
 			gpPerHourWrapperPanel.setLayout(new BorderLayout());
-			gpPerHourWrapperPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+			// gpPerHourWrapperPanel.setBorder(new MatteBorder(0,0,1,0,borderColor));
 			gpPerHourWrapperPanel.add(gpPerHourPanel, BorderLayout.WEST);
 
 			nameField = new EditableNameField(parentPanel, 50, ColorScheme.DARKER_GRAY_COLOR, null);
@@ -295,14 +304,19 @@ public class SessionHistoryPanel extends JPanel
 			subtitlePanel.add(detailsButton, BorderLayout.CENTER);
 			subtitlePanel.add(deleteButton, BorderLayout.EAST);
 
+
+			JPanel nameAndSubtitlePanel = new JPanel();
+			nameAndSubtitlePanel.setLayout(new BorderLayout());
+			nameAndSubtitlePanel.setBorder(new MatteBorder(1,1,1,1,borderColor));
+			nameAndSubtitlePanel.add(nameField, BorderLayout.NORTH);
+			nameAndSubtitlePanel.add(subtitlePanel, BorderLayout.CENTER);
+
 			// Always visible header area
 			JPanel headerPanel = new JPanel();
 			headerPanel.setLayout(new BorderLayout());
-			headerPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
 			headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			headerPanel.add(gpPerHourWrapperPanel, BorderLayout.NORTH);
-			headerPanel.add(nameField, BorderLayout.CENTER);
-			headerPanel.add(subtitlePanel, BorderLayout.SOUTH);
+			headerPanel.add(nameAndSubtitlePanel, BorderLayout.CENTER);
 
 			JPanel infoLabels = new JPanel();
 			infoLabels.setLayout(new GridLayout(7, 1, 0, 8));
@@ -318,10 +332,11 @@ public class SessionHistoryPanel extends JPanel
 			infoLabels.add(durationLabel);
 
 			sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
+			sessionLootPanelData.lootPanel.setBorder(new MatteBorder(1,0,0,0,borderColor));
 
 			detailsPanel = new JPanel();
 			detailsPanel.setLayout(new BorderLayout());
-			detailsPanel.setBorder(new MatteBorder(1,0,0,0,borderColor));
+			detailsPanel.setBorder(new MatteBorder(0,1,1,1,borderColor));
 			detailsPanel.add(infoLabels, BorderLayout.NORTH);
 			detailsPanel.add(sessionLootPanelData.lootPanel, BorderLayout.SOUTH);
 
@@ -340,25 +355,21 @@ public class SessionHistoryPanel extends JPanel
 		return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
 	}
 
-	private static BufferedImage coinsImage;
-	private static int lastCoinValue;
-
-	void getCoinsImage(int quantity, Consumer<BufferedImage> consumer)
+	void getCoinsImage(int quantity, Consumer<BufferedImage> consumer, SessionStats stats)
 	{
-		// TODO: this needs a lot of work to be useful (each session will call this with
-		// differnet values)
-		if (coinsImage == null || quantity != lastCoinValue)
+		if (stats.coinsImage == null || quantity != stats.lastCoinsImageValue)
 		{
 			AsyncBufferedImage asyncImage = itemManager.getImage(ItemID.COINS_995, quantity, false);
+			//TODO: needs to know if asyncImage.isloaded
 			asyncImage.onLoaded(() ->
 			{
-				coinsImage = ImageUtil.resizeImage(asyncImage, 24, 24);
-				consumer.accept(coinsImage);
-				lastCoinValue = quantity;
+				stats.coinsImage = ImageUtil.resizeImage(asyncImage, 24, 24);
+				consumer.accept(stats.coinsImage);
+				stats.lastCoinsImageValue = quantity;
 			});
 		} else
 		{
-			consumer.accept(coinsImage);
+			consumer.accept(stats.coinsImage);
 		}
 	}
 }

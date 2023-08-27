@@ -160,7 +160,7 @@ public class SessionManager
 		long netTotal = gains + losses;
 		long avgTripDuration = (long) (tripDurationSum / ((float) tripCount));
 
-		return new SessionStats(sessionRuntime, gains, losses, netTotal, tripCount, avgTripDuration, initialQtys, qtys);
+		return new SessionStats(getSessionEndTime(), sessionRuntime, gains, losses, netTotal, tripCount, avgTripDuration, initialQtys, qtys);
 	}
 
 	long getSessionStartTime()

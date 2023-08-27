@@ -122,6 +122,7 @@ public class InventoryTotalPlugin extends Plugin
 	
     private BufferedImage icon;
     private NavigationButton navButton;
+	private boolean sessionHistoryDirty;
 
 	// from ClueScrollPlugin
 	private static final int[] RUNEPOUCH_AMOUNT_VARBITS = {
@@ -159,10 +160,9 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
-		//TODO: only call this if something changed
-		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory())
+		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory() && sessionHistoryDirty)
 		{
-			for(SessionStats sessionStats : this.sessionHistory)
+			for (SessionStats sessionStats : this.sessionHistory)
 			{
 				for(Integer intialItemId : sessionStats.getInitialQtys().keySet())
 				{
@@ -174,6 +174,7 @@ public class InventoryTotalPlugin extends Plugin
 				}
 			}
 			SwingUtilities.invokeLater(() -> sessionHistoryPanel.updateSessions());
+			sessionHistoryDirty = false;
 		}
 	}
 
@@ -819,7 +820,6 @@ public class InventoryTotalPlugin extends Plugin
 			}
 			statsToSave.sessionName = name;
 			statsToSave.sessionID = UUID.randomUUID().toString();
-			statsToSave.sessionSaveTime = Instant.now().toEpochMilli();
 			sessionHistory.add(statsToSave);
 
 			String json = gson.toJson(statsToSave);
@@ -827,6 +827,7 @@ public class InventoryTotalPlugin extends Plugin
 
 			savedSessionIdentifiers.add(statsToSave.sessionID);
 			saveSessionIdentifiers();
+			sessionHistoryDirty = true;
 		});
 	}
 
@@ -841,6 +842,7 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			String json = gson.toJson(sessionStats);
 			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
+			sessionHistoryDirty = true;
 		});
 	}
 
@@ -862,6 +864,7 @@ public class InventoryTotalPlugin extends Plugin
 
 			savedSessionIdentifiers.remove(sessionStats.sessionID);
 			saveSessionIdentifiers();
+			sessionHistoryDirty = true;
 		});
 	}
 
@@ -888,6 +891,7 @@ public class InventoryTotalPlugin extends Plugin
 				SessionStats sessionStats = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
 				sessionHistory.add(sessionStats);
 			}
+			sessionHistoryDirty = true;
 		});
 	}
 
