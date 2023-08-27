@@ -19,4 +19,7 @@ class SessionStats
 	private final long avgTripDuration;
 	private final Map<Integer, Float> initialQtys;
 	private final Map<Integer, Float> qtys;
+
+	//ui state
+	transient boolean showDetails;
 }

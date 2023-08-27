@@ -21,13 +21,15 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.awt.event.MouseAdapter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 
-public class UIHelper
+public class UI
 {
 	public static class LootPanelData
 	{
@@ -35,6 +37,24 @@ public class UIHelper
 		JPanel containerPanel = new JPanel();
 		List<InventoryTotalLedgerItem> previousLedger = new LinkedList<InventoryTotalLedgerItem>();
 	}
+	public static final ImageIcon PAUSE_ICON;
+	public static final ImageIcon PLAY_ICON;
+	public static final ImageIcon SESSIONINFO_GEAR_ICON;
+	public static final ImageIcon SESSIONINFO_REFRESH_ICON;
+	public static final ImageIcon SESSIONINFO_WRENCH_ICON;
+	public static final ImageIcon SESSIONINFO_STOP_ICON;
+	public static final ImageIcon SESSIONINFO_PLAY_ICON;
+	public static final ImageIcon SESSIONINFO_TRASH_ICON;
+	public static final ImageIcon SESSIONINFO_SAVE_ICON;
+	public static final ImageIcon SESSIONINFO_GEAR_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_REFRESH_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_WRENCH_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_STOP_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_PLAY_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_TRASH_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_SAVE_HOVER_ICON;
+	public static final ImageIcon SESSIONINFO_INFO_ICON;
+	public static final ImageIcon SESSIONINFO_INFO_HOVER_ICON;
 	
 	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
 	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
@@ -206,7 +226,7 @@ public class UIHelper
 
 	static void updateLootGrid(List<InventoryTotalLedgerItem> ledger, LootPanelData lootPanelData, ItemManager itemManager, InventoryTotalConfig config)
 	{
-		if (UIHelper.ledgersMatch(ledger, lootPanelData.previousLedger))
+		if (UI.ledgersMatch(ledger, lootPanelData.previousLedger))
 		{
 			return;
 		}
@@ -234,10 +254,10 @@ public class UIHelper
 
 			final JLabel itemLabel = new JLabel();
 
-			itemLabel.setToolTipText(UIHelper.buildToolTip(ledgerItem.getDescription(),
-					UIHelper.formatQuantity(ledgerItem.getQty(), false),
-					UIHelper.formatGp(ledgerItem.getPrice(), config.showExactGp()),
-					UIHelper.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
+			itemLabel.setToolTipText(UI.buildToolTip(ledgerItem.getDescription(),
+					UI.formatQuantity(ledgerItem.getQty(), false),
+					UI.formatGp(ledgerItem.getPrice(), config.showExactGp()),
+					UI.formatGp(ledgerItem.getCombinedValue(), config.showExactGp())));
 			itemLabel.setVerticalAlignment(SwingConstants.CENTER);
 			itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -279,5 +299,41 @@ public class UIHelper
 		lootPanelData.lootPanel.add(lootPanelData.containerPanel);
 		lootPanelData.lootPanel.revalidate();
 		lootPanelData.lootPanel.repaint();
+	}
+
+	static
+	{
+		BufferedImage pausePNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-pause.png");
+		BufferedImage playPNG = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-play.png");
+
+		PAUSE_ICON = new ImageIcon(pausePNG);
+		PLAY_ICON = new ImageIcon(playPNG);
+
+		//Session info tray
+		final float hoverAlphaOffset = .53f;
+		final BufferedImage importIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-gear.png");
+		SESSIONINFO_GEAR_ICON = new ImageIcon(importIcon);
+		SESSIONINFO_GEAR_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(importIcon, hoverAlphaOffset));
+		final BufferedImage refreshIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-refresh.png");
+		SESSIONINFO_REFRESH_ICON = new ImageIcon(refreshIcon);
+		SESSIONINFO_REFRESH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(refreshIcon, hoverAlphaOffset));
+		final BufferedImage wrenchIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-wrench.png");
+		SESSIONINFO_WRENCH_ICON = new ImageIcon(wrenchIcon);
+		SESSIONINFO_WRENCH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(wrenchIcon, hoverAlphaOffset));
+		final BufferedImage stopIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-stop.png");
+		SESSIONINFO_STOP_ICON = new ImageIcon(stopIcon);
+		SESSIONINFO_STOP_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(stopIcon, hoverAlphaOffset));
+		final BufferedImage playIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-play.png");
+		SESSIONINFO_PLAY_ICON = new ImageIcon(playIcon);
+		SESSIONINFO_PLAY_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(playIcon, hoverAlphaOffset));
+		final BufferedImage trashIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-trash.png");
+		SESSIONINFO_TRASH_ICON = new ImageIcon(trashIcon);
+		SESSIONINFO_TRASH_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(trashIcon, hoverAlphaOffset));
+		final BufferedImage saveIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-save.png");
+		SESSIONINFO_SAVE_ICON = new ImageIcon(saveIcon);
+		SESSIONINFO_SAVE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(saveIcon, hoverAlphaOffset));
+		final BufferedImage infoIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-info.png");
+		SESSIONINFO_INFO_ICON = new ImageIcon(infoIcon);
+		SESSIONINFO_INFO_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(infoIcon, hoverAlphaOffset));
 	}
 }

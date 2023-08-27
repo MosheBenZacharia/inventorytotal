@@ -225,7 +225,7 @@ class InventoryTotalOverlay extends Overlay
 		int height = 20;
 
 		long total = plugin.getProfitGp();
-		String totalText = UIHelper.formatGp(total, config.showExactGp());
+		String totalText = UI.formatGp(total, config.showExactGp());
 
 		if (config.showGpPerHourOnOverlay() 
 			&& plugin.getMode() == InventoryTotalMode.PROFIT_LOSS
@@ -233,7 +233,7 @@ class InventoryTotalOverlay extends Overlay
 			 && !plugin.getRunData().isBankDelay)
 		{
 			total = getGpPerHour(plugin.elapsedRunTime(), (int) total);
-			totalText = UIHelper.formatGp(total, config.showExactGp()) + "/hr";
+			totalText = UI.formatGp(total, config.showExactGp()) + "/hr";
 		}
 
 		String formattedRunTime = getFormattedRunTime();
@@ -256,7 +256,7 @@ class InventoryTotalOverlay extends Overlay
 			}
 			else
 			{
-				totalText = UIHelper.formatGp(plugin.getTotalGp(), config.showExactGp());
+				totalText = UI.formatGp(plugin.getTotalGp(), config.showExactGp());
 			}
 		}
 
@@ -484,7 +484,7 @@ class InventoryTotalOverlay extends Overlay
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = UIHelper.formatQuantity(item.getQty(), true) + " " + desc;
+				desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);
@@ -579,7 +579,7 @@ class InventoryTotalOverlay extends Overlay
 			String desc = item.getDescription();
 			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 			{
-				desc = UIHelper.formatQuantity(item.getQty(), true) + " " + desc;
+				desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
 			}
 			return desc;
 		}).toArray(String[]::new);
@@ -622,7 +622,7 @@ class InventoryTotalOverlay extends Overlay
 		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
 		{
 			long gpPerHour = getGpPerHour(runTime, netTotal);
-			String gpPerHourString = UIHelper.formatGp(gpPerHour, config.showExactGp());
+			String gpPerHourString = UI.formatGp(gpPerHour, config.showExactGp());
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}
 		if (plugin.needsLootingBagCheck())
@@ -686,7 +686,7 @@ class InventoryTotalOverlay extends Overlay
 		}
 
 		lastGpPerHourUpdateTime = timeNow;
-		lastGpPerHour = UIHelper.getGpPerHour(runTime, total);
+		lastGpPerHour = UI.getGpPerHour(runTime, total);
 		return lastGpPerHour;
 	}
 
@@ -755,7 +755,7 @@ class InventoryTotalOverlay extends Overlay
 			return null;
 		}
 
-		return UIHelper.formatTime(runTime);
+		return UI.formatTime(runTime);
 	}
 
 	public ItemContainer getInventoryItemContainer()
