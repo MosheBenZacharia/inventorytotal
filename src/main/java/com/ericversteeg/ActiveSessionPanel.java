@@ -421,8 +421,10 @@ class ActiveSessionPanel extends PluginPanel
 	void updateButtonPause(TripPanelData tpData, InventoryTotalRunData runData)
 	{
 		UI.clearListeners(tpData.pauseButton);
-		tpData.pauseButton.setVisible(runData.isInProgress());
-		if (runData.isInProgress())
+		boolean visible = runData.isInProgress();
+		CardLayout cardLayout = (CardLayout) tpData.pauseButtonCardContainer.getLayout();
+		cardLayout.show(tpData.pauseButtonCardContainer, visible ? "visible" : "hidden");
+		if (visible)
 		{
 			tpData.pauseButton.setSelected(runData.isPaused);
 			tpData.pauseButton.addActionListener((event) ->
@@ -478,7 +480,7 @@ class ActiveSessionPanel extends PluginPanel
 		JLabel titleLabel = new JLabel("Trip X");
 		JLabel subtitleLabel = new JLabel("Started X ago");
 		JToggleButton pauseButton = new JToggleButton();
-
+		JPanel pauseButtonCardContainer = new JPanel(new CardLayout());
 
 		JToggleButton lootHeaderButtonPanel = new JToggleButton();
 		JLabel topLeftLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
@@ -517,6 +519,7 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonRight = data.buttonRight;
 		JPanel contentPanel = data.contentPanel;
 		JPanel lootPanel = data.lootPanelData.lootPanel;
+		JPanel cardContainer = data.pauseButtonCardContainer;
 
 		data.titleLabel.setForeground(Color.WHITE);
 		data.titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -525,12 +528,19 @@ class ActiveSessionPanel extends PluginPanel
 		data.subtitleLabel.setForeground(Color.GRAY);
 		data.subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
+		//use card container so parent layout doesn't change when we hide it
+		cardContainer.setOpaque(false);
+		cardContainer.add(pauseButton, "visible");
+		JPanel hiddenPanel = new JPanel();
+		hiddenPanel.setOpaque(false);
+		cardContainer.add(hiddenPanel, "hidden");
+
 		JPanel titlePanel = new JPanel();
 		titlePanel.setOpaque(false);
 		titlePanel.setLayout(new BorderLayout());
 		titlePanel.add(data.durationLabel, BorderLayout.WEST);
 		titlePanel.add(data.titleLabel, BorderLayout.CENTER);
-		titlePanel.add(data.pauseButton, BorderLayout.EAST);
+		titlePanel.add(cardContainer, BorderLayout.EAST);
 		
 		JPanel headerPanel = new JPanel();
 		headerPanel.setOpaque(false);
@@ -556,17 +566,17 @@ class ActiveSessionPanel extends PluginPanel
 		pauseButton.setIcon(UI.PAUSE_ICON);
 		pauseButton.setSelectedIcon(UI.PLAY_ICON);
 		pauseButton.setToolTipText("Pause time tracking for this trip.");
+		pauseButton.setPreferredSize(new Dimension(20, 20));
+		SwingUtil.removeButtonDecorations(pauseButton);
 
 		bottomLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		topLeftLabel.setFont(FontManager.getRunescapeSmallFont());
 		bottomRightLabel.setFont(FontManager.getRunescapeSmallFont());
 		topRightLabel.setFont(FontManager.getRunescapeSmallFont());
 
-		SwingUtil.removeButtonDecorations(pauseButton);
 		SwingUtil.removeButtonDecorations(lootHeaderButtonPanel);
 		lootHeaderButtonPanel.setRolloverEnabled(false);
 
-		pauseButton.setPreferredSize(new Dimension(20, 20));
 		// lootHeaderButtonPanel.addActionListener(e -> collapseLoot());
 
 		topLeftLabel.setForeground(Color.WHITE);
