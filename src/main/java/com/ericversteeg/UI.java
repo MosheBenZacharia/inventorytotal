@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -56,8 +57,8 @@ public class UI
 	public static final ImageIcon SESSIONINFO_INFO_ICON;
 	public static final ImageIcon SESSIONINFO_INFO_HOVER_ICON;
 	
-	private static final String PROFIT_LOSS_TIME_FORMAT = "%02d:%02d:%02d";
-	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%02d:%02d";
+	private static final String PROFIT_LOSS_TIME_FORMAT = "%01d:%02d:%02d";
+	private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%01d:%02d";
 	private static final NumberFormat englishFormat = NumberFormat.getInstance(Locale.ENGLISH);
 	private static final Color redLootBackgroundColor = new Color(48, 15, 15);
 	private static final Color greenLootBackgroundColor = new Color(21, 43, 16);
@@ -158,7 +159,7 @@ public class UI
         }
 	}
 
-	public static  void clearListeners(JButton button)
+	public static  void clearListeners(AbstractButton button)
 	{
 		ActionListener[] listeners = button.getActionListeners();
 		for (ActionListener listener : listeners) {

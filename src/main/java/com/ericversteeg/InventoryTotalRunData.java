@@ -7,13 +7,14 @@ import java.util.Map;
 import java.util.UUID;
 import com.google.gson.Gson;
 
-public class InventoryTotalRunData {
+public class InventoryTotalRunData
+{
     String identifier = null;
     long profitLossInitialGp = 0;
-	long runStartTime = 0;
-    //if this is null the trip is in progress
+    long runStartTime = 0;
+    // if this is null the trip is in progress
     Long runEndTime = null;
-    //add to this while paused? then subtract when calculating duration
+    // add to this while paused? then subtract when calculating duration
     long pauseTime = 0;
     boolean isPaused = false;
 
@@ -29,10 +30,15 @@ public class InventoryTotalRunData {
 
     long getRuntime()
     {
-        return (runEndTime == null ? Instant.now().toEpochMilli() : runEndTime)
-				- runStartTime;
+        return (getEndTime() - runStartTime) - pauseTime;
     }
 
-    //its in the period between banking finished (onNewRun) and two ticks later when we call onPostNewRun
+    long getEndTime()
+    {
+        return (runEndTime == null ? Instant.now().toEpochMilli() : runEndTime);
+    }
+
+    // its in the period between banking finished (onNewRun) and two ticks later
+    // when we call onPostNewRun
     transient boolean isBankDelay;
 }

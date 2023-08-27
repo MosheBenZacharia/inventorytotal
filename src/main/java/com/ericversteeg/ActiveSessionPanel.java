@@ -227,6 +227,7 @@ class ActiveSessionPanel extends PluginPanel
 		previousRunData = null;
 		repeatCount = 0;
 		consecutiveRepeatCount = 0;
+		combinedRuntime = 0;
 		for (InventoryTotalRunData runData : runDataSorted)
 		{
 			boolean validTrip = renderTrip(runData, tripIndex);
@@ -276,11 +277,13 @@ class ActiveSessionPanel extends PluginPanel
 		}
 	}
 
+	//not always previous but rather the first of the identical ones
 	InventoryTotalRunData previousRunData = null;
 	List<InventoryTotalLedgerItem> previousLedger = null;
 	int repeatCount = 0;
 	int consecutiveRepeatCount = 0;
 	long previousGpPerHour = 0;
+	long combinedRuntime;
 
 	boolean renderTrip(InventoryTotalRunData runData, int tripIndex)
 	{
@@ -298,8 +301,9 @@ class ActiveSessionPanel extends PluginPanel
 			int startIndex = tripIndex - consecutiveRepeatCount;
 			int endIndex = tripIndex;
 			long runtime =  runData.getRuntime();
-			tpData.titlePanel.setContent("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)",
-					"Started " + UI.getTimeAgo(previousRunData.runStartTime));
+			combinedRuntime += runtime;
+			tpData.titleLabel.setText("Trips " + (startIndex + 1) + "-" + (endIndex + 1) + " (Identical)");
+			tpData.durationLabel.setText(UI.formatTime(combinedRuntime));
 			long gpPerHour = UI.getGpPerHour(runtime, tripStats.getNetTotal());
 			//average it into previous
 			gpPerHour = (long) (((previousGpPerHour * consecutiveRepeatCount) + gpPerHour) / ((float) consecutiveRepeatCount + 1));
@@ -319,6 +323,7 @@ class ActiveSessionPanel extends PluginPanel
 
 		tpData.masterPanel.setVisible(true);
 		long runtime = runData.getRuntime();
+		combinedRuntime = runtime;
 
 		FontMetrics fontMetrics = getGraphics().getFontMetrics(FontManager.getRunescapeSmallFont());
 		tpData.bottomRightLabel
@@ -336,7 +341,9 @@ class ActiveSessionPanel extends PluginPanel
 		{
 			title += " (Active)";
 		}
-		tpData.titlePanel.setContent(title, "Started " + UI.getTimeAgo(runData.runStartTime));
+		tpData.titleLabel.setText(title);
+		tpData.subtitleLabel.setText("Started " + UI.getTimeAgo(runData.runStartTime));
+		tpData.durationLabel.setText(UI.formatTime(runtime));
 		// buttons
 		UI.clearListeners(tpData.buttonLeft);
 		tpData.buttonLeft.setEnabled(!sessionManager.getActiveSessionStartId().equals(runData.identifier));
@@ -413,13 +420,17 @@ class ActiveSessionPanel extends PluginPanel
 
 	void updateButtonPause(TripPanelData tpData, InventoryTotalRunData runData)
 	{
+		UI.clearListeners(tpData.pauseButton);
 		tpData.pauseButton.setVisible(runData.isInProgress());
-		tpData.pauseButton.setSelected(runData.isPaused);
-		tpData.pauseButton.addActionListener((event) ->
+		if (runData.isInProgress())
 		{
-			runData.isPaused = tpData.pauseButton.isSelected();
 			tpData.pauseButton.setSelected(runData.isPaused);
-		});
+			tpData.pauseButton.addActionListener((event) ->
+			{
+				runData.isPaused = tpData.pauseButton.isSelected();
+				tpData.pauseButton.setSelected(runData.isPaused);
+			});
+		}
 	}
 
 	TripPanelData getPanelData(int index)
@@ -462,9 +473,14 @@ class ActiveSessionPanel extends PluginPanel
 
 	private class TripPanelData
 	{
-		PluginErrorPanel titlePanel = new PluginErrorPanel();
-		JToggleButton lootHeaderButtonPanel = new JToggleButton();
+		// PluginErrorPanel titlePanel = new PluginErrorPanel();
+		JLabel durationLabel = new JLabel("1:00:44");
+		JLabel titleLabel = new JLabel("Trip X");
+		JLabel subtitleLabel = new JLabel("Started X ago");
 		JToggleButton pauseButton = new JToggleButton();
+
+
+		JToggleButton lootHeaderButtonPanel = new JToggleButton();
 		JLabel topLeftLabel = new JLabel(htmlLabel("Net Total: ", "N/A"));
 		JLabel bottomLeftLabel = new JLabel(htmlLabel("GP/hr: ", "N/A"));
 		JLabel topRightLabel = new JLabel(htmlLabel("Gains: ", "N/A"));
@@ -496,21 +512,38 @@ class ActiveSessionPanel extends PluginPanel
 		JLabel bottomRightLabel = data.bottomRightLabel;
 		JLabel topRightLabel = data.topRightLabel;
 		JPanel masterPanel = data.masterPanel;
-		PluginErrorPanel titlePanel = data.titlePanel;
 		JButton buttonLeft = data.buttonLeft;
 		JButton buttonMiddle = data.buttonMiddle;
 		JButton buttonRight = data.buttonRight;
 		JPanel contentPanel = data.contentPanel;
 		JPanel lootPanel = data.lootPanelData.lootPanel;
 
+		data.titleLabel.setForeground(Color.WHITE);
+		data.titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+		data.subtitleLabel.setFont(FontManager.getRunescapeSmallFont());
+		data.subtitleLabel.setForeground(Color.GRAY);
+		data.subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+		JPanel titlePanel = new JPanel();
+		titlePanel.setOpaque(false);
+		titlePanel.setLayout(new BorderLayout());
+		titlePanel.add(data.durationLabel, BorderLayout.WEST);
+		titlePanel.add(data.titleLabel, BorderLayout.CENTER);
+		titlePanel.add(data.pauseButton, BorderLayout.EAST);
+		
+		JPanel headerPanel = new JPanel();
+		headerPanel.setOpaque(false);
+		headerPanel.setLayout(new BorderLayout(0,5));
+		headerPanel.setBorder(new EmptyBorder(10, 10, 3, 10));
+		headerPanel.add(titlePanel, BorderLayout.NORTH);
+		headerPanel.add(data.subtitleLabel, BorderLayout.CENTER);
+
 		masterPanel.setLayout(new BorderLayout());
 		masterPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
 
 		JPanel bottomInfo = new JPanel();
 		JPanel topInfo = new JPanel();
-
-		titlePanel.setBorder(new EmptyBorder(10, 10, 3, 10));
-		titlePanel.setContent("Title", "Subtitle");
 
 		lootHeaderButtonPanel.setLayout(new GridLayout(2, 0, 0, 0));
 		bottomInfo.setLayout(new GridLayout(0, 2, 0, 0));
@@ -541,7 +574,6 @@ class ActiveSessionPanel extends PluginPanel
 		topInfo.setBorder(new EmptyBorder(0, 0, 0, 0));
 
 		topInfo.add(topLeftLabel, "West");
-		titlePanel.add(pauseButton, "East");
 
 		topRightLabel.setBorder(new EmptyBorder(0, 48, 0, 0));
 
@@ -573,7 +605,7 @@ class ActiveSessionPanel extends PluginPanel
 		JPanel topPanel = new JPanel();
 		topPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		topPanel.setLayout(new BorderLayout());
-		topPanel.add(titlePanel, BorderLayout.NORTH);
+		topPanel.add(headerPanel, BorderLayout.NORTH);
 		topPanel.add(lootHeaderButtonPanel, BorderLayout.SOUTH);
 
 		contentPanel.setLayout(new BorderLayout());

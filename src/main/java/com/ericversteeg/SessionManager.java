@@ -129,11 +129,8 @@ public class SessionManager
 					losses += value;
 				}
 			}
-			long tripPauseTime = runData.pauseTime;
-			long tripStartTime = runData.runStartTime;
-			long tripEndTime = runData.isInProgress() ? Instant.now().toEpochMilli() : runData.runEndTime;
-			tripDurationSum += (tripEndTime - tripStartTime) - tripPauseTime;
-			totalPauseTime += tripPauseTime;
+			tripDurationSum += runData.getRuntime();
+			totalPauseTime += runData.pauseTime;
 			tripCount++;
 
 			if (activeSessionEndId != null && activeSessionEndId.equals(runData.identifier))
