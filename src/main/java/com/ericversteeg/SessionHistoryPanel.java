@@ -367,7 +367,7 @@ public class SessionHistoryPanel extends JPanel
 				stats.lastCoinsImageValue = quantity;
 			};
 			asyncImage.onLoaded(resizeImage);
-			//TODO: remove this when my onLoaded PR merges
+			//TODO: remove this if/when my onLoaded PR merges
 			resizeImage.run();
 		} else
 		{
