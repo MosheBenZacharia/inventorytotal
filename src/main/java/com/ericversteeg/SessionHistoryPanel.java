@@ -360,13 +360,15 @@ public class SessionHistoryPanel extends JPanel
 		if (stats.coinsImage == null || quantity != stats.lastCoinsImageValue)
 		{
 			AsyncBufferedImage asyncImage = itemManager.getImage(ItemID.COINS_995, quantity, false);
-			//TODO: needs to know if asyncImage.isloaded
-			asyncImage.onLoaded(() ->
+			Runnable resizeImage = ()->
 			{
 				stats.coinsImage = ImageUtil.resizeImage(asyncImage, 24, 24);
 				consumer.accept(stats.coinsImage);
 				stats.lastCoinsImageValue = quantity;
-			});
+			};
+			asyncImage.onLoaded(resizeImage);
+			//TODO: remove this when my onLoaded PR merges
+			resizeImage.run();
 		} else
 		{
 			consumer.accept(stats.coinsImage);
