@@ -23,9 +23,88 @@ public class FractionalRemapper
 
     private static final Map<Integer, RemapData> remapData;
 
+    //avoid GC
+    private static final List<Integer> keySet = new LinkedList<>();
+
+    public static void Remap(Map<Integer, Float> qtyMap)
+    {
+        keySet.clear();
+        for (Integer integer : qtyMap.keySet())
+        {
+            keySet.add(integer);
+        }
+
+        for (Integer oldItemId : keySet)
+        {
+            if (remapData.containsKey(oldItemId))
+            {
+                RemapData data = remapData.get(oldItemId);
+                float originalQty = qtyMap.get(oldItemId);
+                float newQty = originalQty * data.remappedQuantityMultiplier;
+
+                qtyMap.remove(oldItemId);
+                qtyMap.merge(data.remappedId, newQty, Float::sum);
+            }
+        }
+    }
+
     static
     {
+        //Sourced from https://github.com/runelite/runelite/blob/master/runelite-client/src/main/java/net/runelite/client/plugins/itemcharges/ItemWithCharge.java
         remapData = new HashMap<>();
+
+        /////////////////////// Rechargeable Jewelery ///////////////////////
+        //These shouldn't really lose value as the charges deplete since the uncharged
+        //version is only worth slightly less than the charged version.
+        //But we still want them to only show up as one row in the ledger so we just make them
+        //a tiny fraction less of the fully charged version
+
+        //////// Skills necklace(6) /////////
+        //Skills (6) = 12,241gp
+        //Skills (0) = 11,914gp
+        remapData.put(11970, new RemapData(11968, 1f));
+        remapData.put(11105, new RemapData(11968, 1f));
+        remapData.put(11107, new RemapData(11968, 1f));
+        remapData.put(11109, new RemapData(11968, 1f));
+        remapData.put(11111, new RemapData(11968, 1f));
+        //Wealth (5) = 13,989gp
+        //Wealth (0) = 11,903gp
+        //////// Ring of wealth (i5) /////////
+        remapData.put(20787, new RemapData(20786, 0.95f));
+        remapData.put(20788, new RemapData(20786, 0.9f));
+        remapData.put(20789, new RemapData(20786, 0.85f));
+        remapData.put(20790, new RemapData(20786, 0.8f));
+        //////// Ring of wealth (5) /////////
+        remapData.put(11982, new RemapData(11980, 0.95f));
+        remapData.put(11984, new RemapData(11980, 0.9f));
+        remapData.put(11986, new RemapData(11980, 0.85f));
+        remapData.put(11988, new RemapData(11980, 0.8f));
+        //Glory (6) = 12,872gp
+        //Glory (0) = 11,903gp
+        //////// Amulet of glory (t6) /////////
+        remapData.put(11966, new RemapData(11964, 1f));
+        remapData.put(10354, new RemapData(11964, 1f));
+        remapData.put(10356, new RemapData(11964, 1f));
+        remapData.put(10358, new RemapData(11964, 1f));
+        remapData.put(10360, new RemapData(11964, 1f));
+        //////// Amulet of glory(6) /////////
+        remapData.put(11976,new RemapData(11978, 1f));
+        remapData.put(1712, new RemapData(11978, 1f));
+        remapData.put(1710, new RemapData(11978, 1f));
+        remapData.put(1708, new RemapData(11978, 1f));
+        remapData.put(1706, new RemapData(11978, 1f));
+        //Combat (6) = 12,436gp
+        //Combat (0) = 12,370gp
+        //////// Combat bracelet(6) /////////
+        remapData.put(11974, new RemapData(11972, 1f));
+        remapData.put(11118, new RemapData(11972, 1f));
+        remapData.put(11120, new RemapData(11972, 1f));
+        remapData.put(11122, new RemapData(11972, 1f));
+        remapData.put(11124, new RemapData(11972, 1f));
+
+
+        /////////////////////// Everything Else ///////////////////////
+
         //////// Forgotten brew(4) /////////
         remapData.put(27632, new RemapData(27629, 0.75f));
         remapData.put(27635, new RemapData(27629, 0.5f));
@@ -203,12 +282,6 @@ public class FractionalRemapper
         remapData.put(12627, new RemapData(12625, 0.75f));
         remapData.put(12629, new RemapData(12625, 0.5f));
         remapData.put(12631, new RemapData(12625, 0.25f));
-        //////// Skills necklace(6) /////////
-        remapData.put(11970, new RemapData(11968, 0.8333333f));
-        remapData.put(11105, new RemapData(11968, 0.6666667f));
-        remapData.put(11107, new RemapData(11968, 0.5f));
-        remapData.put(11109, new RemapData(11968, 0.33333334f));
-        remapData.put(11111, new RemapData(11968, 0.16666667f));
         //////// Serum 208 (4) /////////
         remapData.put(3417, new RemapData(3416, 0.75f));
         remapData.put(3418, new RemapData(3416, 0.5f));
@@ -255,16 +328,6 @@ public class FractionalRemapper
         remapData.put(5464, new RemapData(5478, 0.3f));
         remapData.put(5462, new RemapData(5478, 0.2f));
         remapData.put(5460, new RemapData(5478, 0.1f));
-        //////// Ring of wealth (i5) /////////
-        remapData.put(20787, new RemapData(20786, 0.8f));
-        remapData.put(20788, new RemapData(20786, 0.6f));
-        remapData.put(20789, new RemapData(20786, 0.4f));
-        remapData.put(20790, new RemapData(20786, 0.2f));
-        //////// Ring of wealth (5) /////////
-        remapData.put(11982, new RemapData(11980, 0.8f));
-        remapData.put(11984, new RemapData(11980, 0.6f));
-        remapData.put(11986, new RemapData(11980, 0.4f));
-        remapData.put(11988, new RemapData(11980, 0.2f));
         //////// Slayer ring (8) /////////
         remapData.put(11867, new RemapData(11866, 0.875f));
         remapData.put(11868, new RemapData(11866, 0.75f));
@@ -333,18 +396,6 @@ public class FractionalRemapper
         remapData.put(4419, new RemapData(4417, 0.75f));
         remapData.put(4421, new RemapData(4417, 0.5f));
         remapData.put(4423, new RemapData(4417, 0.25f));
-        //////// Amulet of glory (t6) /////////
-        remapData.put(11966, new RemapData(11964, 0.8333333f));
-        remapData.put(10354, new RemapData(11964, 0.6666667f));
-        remapData.put(10356, new RemapData(11964, 0.5f));
-        remapData.put(10358, new RemapData(11964, 0.33333334f));
-        remapData.put(10360, new RemapData(11964, 0.16666667f));
-        //////// Amulet of glory(6) /////////
-        remapData.put(11976, new RemapData(11978, 0.8333333f));
-        remapData.put(1712, new RemapData(11978, 0.6666667f));
-        remapData.put(1710, new RemapData(11978, 0.5f));
-        remapData.put(1708, new RemapData(11978, 0.33333334f));
-        remapData.put(1706, new RemapData(11978, 0.16666667f));
         //////// Games necklace(8) /////////
         remapData.put(3855, new RemapData(3853, 0.875f));
         remapData.put(3857, new RemapData(3853, 0.75f));
@@ -434,12 +485,6 @@ public class FractionalRemapper
         remapData.put(9741, new RemapData(9739, 0.75f));
         remapData.put(9743, new RemapData(9739, 0.5f));
         remapData.put(9745, new RemapData(9739, 0.25f));
-        //////// Combat bracelet(6) /////////
-        remapData.put(11974, new RemapData(11972, 0.8333333f));
-        remapData.put(11118, new RemapData(11972, 0.6666667f));
-        remapData.put(11120, new RemapData(11972, 0.5f));
-        remapData.put(11122, new RemapData(11972, 0.33333334f));
-        remapData.put(11124, new RemapData(11972, 0.16666667f));
         //////// Burning amulet(5) /////////
         remapData.put(21169, new RemapData(21166, 0.8f));
         remapData.put(21171, new RemapData(21166, 0.6f));
@@ -531,23 +576,5 @@ public class FractionalRemapper
         remapData.put(11099, new RemapData(11095, 0.6f));
         remapData.put(11101, new RemapData(11095, 0.4f));
         remapData.put(11103, new RemapData(11095, 0.2f));
-    }
-
-    public static void Remap(Map<Integer, Float> qtyMap)
-    {
-        List<Integer> keySet = new LinkedList<>(qtyMap.keySet());
-
-        for (Integer oldItemId : keySet)
-        {
-            if (remapData.containsKey(oldItemId))
-            {
-                RemapData data = remapData.get(oldItemId);
-                float originalQty = qtyMap.get(oldItemId);
-                float newQty = originalQty * data.remappedQuantityMultiplier;
-
-                qtyMap.remove(oldItemId);
-                qtyMap.merge(data.remappedId, newQty, Float::sum);
-            }
-        }
     }
 }
