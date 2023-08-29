@@ -48,7 +48,7 @@ public class InventoryTotalPlugin extends Plugin
 	static final int NO_PROFIT_LOSS_TIME = -1;
 	static final int RUNEPOUCH_ITEM_ID = 12791;
 	static final int DIVINE_RUNEPOUCH_ITEM_ID = 27281;
-	public static final float roundAmount = 0.1f;
+	public static final float roundAmount = 0.05f;
 
     // static item prices so that when ItemManager updates, the Profit / Loss value doesn't all of a sudden change
     // this is cleared and repopulated at the start of each new run (after bank) and whenever new items hit the inventory
@@ -449,6 +449,7 @@ public class InventoryTotalPlugin extends Plugin
 
 		addChargedWeaponComponents(equipmentQtyMap);
 		addChargedItemComponents(equipmentQtyMap);
+		FractionalRemapper.Remap(equipmentQtyMap);
 		return equipmentQtyMap;
 	}
 
@@ -604,6 +605,7 @@ public class InventoryTotalPlugin extends Plugin
 		addChargedWeaponComponents(inventoryQtyMap);
 		addChargedItemComponents(inventoryQtyMap);
 
+		FractionalRemapper.Remap(inventoryQtyMap);
 		return inventoryQtyMap;
 	}
 
