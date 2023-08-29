@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
@@ -123,6 +124,7 @@ public class InventoryTotalPlugin extends Plugin
     private BufferedImage icon;
     private NavigationButton navButton;
 	private boolean sessionHistoryDirty;
+	private boolean isLoggedIn;
 
 	// from ClueScrollPlugin
 	private static final int[] RUNEPOUCH_AMOUNT_VARBITS = {
@@ -154,19 +156,51 @@ public class InventoryTotalPlugin extends Plugin
 		updatePanels();
 	}
 
+	@Subscribe
+	private void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		GameState state = gameStateChanged.getGameState();
+		boolean loggedInNew = state.getState() >= GameState.LOADING.getState();
+		if (loggedInNew != this.isLoggedIn)
+		{
+			this.isLoggedIn = loggedInNew;
+			if (isLoggedIn)
+			{
+				String timeString = readData(InventoryTotalConfig.logOutTimeKey);
+				if (timeString != null)
+				{
+					Long logOutTime = Long.parseLong(timeString);
+					long timePassed = Instant.now().toEpochMilli() - logOutTime;
+					if (this.runData != null)
+					{
+						this.runData.pauseTime += timePassed;
+					}
+				}
+			}
+			else
+			{
+				if (this.state == InventoryTotalState.RUN && this.runData != null)
+				{
+					saveData(InventoryTotalConfig.logOutTimeKey, Instant.now().toEpochMilli());
+				}
+				else
+				{
+					deleteData(InventoryTotalConfig.logOutTimeKey);
+				}
+			}
+		}
+	}
+
 	void updatePanels()
 	{
 		if (navButton.isSelected() && gpPerHourPanel.isShowingActiveSession())
 		{
 			if (this.runData != null)
 			{
+				//ensure we load these after a restart
 				for(Integer intialItemId : this.runData.initialItemQtys.keySet())
 				{
 					ensureNameAndPriceLoaded(intialItemId);
-				}
-				for(Integer itemId : this.runData.itemQtys.keySet())
-				{
-					ensureNameAndPriceLoaded(itemId);
 				}
 			}
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
@@ -322,8 +356,6 @@ public class InventoryTotalPlugin extends Plugin
 		sessionManager.onTripCompleted(runData);
 		runData = createRunData();
 		initialGp = 0;
-
-		writeSavedData();
 	}
 
 	long getInventoryTotal(boolean isNewRun)
@@ -782,27 +814,21 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
-	// max invoke rate approximately once per tick
-	// mainly so that initially this isn't getting invoked multiple times after item prices are added to the map
 	void writeSavedData()
 	{
-		if (state == InventoryTotalState.BANK || Instant.now().toEpochMilli() - lastWriteSaveTime < 600)
-		{
-			return;
-		}
-
 		executor.execute(() ->
 		{
 			String json = gson.toJson(runData);
-			configManager.setConfiguration(InventoryTotalConfig.GROUP, "inventory_total_data", json);
+			saveData( "inventory_total_data", json);
 			lastWriteSaveTime = Instant.now().toEpochMilli();
 		});
 	}
 
 	private InventoryTotalRunData getSavedData()
 	{
-		String json = configManager.getConfiguration(InventoryTotalConfig.GROUP, "inventory_total_data");
+		String json = readData( "inventory_total_data");
 
+		log.info("got save data");
 		InventoryTotalRunData savedData = gson.fromJson(json, InventoryTotalRunData.class);
 
 		if (savedData == null)
@@ -834,7 +860,7 @@ public class InventoryTotalPlugin extends Plugin
 			sessionHistory.add(statsToSave);
 
 			String json = gson.toJson(statsToSave);
-			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(statsToSave.sessionID), json);
+			saveData(InventoryTotalConfig.getSessionKey(statsToSave.sessionID), json);
 
 			savedSessionIdentifiers.add(statsToSave.sessionID);
 			saveSessionIdentifiers();
@@ -852,7 +878,7 @@ public class InventoryTotalPlugin extends Plugin
 		executor.execute(()->
 		{
 			String json = gson.toJson(sessionStats);
-			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
+			saveData( InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
 			sessionHistoryDirty = true;
 		});
 	}
@@ -871,7 +897,7 @@ public class InventoryTotalPlugin extends Plugin
 		executor.execute(()->
 		{
 			sessionHistory.remove(sessionStats);
-			configManager.unsetConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionStats.sessionID));
+			deleteData(InventoryTotalConfig.getSessionKey(sessionStats.sessionID));
 
 			savedSessionIdentifiers.remove(sessionStats.sessionID);
 			saveSessionIdentifiers();
@@ -882,7 +908,7 @@ public class InventoryTotalPlugin extends Plugin
 	void saveSessionIdentifiers()
 	{
 		String json = gson.toJson(savedSessionIdentifiers);
-		configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.sessionIdentifiersKey, json);
+		saveData( InventoryTotalConfig.sessionIdentifiersKey, json);
 	}
 
 	void loadSessions()
@@ -892,14 +918,14 @@ public class InventoryTotalPlugin extends Plugin
 		executor.execute(()->
 		{
 			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();
-			savedSessionIdentifiers = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.sessionIdentifiersKey), listType);
+			savedSessionIdentifiers = gson.fromJson(readData( InventoryTotalConfig.sessionIdentifiersKey), listType);
 			if (savedSessionIdentifiers == null)
 			{
 				savedSessionIdentifiers = new LinkedList<>();
 			}
 			for (String sessionIdentifier : savedSessionIdentifiers)
 			{
-				SessionStats sessionStats = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
+				SessionStats sessionStats = gson.fromJson(readData( InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
 				sessionHistory.add(sessionStats);
 			}
 			sessionHistoryDirty = true;
@@ -988,5 +1014,25 @@ public class InventoryTotalPlugin extends Plugin
 	public InventoryTotalRunData getRunData()
 	{
 		return runData;
+	}
+
+	void saveData(String key, String data)
+	{
+		configManager.setConfiguration(InventoryTotalConfig.GROUP, key, data);
+	}
+
+	String readData(String key)
+	{
+		return configManager.getConfiguration(InventoryTotalConfig.GROUP, key);
+	}
+
+	<T> void saveData(String key, T data)
+	{
+		configManager.setConfiguration(InventoryTotalConfig.GROUP, key, data);
+	}
+
+	void deleteData(String key)
+	{
+		configManager.unsetConfiguration(InventoryTotalConfig.GROUP, key);
 	}
 }

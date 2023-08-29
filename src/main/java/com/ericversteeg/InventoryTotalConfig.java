@@ -11,6 +11,7 @@ import java.awt.*;
 public interface InventoryTotalConfig extends Config
 {
 	String GROUP = "inventorytotal";
+	String logOutTimeKey = "log_out_time";
 	String fish_barrel = "fish_barrel";
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
