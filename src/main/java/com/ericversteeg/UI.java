@@ -164,9 +164,11 @@ public class UI {
     }
 
     public static List<InventoryTotalLedgerItem> filterAndSortLedger(List<InventoryTotalLedgerItem> ledger) {
+        //don'tneed to filter here, getprofitlossledger does this at the bottom
+
         // filter out anything with no change or change that will get rounded to 0
-        ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
-                .collect(Collectors.toList());
+        // ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
+        //         .collect(Collectors.toList());
 
         // sort by profit descending
         ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
