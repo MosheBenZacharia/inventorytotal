@@ -206,9 +206,14 @@ public class SessionHistoryPanel extends JPanel
 			panelData.totalLossesLabel
 					.setText(htmlLabel(totalLossesLabelPrefix, UI.formatGp(stats.getTotalLoss(), config.showExactGp())));
 			panelData.durationLabel.setText(htmlLabel(durationLabelPrefix, UI.formatTime(stats.getSessionRuntime())));
-			panelData.tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
-			panelData.avgTripDurationLabel
-					.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
+			boolean showTripCountAndTime = stats.getTripCount() > 1;
+			panelData.setTripCountAndDurationVisible(showTripCountAndTime);
+			if(showTripCountAndTime)
+			{
+				panelData.tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
+				panelData.avgTripDurationLabel
+						.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
+			}
 			UI.updateLootGrid(
 					UI.filterAndSortLedger(
 							InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
@@ -258,9 +263,19 @@ public class SessionHistoryPanel extends JPanel
 		private final JLabel totalLossesLabel = new JLabel(htmlLabel(totalLossesLabelPrefix, "N/A"));
 		private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
 		private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
+		private final Component tripCountSpacing;
+		private final Component avgTripDurationSpacing;
 		private final UI.LootPanelData sessionLootPanelData = new UI.LootPanelData();
 		Runnable onDetailsPressed;
 		Runnable onDeletePressed;
+
+		void setTripCountAndDurationVisible(boolean visible)
+		{
+			tripCountLabel.setVisible(visible);
+			avgTripDurationLabel.setVisible(visible);
+			tripCountSpacing.setVisible(visible);
+			avgTripDurationSpacing.setVisible(visible);
+		}
 
 		SessionHistoryPanelData(SessionHistoryPanel parentPanel)
 		{
@@ -319,16 +334,23 @@ public class SessionHistoryPanel extends JPanel
 			headerPanel.add(nameAndSubtitlePanel, BorderLayout.CENTER);
 
 			JPanel infoLabels = new JPanel();
-			infoLabels.setLayout(new GridLayout(7, 1, 0, 8));
+			infoLabels.setLayout(new BoxLayout(infoLabels, BoxLayout.Y_AXIS));
 			infoLabels.setBorder(new EmptyBorder(8, 10, 8, 10));
 			infoLabels.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
+			int vGap = 8;
 			infoLabels.add(gpPerHourLabel);
+			UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(netTotalLabel);
+			UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(totalGainsLabel);
+			UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(totalLossesLabel);
+			UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(tripCountLabel);
+			tripCountSpacing = UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(avgTripDurationLabel);
+			avgTripDurationSpacing = UI.addVerticalRigidBox(infoLabels, vGap);
 			infoLabels.add(durationLabel);
 
 			sessionLootPanelData.lootPanel.setLayout(new BorderLayout());

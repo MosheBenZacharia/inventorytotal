@@ -111,7 +111,17 @@ class ActiveSessionPanel extends PluginPanel
 	private final JLabel sessionTimeLabel = new JLabel(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 	private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
 	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
+	private Component tripCountSpacing;
+	private Component avgTripDurationSpacing;
 	private final UI.LootPanelData sessionLootPanelData = new UI.LootPanelData();
+
+	void setTripCountAndDurationVisible(boolean visible)
+	{
+		tripCountLabel.setVisible(visible);
+		avgTripDurationLabel.setVisible(visible);
+		tripCountSpacing.setVisible(visible);
+		avgTripDurationSpacing.setVisible(visible);
+	}
 
 	private JPanel buildSessionInfoPanel()
 	{
@@ -119,19 +129,27 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
 		JPanel sessionInfoSection = new JPanel();
-		sessionInfoSection.setLayout(new GridLayout(8, 1, 0, 10));
+		sessionInfoSection.setLayout(new BoxLayout(sessionInfoSection, BoxLayout.Y_AXIS));
 		sessionInfoSection.setBorder(new EmptyBorder(10, 5, 3, 0));
+		int vGap = 10;
 
 		sessionNameLabel.setFont(FontManager.getRunescapeBoldFont());
 
 		sessionInfoSection.add(sessionNameLabel);
+		UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(gpPerHourLabel);
+		UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(netTotalLabel);
+		UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(totalGainsLabel);
+		UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(totalLossesLabel);
-		sessionInfoSection.add(sessionTimeLabel);
+		UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(tripCountLabel);
+		tripCountSpacing = UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(avgTripDurationLabel);
+		avgTripDurationSpacing = UI.addVerticalRigidBox(sessionInfoSection, vGap);
+		sessionInfoSection.add(sessionTimeLabel);
 
 		//icon buttons
 		startTrackingButton = UI.createIconButton(UI.SESSIONINFO_PLAY_ICON, UI.SESSIONINFO_PLAY_HOVER_ICON, "Start tracking new trips", ()-> { 
@@ -269,9 +287,14 @@ class ActiveSessionPanel extends PluginPanel
 			totalLossesLabel.setText(
 					htmlLabel(totalLossesLabelPrefix, UI.formatGp(stats.getTotalLoss(), config.showExactGp())));
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, UI.formatTime(stats.getSessionRuntime())));
-			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
-			avgTripDurationLabel
-					.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
+			boolean showTripCountAndTime = stats.getTripCount() > 1;
+			setTripCountAndDurationVisible(showTripCountAndTime);
+			if(showTripCountAndTime)
+			{
+				tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, Integer.toString(stats.getTripCount())));
+				avgTripDurationLabel
+						.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
+			}
 			UI.updateLootGrid(UI.filterAndSortLedger(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
 					sessionLootPanelData, itemManager, config);
 		}
