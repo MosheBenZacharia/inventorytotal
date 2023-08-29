@@ -187,6 +187,7 @@ public class InventoryTotalPlugin extends Plugin
 				{
 					deleteData(InventoryTotalConfig.logOutTimeKey);
 				}
+				lastTickTime = null;
 			}
 		}
 	}
