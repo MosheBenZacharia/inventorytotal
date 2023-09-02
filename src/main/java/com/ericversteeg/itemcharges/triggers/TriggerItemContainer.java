@@ -8,6 +8,7 @@ public class TriggerItemContainer {
 
     public boolean increase_by_difference;
     public boolean add_difference;
+    public Runnable extra_consumer;
 
     @Nullable public String menu_target;
     @Nullable public String menu_option;
@@ -39,6 +40,11 @@ public class TriggerItemContainer {
 
     public TriggerItemContainer addDifference() {
         this.add_difference = true;
+        return this;
+    }
+
+    public TriggerItemContainer extraConsumer(Runnable r) {
+        this.extra_consumer = r;
         return this;
     }
 }

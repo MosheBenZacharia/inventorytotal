@@ -262,6 +262,12 @@ public class ChargedItem {
 					break;
 				}
 
+				if (trigger_item_container.extra_consumer != null)
+				{
+					trigger_item_container.extra_consumer.run();
+					break;
+				}
+
 				// Charges dynamically based on the items of the item container.
 				setCharges(itemContainer.count());
 				break;

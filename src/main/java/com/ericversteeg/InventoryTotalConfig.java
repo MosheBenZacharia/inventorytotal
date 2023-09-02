@@ -20,6 +20,9 @@ public interface InventoryTotalConfig extends Config
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
 	String blood_essence = "blood_essence";
+	String gem_bag = "gem_bag";
+	String herb_sack = "herb_sack";
+	String seed_box = "seed_box";
 	String sessionKey = "session_stats_";
 	String sessionIdentifiersKey = "session_ids";
 

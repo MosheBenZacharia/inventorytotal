@@ -64,6 +64,7 @@ public class ChargedItemManager {
 			new U_BottomlessCompostBucket(client, client_thread, configs, items, chat_messages, notifier, gson),
 			new U_AshSanctifier(client, client_thread, configs, items, chat_messages, notifier, gson),
 			new U_BloodEssence(client, client_thread, configs, items, chat_messages, notifier, gson),
+			new U_GemBag(client, client_thread, configs, items, chat_messages, notifier, gson),
 		};
 	}
 

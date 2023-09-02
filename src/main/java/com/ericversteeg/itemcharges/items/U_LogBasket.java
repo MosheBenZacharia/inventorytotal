@@ -60,7 +60,6 @@ public class U_LogBasket extends ChargedItem
             new TriggerChatMessage("(Your|The) basket is empty.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
             new TriggerChatMessage("You bank all your logs.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
 			new TriggerChatMessage("(You get some.* logs)").extraConsumer(message -> {
-				log.info(message);
 				if ((item_id == ItemID.OPEN_LOG_BASKET || item_id == ItemID.OPEN_FORESTRY_BASKET) && getItemCount() < CAPACITY && super.hasChargeData()) {
 					final Matcher matcher = logPattern.matcher(message);
 					if (matcher.matches())
@@ -70,12 +69,9 @@ public class U_LogBasket extends ChargedItem
 						if (itemId != null)
 						{
 							super.addItems(itemId, 1f);
-							if (getItemCount() < CAPACITY)
+							if (getItemCount() < CAPACITY && lastNatureOfferingTickCount == client.getTickCount())
 							{
-								if (lastNatureOfferingTickCount == client.getTickCount())
-								{
-									super.addItems(itemId, 1f);
-								}
+								super.addItems(itemId, 1f);
 							}
 						}
 					}
