@@ -13,6 +13,7 @@ public interface InventoryTotalConfig extends Config
 	String GROUP = "inventorytotal";
 	String logOutTimeKey = "log_out_time";
 	String fish_barrel = "fish_barrel";
+	String kharedsts_memoirs = "kharedsts_memoirs";
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
 	String sessionKey = "session_stats_";

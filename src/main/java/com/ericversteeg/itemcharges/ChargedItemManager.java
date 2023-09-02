@@ -2,6 +2,7 @@
 package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
+import com.ericversteeg.itemcharges.items.S_KharedstMemoirs;
 import com.ericversteeg.itemcharges.items.U_FishBarrel;
 import com.ericversteeg.itemcharges.items.U_LogBasket;
 import com.google.gson.Gson;
@@ -68,6 +69,7 @@ public class ChargedItemManager {
 		chargedItems = new ChargedItem[]{
 			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson),
 			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson),
+			new S_KharedstMemoirs(client, client_thread, configs, items, chat_messages, notifier, gson),
 		};
 	}
 

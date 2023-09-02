@@ -117,6 +117,8 @@ public class ChargedItem {
 		client_thread.invokeLater(() -> {
 			loadChargesFromConfig();
 			onChargesUpdated();
+			onItemContainerUpdated(client.getItemContainer(InventoryID.INVENTORY));
+			onItemContainerUpdated(client.getItemContainer(InventoryID.EQUIPMENT));
 		});
 	}
 
@@ -149,9 +151,7 @@ public class ChargedItem {
 
 	public boolean hasChargeData()
 	{
-		return itemQuantities != null;
-		//TODO: switch to this one
-		//return this.charges != ChargedItemManager.CHARGES_UNKNOWN || itemQuantities != null;
+		return this.charges != ChargedItemManager.CHARGES_UNKNOWN || itemQuantities != null;
 	}
 
 	//should be overriden by derived class if they are using charges (should work like weapon charges)
@@ -168,18 +168,27 @@ public class ChargedItem {
 	private Map<Integer, Integer> differenceMap = new HashMap<>();
 
 	public void onItemContainersChanged(final ItemContainerChanged event) {
-		if (event.getItemContainer() == null) return;
+
+		onItemContainerUpdated(event.getItemContainer());
+	}
+
+	protected void onItemContainerUpdated(final ItemContainer itemContainer)
+	{
+		if (itemContainer == null)
+			return;
+
+		int containerId = itemContainer.getId();
 
 		// Find items difference before items are overridden.
 		int items_difference = 0;
-		if (event.getItemContainer().getId() == InventoryID.INVENTORY.getId() && inventory_items != null) {
-			items_difference = itemsDifference(inventory_items, event.getItemContainer().getItems());
+		if (containerId == InventoryID.INVENTORY.getId() && inventory_items != null) {
+			items_difference = itemsDifference(inventory_items, itemContainer.getItems());
 		}
 
 		differenceMap.clear();
-		if (event.getItemContainer().getId() == InventoryID.INVENTORY.getId() && inventory_items != null) {
+		if (containerId == InventoryID.INVENTORY.getId() && inventory_items != null) {
 			Item[] before = inventory_items;
-			Item[] after = event.getItemContainer().getItems();
+			Item[] after = itemContainer.getItems();
 			for (Item beforeItem : before)
 			{
 				differenceMap.merge(beforeItem.getId(), 1, Integer::sum);
@@ -189,7 +198,7 @@ public class ChargedItem {
 				differenceMap.merge(afterItem.getId(), -1, Integer::sum);
 			}
 		}
-		if (event.getContainerId() == InventoryID.INVENTORY.getId())
+		if (containerId == InventoryID.INVENTORY.getId())
 		{
 			if (itemQuantities != null && supportsWidgetOnWidget &&
 				(lastUseOnMeTick == client.getTickCount() || lastUseOnMeTick + 1 == client.getTickCount()))
@@ -206,15 +215,15 @@ public class ChargedItem {
 		}
 
 		// Update inventory reference.
-		if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
-			inventory = event.getItemContainer();
+		if (containerId == InventoryID.INVENTORY.getId()) {
+			inventory = itemContainer;
 			inventory_items = inventory.getItems();
 		}
 
 		if (triggers_item_containers != null) {
 			for (final TriggerItemContainer trigger_item_container : triggers_item_containers) {
 				// Item container is wrong.
-				if (trigger_item_container.inventory_id != event.getContainerId()) continue;
+				if (trigger_item_container.inventory_id != containerId) continue;
 
 				// Menu target check.
 				if (
@@ -255,18 +264,18 @@ public class ChargedItem {
 				}
 
 				// Charges dynamically based on the items of the item container.
-				if (event.getItemContainer() != null) {
-					setCharges(event.getItemContainer().count());
+				if (itemContainer != null) {
+					setCharges(itemContainer.count());
 					break;
 				}
 			}
 		}
 
 		// Save inventory and equipment item containers for other uses.
-		if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
-			inventory = event.getItemContainer();
-		} else if (event.getContainerId() == InventoryID.EQUIPMENT.getId()) {
-			equipment = event.getItemContainer();
+		if (containerId == InventoryID.INVENTORY.getId()) {
+			inventory = itemContainer;
+		} else if (containerId == InventoryID.EQUIPMENT.getId()) {
+			equipment = itemContainer;
 		}
 
 		// No trigger items to detect charges.
@@ -725,7 +734,7 @@ public class ChargedItem {
 
 		//if that didn't work try loading map
 		try {
-			Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
+			Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Float>>() {}.getType();
 			itemQuantities = gson.fromJson(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key), mapType);
 			return;
 		} catch (final Exception ignored) {}
