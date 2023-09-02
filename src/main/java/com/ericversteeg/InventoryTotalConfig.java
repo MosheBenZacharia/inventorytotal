@@ -19,6 +19,7 @@ public interface InventoryTotalConfig extends Config
 	String bottomless_compost_bucket_type = "bottomless_compost_bucket_type";
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
+	String blood_essence = "blood_essence";
 	String sessionKey = "session_stats_";
 	String sessionIdentifiersKey = "session_ids";
 

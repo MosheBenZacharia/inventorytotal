@@ -76,8 +76,11 @@ public class ChargedItem {
 	@Getter
 	private Map<Integer, Float> itemQuantities = null;
 
-	@Nullable public Integer negative_full_charges;
-	public boolean zero_charges_is_positive = false;
+	@Nullable 
+	protected Integer negative_full_charges;
+	protected boolean zero_charges_is_positive = false;
+	// Some items (specifically blood essence) will get their chat message before they are present in the inventory (when activating)
+	protected boolean allow_chat_messages_when_not_present = false;
 	private int gametick = 0;
 	private int gametick_before = 0;
 
@@ -325,7 +328,7 @@ public class ChargedItem {
 				// No config to save charges to.
 				config_key == null ||
 				// Not in inventory nor in equipment.
-				(!in_inventory && !in_equipment)
+				(!isInInventoryOrEquipment && !allow_chat_messages_when_not_present)
 		) return;
 
 		final String message = event.getMessage().replaceAll("</?col.*?>", "").replaceAll("<br>", " ");
@@ -380,6 +383,8 @@ public class ChargedItem {
 
 					if (chat_message.increase_dynamically) {
 						increaseCharges(charges);
+					} else if(chat_message.decrease_dynamically) {
+						decreaseCharges(charges);
 					} else {
 						setCharges(charges);
 					}
