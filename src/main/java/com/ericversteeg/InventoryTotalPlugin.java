@@ -254,6 +254,8 @@ public class InventoryTotalPlugin extends Plugin
 		chargedItemManager.shutDown();
 		sessionManager.shutDown();
 		clientToolbar.removeNavigation(navButton);
+
+		writeSavedData();
 	}
 
     private void buildSidePanel()
@@ -963,10 +965,7 @@ public class InventoryTotalPlugin extends Plugin
 			return NO_PROFIT_LOSS_TIME;
 		}
 
-		return Instant
-				.now()
-				.minusMillis(runData.runStartTime)
-				.toEpochMilli();
+		return runData.getRuntime();
 	}
 
 	void setMode(InventoryTotalMode mode)

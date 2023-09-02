@@ -130,8 +130,8 @@ class ActiveSessionPanel extends PluginPanel
 
 		JPanel sessionInfoSection = new JPanel();
 		sessionInfoSection.setLayout(new BoxLayout(sessionInfoSection, BoxLayout.Y_AXIS));
-		sessionInfoSection.setBorder(new EmptyBorder(10, 5, 3, 0));
-		int vGap = 10;
+		sessionInfoSection.setBorder(new EmptyBorder(6, 5, 3, 0));
+		int vGap = 8;
 
 		sessionNameLabel.setFont(FontManager.getRunescapeBoldFont());
 
