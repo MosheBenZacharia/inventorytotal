@@ -2,6 +2,7 @@
 package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
+import lombok.Getter;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -86,6 +87,7 @@ public class ChargedItem {
 	private int lastUseOnMeTick = -2;
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
+	@Getter
 	private Map<Integer, Float> itemQuantities = null;
 
 	@Nullable public Integer negative_full_charges;
@@ -154,18 +156,8 @@ public class ChargedItem {
 		return this.charges != ChargedItemManager.CHARGES_UNKNOWN || itemQuantities != null;
 	}
 
-	//should be overriden by derived class if they are using charges (should work like weapon charges)
-	public Map<Integer, Float> getItemQuantities()
-	{
-		return this.itemQuantities;
-	}
-
-	public int getCharges() {
-		return charges;
-	}
-
 	//avoid GC
-	private Map<Integer, Integer> differenceMap = new HashMap<>();
+	private final Map<Integer, Integer> differenceMap = new HashMap<>();
 
 	public void onItemContainersChanged(final ItemContainerChanged event) {
 
@@ -264,10 +256,8 @@ public class ChargedItem {
 				}
 
 				// Charges dynamically based on the items of the item container.
-				if (itemContainer != null) {
-					setCharges(itemContainer.count());
-					break;
-				}
+				setCharges(itemContainer.count());
+				break;
 			}
 		}
 
@@ -402,6 +392,7 @@ public class ChargedItem {
 					final String extra = matcher.group(extra_group);
 					if (extra != null) {
 						setConfiguration(config_key + "_" + extra_group, extra.replaceAll(",", ""));
+						onChargesUpdated();
 					}
 				}
 			}

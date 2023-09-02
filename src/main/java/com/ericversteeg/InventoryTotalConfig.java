@@ -14,6 +14,8 @@ public interface InventoryTotalConfig extends Config
 	String logOutTimeKey = "log_out_time";
 	String fish_barrel = "fish_barrel";
 	String kharedsts_memoirs = "kharedsts_memoirs";
+	String bottomless_compost_bucket = "bottomless_compost_bucket";
+	String bottomless_compost_bucket_type = "bottomless_compost_bucket_type";
 	String log_basket = "log_basket";
 	String looting_bag = "looting_bag";
 	String sessionKey = "session_stats_";

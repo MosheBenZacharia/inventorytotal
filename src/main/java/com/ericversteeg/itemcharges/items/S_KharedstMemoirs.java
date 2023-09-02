@@ -54,7 +54,6 @@ public class S_KharedstMemoirs extends ChargedItem {
     @Override
     protected  void onChargesUpdated()
     {
-        log.info("charges updated: "+ charges);
         quantities.clear();
         quantities.put(ItemID.LAW_RUNE, (float) charges);
         quantities.put(ItemID.BODY_RUNE, (float) charges);
