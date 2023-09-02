@@ -6,6 +6,7 @@ import com.ericversteeg.itemcharges.ChargesItem;
 import com.ericversteeg.itemcharges.triggers.TriggerChatMessage;
 import com.ericversteeg.itemcharges.triggers.TriggerItem;
 import com.ericversteeg.itemcharges.triggers.TriggerItemContainer;
+import com.ericversteeg.itemcharges.triggers.TriggerItemDespawn;
 import com.ericversteeg.itemcharges.triggers.TriggerMenuOption;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemID;
+import net.runelite.api.TileItem;
 import net.runelite.client.Notifier;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
@@ -31,7 +33,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class U_GemBag extends ChargedItem
 {
-    // private final int CAPACITY = 60;
+    private final int CAPACITY = 60;
     private static final String checkRegex = "Sapphires: (\\d+) \\/ Emeralds: (\\d+) \\/ Rubies: (\\d+) Diamonds: (\\d+) \\/ Dragonstones: (\\d+)";
     private static final Pattern checkPattern = Pattern.compile(checkRegex);
 
@@ -50,9 +52,19 @@ public class U_GemBag extends ChargedItem
         this.zero_charges_is_positive = true;
         this.triggers_items = new TriggerItem[]{
                 new TriggerItem(ItemID.GEM_BAG_12020),
-                new TriggerItem(ItemID.OPEN_GEM_BAG),
+                new TriggerItem(ItemID.OPEN_GEM_BAG, true),
         };
-        //TODO: trigger despawn
+        this.trigger_item_despawn = new TriggerItemDespawn((TileItem tileItem) ->
+        {
+            if (tileItem.getId() == ItemID.UNCUT_SAPPHIRE ||
+                tileItem.getId() == ItemID.UNCUT_EMERALD ||
+                tileItem.getId() == ItemID.UNCUT_RUBY ||
+                tileItem.getId() == ItemID.UNCUT_DIAMOND ||
+                tileItem.getId() == ItemID.UNCUT_DRAGONSTONE)
+            {
+                addDespawnedGemIfHasCapacity(tileItem);
+            }
+        });
         this.triggers_chat_messages = new TriggerChatMessage[]{
                 new TriggerChatMessage("The gem bag is now empty.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
                 new TriggerChatMessage("The gem bag is empty.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
@@ -72,11 +84,11 @@ public class U_GemBag extends ChargedItem
                             int diamonds = Integer.parseInt(matcher.group(4));
                             int dragonstones = Integer.parseInt(matcher.group(5));
 
-                            super.addItems(ItemID.SAPPHIRE, (float) sapphires);
-                            super.addItems(ItemID.EMERALD, (float) emeralds);
-                            super.addItems(ItemID.RUBY, (float) rubies);
-                            super.addItems(ItemID.DIAMOND, (float) diamonds);
-                            super.addItems(ItemID.DRAGONSTONE, (float) dragonstones);
+                            super.addItems(ItemID.UNCUT_SAPPHIRE, (float) sapphires);
+                            super.addItems(ItemID.UNCUT_EMERALD, (float) emeralds);
+                            super.addItems(ItemID.UNCUT_RUBY, (float) rubies);
+                            super.addItems(ItemID.UNCUT_DIAMOND, (float) diamonds);
+                            super.addItems(ItemID.UNCUT_DRAGONSTONE, (float) dragonstones);
                         }
                         catch (NumberFormatException e)
                         {
@@ -93,5 +105,13 @@ public class U_GemBag extends ChargedItem
             new TriggerItemContainer(InventoryID.BANK.getId()).menuTarget("Gem bag").menuOption("Empty").extraConsumer(() -> super.emptyOrClear()),
         };
         this.supportsWidgetOnWidget = true;
+    }
+
+    private void addDespawnedGemIfHasCapacity(TileItem tileItem)
+    {
+        if (tileItem.getQuantity() == 1 && super.itemQuantities.get(tileItem.getId()) < CAPACITY)
+        {
+            super.addItems(tileItem.getId(), 1f);
+        }
     }
 }

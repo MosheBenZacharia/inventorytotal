@@ -3,6 +3,9 @@ package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
 import com.ericversteeg.itemcharges.triggers.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -10,6 +13,7 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
@@ -37,6 +41,15 @@ import java.lang.reflect.Type;
 
 @Slf4j
 public class ChargedItem {
+
+	@Data
+	@AllArgsConstructor
+	public class PickupAction
+	{
+		int itemId;
+		WorldPoint worldPoint;
+	}
+	
 	public final ChargesItem infobox_id;
 	public int item_id;
 	protected final Client client;
@@ -63,8 +76,10 @@ public class ChargedItem {
 	@Nullable protected TriggerItemContainer[] triggers_item_containers;
 	@Nullable protected TriggerMenuOption[] triggers_menu_options;
 	@Nullable protected TriggerXPDrop[] triggers_xp_drops;
+	@Nullable protected TriggerItemDespawn trigger_item_despawn;
 	protected boolean supportsWidgetOnWidget = false;
 
+	private PickupAction lastPickUpAction;
 	private boolean in_equipment;
 	private boolean in_inventory;
 	private final List<String[]> menu_entries = new ArrayList<>();
@@ -74,7 +89,7 @@ public class ChargedItem {
 	private boolean isInInventoryOrEquipment;
 	protected int charges = ChargedItemManager.CHARGES_UNKNOWN;
 	@Getter
-	private Map<Integer, Float> itemQuantities = null;
+	protected Map<Integer, Float> itemQuantities = null;
 
 	@Nullable 
 	protected Integer negative_full_charges;
@@ -147,6 +162,8 @@ public class ChargedItem {
 
 	public void onStatChanged(StatChanged event)
 	{
+		if (!hasChargeData())
+			return;
 		if (!isInInventoryOrEquipment)
 			return;
 		if (event.getXp() <= 0)
@@ -161,6 +178,38 @@ public class ChargedItem {
 				decreaseCharges(trigger_xp_drop.discharges);
 			}
 		}
+	}
+
+	public void onItemDespawned(ItemDespawned event)
+	{
+		if (!hasChargeData())
+			return;
+		if (!isInInventoryOrEquipment)
+			return;
+		if (this.triggers_items == null)
+			return;
+		if (this.trigger_item_despawn == null)
+			return;
+		if (lastPickUpAction == null)
+			return;
+		if (!event.getTile().getWorldLocation().equals(client.getLocalPlayer().getWorldLocation()))
+			return;
+		if (!event.getTile().getWorldLocation().equals(lastPickUpAction.getWorldPoint()))
+			return;
+		if (event.getItem().getId() != lastPickUpAction.getItemId())
+			return;
+		
+		for (TriggerItem triggerItem : this.triggers_items)
+		{
+			if (triggerItem.item_id == this.item_id)
+			{
+				//Check to see if the item ID we are currently mapped to is an open container
+				if (!triggerItem.is_open_container)
+					return;
+			}
+		}
+
+		trigger_item_despawn.consumer.accept(event.getItem());
 	}
 
 	//avoid GC
@@ -300,7 +349,7 @@ public class ChargedItem {
 
 				// Update infobox item picture and tooltip dynamically based on the items if use has different variant of it.
 				if (trigger_item.item_id != item_id) {
-					updateInfobox(trigger_item.item_id);
+					updateItemId(trigger_item.item_id);
 				}
 
 				if (in_equipment_item) in_equipment = true;
@@ -626,9 +675,13 @@ public class ChargedItem {
 		}
 	}
 
-
 	public void onMenuOptionClicked(final MenuOptionClicked event) {
 
+		if (event.getMenuAction() == MenuAction.GROUND_ITEM_THIRD_OPTION && event.getMenuOption().equals("Take"))
+		{
+			WorldPoint point = WorldPoint.fromScene(client, event.getParam0(), event.getParam1(), client.getPlane());
+			lastPickUpAction = new PickupAction(event.getId(), point);
+		}
 		if (event.getMenuAction() == MenuAction.WIDGET_TARGET_ON_WIDGET && this.supportsWidgetOnWidget) {
 			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
 			if (itemContainer == null)
@@ -783,8 +836,7 @@ public class ChargedItem {
 		configs.setConfiguration(InventoryTotalConfig.GROUP, key, value);
 	}
 
-	private void updateInfobox(final int item_id) {
-		// Item id.
+	private void updateItemId(final int item_id) {
 		this.item_id = item_id;
 	}
 

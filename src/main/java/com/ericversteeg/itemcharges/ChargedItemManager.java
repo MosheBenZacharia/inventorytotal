@@ -73,6 +73,16 @@ public class ChargedItemManager {
 	}
 
 	@Subscribe
+	public void onItemDespawned(final ItemDespawned event)
+	{
+		log.debug("ITEM DESPAWNED | " + event.getItem().getId());
+
+		for (final ChargedItem chargedItem : this.chargedItems) {
+			chargedItem.onItemDespawned(event);
+		}
+	}
+
+	@Subscribe
 	public void onStatChanged(final StatChanged event)
 	{
 		log.debug("STAT CHANGED | " + event.getSkill());
