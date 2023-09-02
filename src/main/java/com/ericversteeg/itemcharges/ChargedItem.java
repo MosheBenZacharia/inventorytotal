@@ -2,6 +2,7 @@
 package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
+import com.ericversteeg.itemcharges.triggers.*;
 import lombok.Getter;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -9,14 +10,7 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
-import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicChanged;
-import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
 import net.runelite.client.callback.ClientThread;
@@ -26,15 +20,6 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
-import com.ericversteeg.itemcharges.triggers.TriggerAnimation;
-import com.ericversteeg.itemcharges.triggers.TriggerChatMessage;
-import com.ericversteeg.itemcharges.triggers.TriggerGraphic;
-import com.ericversteeg.itemcharges.triggers.TriggerHitsplat;
-import com.ericversteeg.itemcharges.triggers.TriggerItem;
-import com.ericversteeg.itemcharges.triggers.TriggerItemContainer;
-import com.ericversteeg.itemcharges.triggers.TriggerMenuOption;
-import com.ericversteeg.itemcharges.triggers.TriggerReset;
-import com.ericversteeg.itemcharges.triggers.TriggerWidget;
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
@@ -77,6 +62,7 @@ public class ChargedItem {
 	@Nullable protected TriggerReset[] triggers_resets;
 	@Nullable protected TriggerItemContainer[] triggers_item_containers;
 	@Nullable protected TriggerMenuOption[] triggers_menu_options;
+	@Nullable protected TriggerXPDrop[] triggers_xp_drops;
 	protected boolean supportsWidgetOnWidget = false;
 
 	private boolean in_equipment;
@@ -154,6 +140,24 @@ public class ChargedItem {
 	public boolean hasChargeData()
 	{
 		return this.charges != ChargedItemManager.CHARGES_UNKNOWN || itemQuantities != null;
+	}
+
+	public void onStatChanged(StatChanged event)
+	{
+		if (!isInInventoryOrEquipment)
+			return;
+		if (event.getXp() <= 0)
+			return;
+
+		if (triggers_xp_drops != null) {
+			for (final TriggerXPDrop trigger_xp_drop : triggers_xp_drops) {
+				// Skill is wrong.
+				if (trigger_xp_drop.skill != event.getSkill())
+					continue;
+
+				decreaseCharges(trigger_xp_drop.discharges);
+			}
+		}
 	}
 
 	//avoid GC

@@ -2,22 +2,12 @@
 package com.ericversteeg.itemcharges;
 
 import com.ericversteeg.InventoryTotalConfig;
-import com.ericversteeg.itemcharges.items.S_KharedstMemoirs;
-import com.ericversteeg.itemcharges.items.U_BottomlessCompostBucket;
-import com.ericversteeg.itemcharges.items.U_FishBarrel;
-import com.ericversteeg.itemcharges.items.U_LogBasket;
+import com.ericversteeg.itemcharges.items.*;
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicChanged;
-import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.*;
 import net.runelite.client.Notifier;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
@@ -72,11 +62,22 @@ public class ChargedItemManager {
 			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson),
 			new S_KharedstMemoirs(client, client_thread, configs, items, chat_messages, notifier, gson),
 			new U_BottomlessCompostBucket(client, client_thread, configs, items, chat_messages, notifier, gson),
+			new U_AshSanctifier(client, client_thread, configs, items, chat_messages, notifier, gson),
 		};
 	}
 
 	public void shutDown() {
 
+	}
+
+	@Subscribe
+	public void onStatChanged(final StatChanged event)
+	{
+		log.debug("STAT CHANGED | " + event.getSkill());
+
+		for (final ChargedItem chargedItem : this.chargedItems) {
+			chargedItem.onStatChanged(event);
+		}
 	}
 
 	@Subscribe
