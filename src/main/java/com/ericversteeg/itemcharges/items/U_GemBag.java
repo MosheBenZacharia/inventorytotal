@@ -109,7 +109,7 @@ public class U_GemBag extends ChargedItem
 
     private void addDespawnedGemIfHasCapacity(TileItem tileItem)
     {
-        if (tileItem.getQuantity() == 1 
+        if (tileItem.getQuantity() == 1
                 && (!super.itemQuantities.containsKey(tileItem.getId()) || super.itemQuantities.get(tileItem.getId()) < CAPACITY))
         {
             super.addItems(tileItem.getId(), 1f);
