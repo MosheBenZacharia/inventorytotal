@@ -813,7 +813,8 @@ public class InventoryTotalPlugin extends Plugin
 		else
 		{
 			//certain things should still have value (still need to figure out what else to include)
-			if (itemId == ItemID.CRYSTAL_SHARD)
+			if (itemId == ItemID.CRYSTAL_SHARD
+				|| itemId == ItemID.BRIMSTONE_KEY)
 			{
 				ItemComposition composition = itemManager.getItemComposition(itemId);
 				return composition.getHaPrice();
