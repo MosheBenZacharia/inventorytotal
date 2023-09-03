@@ -305,7 +305,7 @@ public class ChargedItem {
 					for (Integer itemId : differenceMap.keySet())
 					{
 						Integer count = differenceMap.get(itemId);
-						if (count > 0)
+						if (count != 0)
 						{
 							addItems(itemId, (float) count);
 						}

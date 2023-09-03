@@ -18,7 +18,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
-import net.runelite.http.api.item.ItemPrice;
 
 import java.util.List;
 import java.util.Map;
