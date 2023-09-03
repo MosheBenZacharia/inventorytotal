@@ -7,8 +7,6 @@ import com.ericversteeg.itemcharges.ChargesItem;
 import com.ericversteeg.itemcharges.triggers.TriggerChatMessage;
 import com.ericversteeg.itemcharges.triggers.TriggerItem;
 import com.ericversteeg.itemcharges.triggers.TriggerItemContainer;
-import com.ericversteeg.itemcharges.triggers.TriggerMenuOption;
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +18,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.http.api.item.ItemPrice;
 
 import java.util.List;
@@ -64,7 +60,7 @@ public class U_LogBasket extends ChargedItem
 					final Matcher matcher = logPattern.matcher(message);
 					if (matcher.matches())
 					{
-						final String logName = matcher.group(1).toLowerCase().trim();
+						final String logName = matcher.group(1);
 						Integer itemId = tryFindItemIdFromName(logName);
 						if (itemId != null)
 						{
@@ -77,7 +73,7 @@ public class U_LogBasket extends ChargedItem
 					}
 					else
 					{
-						log.error("no match found");
+						log.error("no log match found for message: " + message);
 					}
 				}
 			}),
@@ -95,7 +91,7 @@ public class U_LogBasket extends ChargedItem
 					try
 					{
 						int amount = Integer.parseInt(matcher.group(1));
-						String name = matcher.group(2).toLowerCase();
+						String name = matcher.group(2);
 						Integer itemId = tryFindItemIdFromName(name);
 						if (itemId != null)
 							super.addItems(itemId, (float) amount);
@@ -112,21 +108,5 @@ public class U_LogBasket extends ChargedItem
 			new TriggerItemContainer(InventoryID.INVENTORY.getId()).menuTarget("Log basket").menuOption("Fill").addDifference(),
 		};
 		this.supportsWidgetOnWidget = true;
-	}
-
-	private Integer tryFindItemIdFromName(String name)
-	{
-		List<ItemPrice> results = items.search(name);
-		if(results != null && !results.isEmpty())
-		{
-			for (ItemPrice result : results)
-			{
-				if (result.getName().toLowerCase().equals(name))
-				{
-					return result.getId();
-				}
-			}
-		}
-		return null;
 	}
 }

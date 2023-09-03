@@ -24,6 +24,8 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.http.api.item.ItemPrice;
+
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
@@ -852,6 +854,33 @@ public class ChargedItem {
 
 		return Math.abs(items_before_count - items_after_count);
 
+	}
+
+	private final static Map<String, Integer> nameToIdLookup = new HashMap<>();
+
+	//only works on tradeable items
+	protected Integer tryFindItemIdFromName(String name)
+	{
+		name = name.toLowerCase().trim();
+
+		if (nameToIdLookup.containsKey(name))
+		{
+			return nameToIdLookup.get(name);
+		}
+		
+		List<ItemPrice> results = items.search(name);
+		if (results != null && !results.isEmpty())
+		{
+			for (ItemPrice result : results)
+			{
+				if (result.getName().toLowerCase().equals(name))
+				{
+					nameToIdLookup.put(name, result.getId());
+					return result.getId();
+				}
+			}
+		}
+		return null;
 	}
 }
 
