@@ -299,7 +299,7 @@ public class SessionManager
 		// don't care about trips where nothing happened, can remove it from the history
 		if (!tripHadChange(runData.initialItemQtys, runData.itemQtys))
 		{
-			log.info("nothing changed, ignoring trip");
+			log.debug("nothing changed, ignoring trip");
 			deleteTrip(runData.identifier);
 			return;
 		}
@@ -307,27 +307,7 @@ public class SessionManager
 
 	boolean tripHadChange(Map<Integer, Float> tripStart, Map<Integer, Float> tripEnd)
 	{
-		if (tripStart.size() != tripEnd.size())
-		{
-			return true;
-		}
-
-		for (Integer startId : tripStart.keySet())
-		{
-			if (!tripEnd.containsKey(startId) || Math
-				.abs(tripEnd.get(startId) - tripStart.get(startId)) > (InventoryTotalPlugin.roundAmount / 2f))
-			{
-				return true;
-			}
-		}
-		for (Integer endId : tripEnd.keySet())
-		{
-			if (!tripStart.containsKey(endId)
-				|| Math.abs(tripEnd.get(endId) - tripStart.get(endId)) > (InventoryTotalPlugin.roundAmount / 2f))
-			{
-				return true;
-			}
-		}
-		return false;
+		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(tripStart, tripEnd);
+		return !ledger.isEmpty();
 	}
 }

@@ -744,6 +744,7 @@ public class InventoryTotalPlugin extends Plugin
 			}
 		}
 
+		//filter out quantities less than round amount here!
 		List<InventoryTotalLedgerItem> ledgerItemsFiltered = new LinkedList<>();
 		for (InventoryTotalLedgerItem item : ledgerItems.values())
 		{
