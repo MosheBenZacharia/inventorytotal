@@ -313,6 +313,8 @@ public class InventoryTotalPlugin extends Plugin
 
 		if (!isRun)
 			return;
+		if (runData.isBankDelay)
+			return;
 
 		if (previousTotalGp == null)
 		{

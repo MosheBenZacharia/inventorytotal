@@ -39,6 +39,7 @@ public class InventoryTotalRunData
     }
 
     // its in the period between banking finished (onNewRun) and two ticks later
-    // when we call onPostNewRun
+    // when we call onPostNewRun. we have this delay because of how you can withdraw from the bank,
+    // close it immediately, and still get the items in your inventory a tick later.
     transient boolean isBankDelay;
 }

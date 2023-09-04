@@ -329,7 +329,7 @@ class ActiveSessionPanel extends PluginPanel
 			tpData.topLeftLabel
 					.setText(htmlLabel("GP/hr: ", UI.formatGp(gpPerHour, false) + "/hr"));
 			updateButtonMiddle(tpData, runData);
-			updateButtonRight(tpData, runData, false);
+			tpData.deleteWrapper.addActionListener((event) -> sessionManager.deleteTrip(runData.identifier));
 			updateButtonPause(tpData, runData);
 			previousGpPerHour = gpPerHour;
 			return true;
@@ -374,8 +374,7 @@ class ActiveSessionPanel extends PluginPanel
 			this.updateTrips();
 		});
 		updateButtonMiddle(tpData, runData);
-		UI.clearListeners(tpData.buttonRight);
-		updateButtonRight(tpData, runData, true);
+		updateButtonRight(tpData, runData);
 		updateButtonPause(tpData, runData);
 
 		UI.updateLootGrid(ledger, tpData.lootPanelData, itemManager, config);
@@ -415,23 +414,25 @@ class ActiveSessionPanel extends PluginPanel
 		}
 	}
 
-	void updateButtonRight(TripPanelData tpData, InventoryTotalRunData runData, boolean includeConfirmation)
+	void updateButtonRight(TripPanelData tpData, InventoryTotalRunData runData)
 	{
+		UI.clearListeners(tpData.buttonRight);
+		UI.clearListeners(tpData.deleteWrapper);
 		tpData.buttonRight.setEnabled(!runData.isInProgress());
 		tpData.buttonRight.setText("Delete");
 		tpData.buttonRight.setToolTipText("Delete this trip.");
 		tpData.buttonRight.addActionListener((event) ->
 		{
-			int confirm = 0;
-			if (includeConfirmation)
-			{
-				confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?", "Warning",
-						JOptionPane.OK_CANCEL_OPTION);
-			}
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this trip?", "Warning",
+			JOptionPane.OK_CANCEL_OPTION);
 
 			if (confirm == 0)
 			{
 				sessionManager.deleteTrip(runData.identifier);
+				for (java.awt.event.ActionListener listener : tpData.deleteWrapper.getActionListeners())
+				{
+					listener.actionPerformed(event);
+				}
 				this.updateTrips();
 			}
 		});
@@ -512,6 +513,8 @@ class ActiveSessionPanel extends PluginPanel
 		JButton buttonRight = new JButton("Right");
 		JPanel contentPanel = new JPanel();
 		UI.LootPanelData lootPanelData = new UI.LootPanelData();
+		//use this as our 'delete all' observer since it's a pain to do it in java
+		JButton deleteWrapper = new JButton();
 
 		void setContentPanelBorder(Color color)
 		{
