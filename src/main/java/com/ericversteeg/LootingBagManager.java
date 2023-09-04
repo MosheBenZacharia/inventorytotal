@@ -101,10 +101,14 @@ public class LootingBagManager
 		ItemContainer itemContainer = client.getItemContainer(LOOTING_BAG_CONTAINER);
 		if (itemContainer == null)
 		{
+			if (bagItems == null)
+				bagItems = new HashMap<>();
 			bagItems.clear();
 			saveData();
 			return;
 		}
+		if (bagItems == null)
+			bagItems = new HashMap<>();
 		bagItems.clear();
 		for (Item item : itemContainer.getItems())
 		{
