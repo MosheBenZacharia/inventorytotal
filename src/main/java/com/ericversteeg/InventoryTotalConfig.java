@@ -426,9 +426,10 @@ public interface InventoryTotalConfig extends Config
 		return false;
 	}
 
+	public static final String sidePanelPositionKeyName = "sidePanelPosition";
     @ConfigItem(
             position = 50,
-            keyName = "Side Panel Position",
+            keyName = sidePanelPositionKeyName,
             name = "Side Panel Position",
             description = "Panel icon position, Lower # = higher pos, Higher # = lower pos ",
 			section =  sessionPanelSection

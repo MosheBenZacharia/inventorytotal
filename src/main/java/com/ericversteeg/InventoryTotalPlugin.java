@@ -292,7 +292,7 @@ public class InventoryTotalPlugin extends Plugin
 		gpPerHourPanel = new GPPerHourPanel(activeSessionPanel, sessionHistoryPanel);
 
         icon = ImageUtil.loadImageResource(getClass(), "/gpperhour-icon.png");
-        navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(gpPerHourPanel).build();
+        navButton = buildNavButton();
 		if (config.enableSessionPanel())
 			clientToolbar.addNavigation(navButton);
     }
@@ -310,6 +310,7 @@ public class InventoryTotalPlugin extends Plugin
     {
 		updatePluginState();
 		updatePanels();
+		updateChargeableItemsNeedingCheck();
 		
 		if (this.state == InventoryTotalState.RUN && runData.isPaused && lastTickTime != null)
 		{
@@ -372,7 +373,22 @@ public class InventoryTotalPlugin extends Plugin
 				else
 					clientToolbar.removeNavigation(navButton);
 			}
+			if (event.getKey().equals(InventoryTotalConfig.sidePanelPositionKeyName))
+			{
+				clientToolbar.removeNavigation(navButton);
+				//need to rebuild it for some reason (i think its a bug in core)
+				navButton = buildNavButton();
+				if (config.enableSessionPanel())
+				{
+					clientToolbar.addNavigation(navButton);
+				}
+			}
 		}
+	}
+
+	private NavigationButton buildNavButton()
+	{
+		return NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(gpPerHourPanel).build();
 	}
 
 	@Subscribe
@@ -605,6 +621,7 @@ public class InventoryTotalPlugin extends Plugin
 
 		Item ring = itemContainer.getItem(EquipmentInventorySlot.RING.getSlotIdx());
 		Item ammo = itemContainer.getItem(EquipmentInventorySlot.AMMO.getSlotIdx());
+		Item weapon = itemContainer.getItem(EquipmentInventorySlot.WEAPON.getSlotIdx());
 
 		Player player = client.getLocalPlayer();
 
@@ -628,6 +645,11 @@ public class InventoryTotalPlugin extends Plugin
 		if (ammo != null)
 		{
 			equipmentQtyMap.put(ammo.getId(), (float) ammo.getQuantity());
+		}
+
+		if (weapon != null)
+		{
+			equipmentQtyMap.put(weapon.getId(), (float) weapon.getQuantity());
 		}
 
 		addChargedWeaponComponents(equipmentQtyMap);
@@ -792,31 +814,14 @@ public class InventoryTotalPlugin extends Plugin
 		return inventoryQtyMap;
 	}
 
-	boolean needsLootingBagCheck()
-	{
-		if (this.state == InventoryTotalState.BANK)
-			return false;
-		final ItemContainer itemContainer = inventoryItemContainer;
-		if(itemContainer == null)
-			return false;
-
-		// only when the looting bag is in the inventory
-		if (Arrays.stream(itemContainer.getItems()).anyMatch(s -> s.getId() == ItemID.LOOTING_BAG || s.getId() == ItemID.LOOTING_BAG_22586))
-		{
-			return lootingBagManager.needsCheck();
-		}
-
-		return false;
-	}
-
-	//no GC
+	@Getter
 	private final HashSet<String> chargeableItemsNeedingCheck = new HashSet<>();
 
-	HashSet<String> getChargeableItemsNeedingCheck()
+	void updateChargeableItemsNeedingCheck()
 	{
 		chargeableItemsNeedingCheck.clear();
 		if (this.state == InventoryTotalState.BANK)
-			return chargeableItemsNeedingCheck;
+			return;
 
 		final ItemContainer itemContainer = inventoryItemContainer;
 		//loop through container instead of getting qtyMap because we don't care about chargeable items in looting bag (actually can you even put something charged in a container? wouldnt be tradeable right?)
@@ -825,13 +830,17 @@ public class InventoryTotalPlugin extends Plugin
 			Item[] inventoryItems = itemContainer.getItems();
 			for (Item item : inventoryItems)
 			{
-				if (weaponChargesManager.isChargeableWeapon(item.getId()) && !weaponChargesManager.hasChargeData(item.getId()))
+				if ((item.getId() == ItemID.LOOTING_BAG || item.getId() == ItemID.LOOTING_BAG_22586) && lootingBagManager.needsCheck())
 				{
-					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName());
+					chargeableItemsNeedingCheck.add("looting bag");
+				}
+				else if (weaponChargesManager.isChargeableWeapon(item.getId()) && !weaponChargesManager.hasChargeData(item.getId()))
+				{
+					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName().toLowerCase());
 				} 
 				else if (chargedItemManager.isChargeableItem(item.getId()) && !chargedItemManager.hasChargeData(item.getId()))
 				{
-					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName());
+					chargeableItemsNeedingCheck.add(itemManager.getItemComposition(item.getId()).getName().toLowerCase());
 				} 
 			}
 		}
@@ -840,15 +849,13 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			if (weaponChargesManager.isChargeableWeapon(itemId) && !weaponChargesManager.hasChargeData(itemId))
 			{
-				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName());
+				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName().toLowerCase());
 			}
 			else if (chargedItemManager.isChargeableItem(itemId) && !chargedItemManager.hasChargeData(itemId))
 			{
-				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName());
+				chargeableItemsNeedingCheck.add(itemManager.getItemComposition(itemId).getName().toLowerCase());
 			} 
 		}
-
-		return chargeableItemsNeedingCheck;
 	}
 
 	static List<InventoryTotalLedgerItem> getProfitLossLedger(Map<Integer, Float> initialQtys, Map<Integer, Float> qtys)

@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.awt.*;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.List;
@@ -107,6 +108,8 @@ class ActiveSessionPanel extends PluginPanel
 	private final JLabel sessionTimeLabel = new JLabel(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 	private final JLabel tripCountLabel = new JLabel(htmlLabel(tripCountLabelPrefix, "N/A"));
 	private final JLabel avgTripDurationLabel = new JLabel(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
+	private final JLabel errorLabel = new JLabel("Error");
+	private Component errorSpacing;
 	private Component tripCountSpacing;
 	private Component avgTripDurationSpacing;
 	private final UI.LootPanelData sessionLootPanelData = new UI.LootPanelData();
@@ -147,6 +150,11 @@ class ActiveSessionPanel extends PluginPanel
 		sessionInfoSection.add(avgTripDurationLabel);
 		avgTripDurationSpacing = UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		sessionInfoSection.add(sessionTimeLabel);
+		//error
+		errorSpacing = UI.addVerticalRigidBox(sessionInfoSection, vGap);
+		errorLabel.setForeground(Color.red);
+		sessionInfoSection.add(errorLabel);
+		
 
 		//icon buttons
 		startTrackingButton = UI.createIconButton(UI.SESSIONINFO_PLAY_ICON, UI.SESSIONINFO_PLAY_HOVER_ICON, "Start tracking new trips", ()-> { 
@@ -273,7 +281,7 @@ class ActiveSessionPanel extends PluginPanel
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
 			if (showSessionLootGrid)
 				UI.updateLootGrid(emptyLedger, sessionLootPanelData, itemManager, config);
-
+			updateErrorPanel(false);
 		} else
 		{
 			sessionNameLabel.setText(sessionNameLabelPlaceholder);
@@ -298,10 +306,37 @@ class ActiveSessionPanel extends PluginPanel
 			if (showSessionLootGrid)
 				UI.updateLootGrid(UI.filterAndSortLedger(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
 					sessionLootPanelData, itemManager, config);
+			updateErrorPanel(true);
 		}
 		sessionLootPanelData.lootPanel.setVisible(showSessionLootGrid);
 	}
 
+	private void updateErrorPanel(boolean visible)
+	{
+		if (!visible || !needsCheck())
+		{
+			errorLabel.setVisible(false);
+			errorSpacing.setVisible(false);
+			return;
+		}
+		
+		HashSet<String> items = plugin.getChargeableItemsNeedingCheck();
+		StringBuilder builder = new StringBuilder();
+		builder.append("<html><body>");
+		for (String item : items)
+		{
+			builder.append("Check " + item + " to calibrate.<br>");
+		}
+		builder.append("</body></html>");
+		errorLabel.setVisible(true);
+		errorLabel.setText(builder.toString());
+		errorSpacing.setVisible(true);
+	}
+
+	private boolean needsCheck()
+	{
+		return plugin.getChargeableItemsNeedingCheck().size() != 0;
+	}
 
 	//not always previous but rather the first of the identical ones
 	InventoryTotalRunData previousRunData = null;

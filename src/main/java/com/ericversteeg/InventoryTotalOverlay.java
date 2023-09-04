@@ -139,7 +139,7 @@ class InventoryTotalOverlay extends Overlay
 
 	private boolean needsCheck()
 	{
-		return plugin.needsLootingBagCheck() || (plugin.getChargeableItemsNeedingCheck().size() != 0);
+		return plugin.getChargeableItemsNeedingCheck().size() != 0;
 	}
 
 	private BufferedImage getCoinsImage(int quantity)
@@ -376,13 +376,9 @@ class InventoryTotalOverlay extends Overlay
 		}
 		long total = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
 		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
-		if (plugin.needsLootingBagCheck())
-		{
-			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
-		}
 		for (String itemName : plugin.getChargeableItemsNeedingCheck())
 		{
-			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to Calibrate Charges", Color.RED, "", Color.WHITE, false));
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
 		}
 
 
@@ -496,13 +492,9 @@ class InventoryTotalOverlay extends Overlay
 			String gpPerHourString = UI.formatGp(gpPerHour, config.showExactGp());
 			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 		}
-		if (plugin.needsLootingBagCheck())
-		{
-			ledgerEntries.add(new LedgerEntry("Check Looting Bag to Calibrate", Color.RED, "", Color.WHITE, false));
-		}
 		for (String itemName : plugin.getChargeableItemsNeedingCheck())
 		{
-			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to Calibrate Charges", Color.RED, "", Color.WHITE, false));
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
 		}
 
 		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
