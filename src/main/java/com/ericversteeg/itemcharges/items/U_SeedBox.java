@@ -19,6 +19,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,9 +42,10 @@ public class U_SeedBox extends ChargedItem {
             final ItemManager items,
             final ChatMessageManager chat_messages,
             final Notifier notifier,
-            final Gson gson
+            final Gson gson,
+            final ScheduledExecutorService executorService
     ) {
-        super(ChargesItem.SEED_BOX, ItemID.SEED_BOX, client, client_thread, configs, items, chat_messages, notifier, gson);
+        super(ChargesItem.SEED_BOX, ItemID.SEED_BOX, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
 
         this.config_key = InventoryTotalConfig.seed_box;
         this.zero_charges_is_positive = true;

@@ -20,6 +20,7 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 
 
@@ -49,6 +50,9 @@ public class ChargedItemManager {
 	private ChatMessageManager chat_messages;
 
 	@Inject
+	private ScheduledExecutorService executorService;
+
+	@Inject
 	private Notifier notifier;
 
 	@Inject
@@ -58,15 +62,15 @@ public class ChargedItemManager {
 
 	public void startUp() {
 		chargedItems = new ChargedItem[]{
-			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new S_KharedstMemoirs(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_BottomlessCompostBucket(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_AshSanctifier(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_BloodEssence(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_GemBag(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_HerbSack(client, client_thread, configs, items, chat_messages, notifier, gson),
-			new U_SeedBox(client, client_thread, configs, items, chat_messages, notifier, gson),
+			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new S_KharedstMemoirs(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_BottomlessCompostBucket(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_AshSanctifier(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_BloodEssence(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_GemBag(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_HerbSack(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
+			new U_SeedBox(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
 		};
 	}
 

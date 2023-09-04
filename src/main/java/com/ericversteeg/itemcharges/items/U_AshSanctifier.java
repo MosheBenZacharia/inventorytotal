@@ -20,6 +20,7 @@ import com.ericversteeg.itemcharges.ChargesItem;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class U_AshSanctifier extends ChargedItem {
 
@@ -33,9 +34,10 @@ public class U_AshSanctifier extends ChargedItem {
             final ItemManager items,
             final ChatMessageManager chat_messages,
             final Notifier notifier,
-            final Gson gson
+            final Gson gson,
+            final ScheduledExecutorService executorService
     ) {
-        super(ChargesItem.ASH_SANCTIFIER, ItemID.ASH_SANCTIFIER, client, client_thread, configs, items, chat_messages, notifier, gson);
+        super(ChargesItem.ASH_SANCTIFIER, ItemID.ASH_SANCTIFIER, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
         this.config_key = InventoryTotalConfig.ash_sanctifier;
         this.triggers_items = new TriggerItem[]{
                 new TriggerItem(ItemID.ASH_SANCTIFIER),

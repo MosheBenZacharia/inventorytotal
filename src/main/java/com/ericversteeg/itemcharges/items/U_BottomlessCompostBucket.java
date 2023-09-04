@@ -23,6 +23,7 @@ import com.ericversteeg.itemcharges.triggers.TriggerWidget;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class U_BottomlessCompostBucket extends ChargedItem {
 
@@ -36,9 +37,10 @@ public class U_BottomlessCompostBucket extends ChargedItem {
             final ItemManager items,
             final ChatMessageManager chat_messages,
             final Notifier notifier,
-            final Gson gson
+            final Gson gson,
+            final ScheduledExecutorService executorService
     ) {
-        super(ChargesItem.BOTTOMLESS_COMPOST_BUCKET, ItemID.BOTTOMLESS_COMPOST_BUCKET_22997, client, client_thread, configs, items, chat_messages, notifier, gson);
+        super(ChargesItem.BOTTOMLESS_COMPOST_BUCKET, ItemID.BOTTOMLESS_COMPOST_BUCKET_22997, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
         this.config_key = InventoryTotalConfig.bottomless_compost_bucket;
         this.extra_config_keys = new String[]{"type"};
         this.triggers_items = new TriggerItem[]{

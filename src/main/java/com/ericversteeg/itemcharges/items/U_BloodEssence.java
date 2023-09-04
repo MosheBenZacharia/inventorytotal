@@ -19,6 +19,7 @@ import com.ericversteeg.itemcharges.ChargesItem;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class U_BloodEssence extends ChargedItem {
 
@@ -32,9 +33,10 @@ public class U_BloodEssence extends ChargedItem {
             final ItemManager items,
             final ChatMessageManager chat_messages,
             final Notifier notifier,
-            final Gson gson
+            final Gson gson,
+            final ScheduledExecutorService executorService
     ) {
-        super(ChargesItem.BLOOD_ESSENCE, ItemID.BLOOD_ESSENCE_ACTIVE, client, client_thread, configs, items, chat_messages, notifier, gson);
+        super(ChargesItem.BLOOD_ESSENCE, ItemID.BLOOD_ESSENCE_ACTIVE, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
         super.allow_chat_messages_when_not_present = true;
         this.config_key = InventoryTotalConfig.blood_essence;
         this.triggers_items = new TriggerItem[]{

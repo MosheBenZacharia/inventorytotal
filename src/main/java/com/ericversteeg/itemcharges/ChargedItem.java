@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.Type;
@@ -61,6 +62,7 @@ public class ChargedItem {
 	protected final ChatMessageManager chat_messages;
 	protected final Notifier notifier;
 	protected final Gson gson;
+	protected final ScheduledExecutorService executorService;
 
 	@Nullable public ItemContainer inventory;
 	@Nullable protected ItemContainer equipment;
@@ -110,7 +112,8 @@ public class ChargedItem {
 		final ItemManager items,
 		final ChatMessageManager chat_messages,
 		final Notifier notifier,
-		final Gson gson
+		final Gson gson,
+		final ScheduledExecutorService executorService
 	) {
 		this.infobox_id = infobox_id;
 		this.item_id = item_id;
@@ -121,6 +124,7 @@ public class ChargedItem {
 		this.chat_messages = chat_messages;
 		this.notifier = notifier;
 		this.gson = gson;
+		this.executorService = executorService;
 
 		client_thread.invokeLater(() -> {
 			loadChargesFromConfig();
@@ -813,11 +817,22 @@ public class ChargedItem {
 		}
 	}
 
+	private boolean itemQuantitiesNeedsSaving = false;
+
 	private void onItemQuantitiesModified() {
 
-		if (config_key != null) {
-			setConfiguration(config_key, gson.toJson(this.itemQuantities));
-		}
+		itemQuantitiesNeedsSaving = true;
+	}
+
+	private void saveItemQuantities()
+	{
+		itemQuantitiesNeedsSaving = false;
+		executorService.execute(()->
+		{
+			if (config_key != null) {
+				setConfiguration(config_key, gson.toJson(this.itemQuantities));
+			}
+		});
 	}
 
 	private void decreaseCharges(final int charges) {
@@ -845,7 +860,12 @@ public class ChargedItem {
 	protected void onChargesUpdated() {}
 
 	public void onGameTick(final GameTick ignored) {
+
 		gametick++;
+		if (itemQuantitiesNeedsSaving)
+		{
+			saveItemQuantities();
+		}
 	}
 
 	private int itemsDifference(final Item[] items_before, final Item[] items_after) {

@@ -24,6 +24,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,9 +78,10 @@ public class U_FishBarrel extends ChargedItem
 		final ItemManager items,
 		final ChatMessageManager chat_messages,
 		final Notifier notifier,
-		final Gson gson
+		final Gson gson,
+		final ScheduledExecutorService executorService
 	) {
-		super(ChargesItem.FISH_BARREL, ItemID.FISH_BARREL, client, client_thread, configs, items, chat_messages, notifier, gson);
+		super(ChargesItem.FISH_BARREL, ItemID.FISH_BARREL, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
 
 		this.config_key = InventoryTotalConfig.fish_barrel;
 		this.zero_charges_is_positive = true;

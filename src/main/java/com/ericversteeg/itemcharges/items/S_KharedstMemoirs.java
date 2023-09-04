@@ -21,6 +21,7 @@ import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
 public class S_KharedstMemoirs extends ChargedItem {
@@ -35,9 +36,10 @@ public class S_KharedstMemoirs extends ChargedItem {
             final ItemManager items,
             final ChatMessageManager chat_messages,
             final Notifier notifier,
-            final Gson gson
+            final Gson gson,
+            final ScheduledExecutorService executorService
     ) {
-        super(ChargesItem.KHAREDSTS_MEMOIRS, ItemID.KHAREDSTS_MEMOIRS, client, client_thread, configs, items, chat_messages, notifier, gson);
+        super(ChargesItem.KHAREDSTS_MEMOIRS, ItemID.KHAREDSTS_MEMOIRS, client, client_thread, configs, items, chat_messages, notifier, gson, executorService);
         this.config_key = InventoryTotalConfig.kharedsts_memoirs;
         this.triggers_items = new TriggerItem[]{
                 new TriggerItem(ItemID.KHAREDSTS_MEMOIRS),
