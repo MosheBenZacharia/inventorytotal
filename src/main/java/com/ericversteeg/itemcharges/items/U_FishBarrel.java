@@ -130,8 +130,7 @@ public class U_FishBarrel extends ChargedItem
 			new TriggerChatMessage("The barrel contains:").extraConsumer(message -> {
 				
 				super.emptyOrClear();
-				//fix weird whitespace issue
-				final Matcher matcher = checkPattern.matcher(message.replace("\u00A0", " "));
+				final Matcher matcher = checkPattern.matcher(message);
 				while (matcher.find())
 				{
 					try

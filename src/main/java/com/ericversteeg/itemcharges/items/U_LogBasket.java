@@ -83,8 +83,7 @@ public class U_LogBasket extends ChargedItem
 			new TriggerChatMessage("The basket contains:").extraConsumer(message -> {
 				
 				super.emptyOrClear();
-				//fix weird whitespace issue
-				final Matcher matcher = checkPattern.matcher(message.replace("\u00A0", " "));
+				final Matcher matcher = checkPattern.matcher(message);
 				while (matcher.find())
 				{
 					try

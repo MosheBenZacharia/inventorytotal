@@ -48,7 +48,6 @@ public class U_HerbSack extends ChargedItem {
         };
         this.triggers_chat_messages = new TriggerChatMessage[]{
                 new TriggerChatMessage("The herb sack is empty.").onItemClick().extraConsumer((message) -> super.emptyOrClear()),
-                new TriggerChatMessage("You look in your herb sack and see:").onItemClick().extraConsumer((message) -> super.emptyOrClear()),
                 new TriggerChatMessage(pickupRegex).extraConsumer(message -> {
                     if (super.hasChargeData()) {
                         final Matcher matcher = pickupPattern.matcher(message);
@@ -63,16 +62,16 @@ public class U_HerbSack extends ChargedItem {
                         }
                     }
                 }),
+                //check
+                new TriggerChatMessage("You look in your herb sack and see:").onItemClick().extraConsumer((message) -> super.emptyOrClear()),
                 new TriggerChatMessage("x Grimy").onItemClick().extraConsumer(message -> {
 
-                    //fix weird whitespace issue
-                    final Matcher matcher = checkPattern.matcher(message.replace("\u00A0", " "));
+                    final Matcher matcher = checkPattern.matcher(message);
                     while (matcher.find()) {
                         try {
                             int amount = Integer.parseInt(matcher.group(1));
                             String name = matcher.group(2);
                             Integer itemId = tryFindItemIdFromName(name);
-                            log.info(name + itemId);
                             if (itemId != null)
                                 super.addItems(itemId, (float) amount);
                         } catch (NumberFormatException e) {

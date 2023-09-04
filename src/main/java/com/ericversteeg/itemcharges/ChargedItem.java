@@ -388,7 +388,7 @@ public class ChargedItem {
 				(!isInInventoryOrEquipment && !allow_chat_messages_when_not_present)
 		) return;
 
-		final String message = event.getMessage().replaceAll("</?col.*?>", "").replaceAll("<br>", " ");
+		final String message = event.getMessage().replaceAll("</?col.*?>", "").replace("<br>", " ").replace("\u00A0", " ");
 
 		for (final TriggerChatMessage chat_message : triggers_chat_messages) {
 			final Pattern regex = chat_message.message;

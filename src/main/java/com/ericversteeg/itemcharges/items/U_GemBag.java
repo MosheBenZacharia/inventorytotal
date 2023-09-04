@@ -72,8 +72,7 @@ public class U_GemBag extends ChargedItem
 
                     log.info("message matched: "+ message);
                     super.emptyOrClear();
-                    //fix weird whitespace issue
-                    final Matcher matcher = checkPattern.matcher(message.replace("\u00A0", " "));
+                    final Matcher matcher = checkPattern.matcher(message);
                     while (matcher.find())
                     {
                         try
