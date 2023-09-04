@@ -7,11 +7,9 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.PluginErrorPanel;
 import net.runelite.client.util.*;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
@@ -19,8 +17,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
