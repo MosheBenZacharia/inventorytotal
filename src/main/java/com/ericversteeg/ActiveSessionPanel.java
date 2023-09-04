@@ -122,7 +122,7 @@ class ActiveSessionPanel extends PluginPanel
 
 	private JPanel buildSessionInfoPanel()
 	{
-		sessionInfoPanel.setLayout(new BorderLayout(0, 5));
+		sessionInfoPanel.setLayout(new BorderLayout(0, 10));
 		sessionInfoPanel.setBorder(new EmptyBorder(0, 0, 4, 0));
 
 		JPanel sessionInfoSection = new JPanel();

@@ -21,6 +21,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
@@ -134,8 +135,6 @@ public class InventoryTotalPlugin extends Plugin
 	private Long previousTotalGp = null;
 
 	private long initialGp = 0;
-
-	private long lastWriteSaveTime = 0;
 	
     private BufferedImage icon;
     private NavigationButton navButton;
@@ -161,7 +160,8 @@ public class InventoryTotalPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		overlayManager.add(overlay);
+		if (config.showTripOverlay())
+			overlayManager.add(overlay);
 
 		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
 		eventBus.register(lootingBagManager);
@@ -178,6 +178,21 @@ public class InventoryTotalPlugin extends Plugin
 		sessionManager.onTripStarted(runData);
 		buildSidePanel();
 		updatePanels();
+	}
+
+	@Override
+	protected void shutDown() throws Exception
+	{
+		overlayManager.remove(overlay);
+		eventBus.unregister(lootingBagManager);
+		eventBus.unregister(weaponChargesManager);
+		eventBus.unregister(chargedItemManager);
+		weaponChargesManager.shutDown();
+		chargedItemManager.shutDown();
+		sessionManager.shutDown();
+		clientToolbar.removeNavigation(navButton);
+
+		writeSavedData();
 	}
 
 	@Subscribe
@@ -267,21 +282,6 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
-	@Override
-	protected void shutDown() throws Exception
-	{
-		overlayManager.remove(overlay);
-		eventBus.unregister(lootingBagManager);
-		eventBus.unregister(weaponChargesManager);
-		eventBus.unregister(chargedItemManager);
-		weaponChargesManager.shutDown();
-		chargedItemManager.shutDown();
-		sessionManager.shutDown();
-		clientToolbar.removeNavigation(navButton);
-
-		writeSavedData();
-	}
-
     private void buildSidePanel()
     {
         activeSessionPanel = new ActiveSessionPanel(this, config, itemManager, clientThread, sessionManager);
@@ -293,7 +293,8 @@ public class InventoryTotalPlugin extends Plugin
 
         icon = ImageUtil.loadImageResource(getClass(), "/gpperhour-icon.png");
         navButton = NavigationButton.builder().tooltip("GP Per Hour").icon(icon).priority(config.sidePanelPosition()).panel(gpPerHourPanel).build();
-        clientToolbar.addNavigation(navButton);
+		if (config.enableSessionPanel())
+			clientToolbar.addNavigation(navButton);
     }
 
 	@Subscribe
@@ -350,6 +351,28 @@ public class InventoryTotalPlugin extends Plugin
 	InventoryTotalConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(InventoryTotalConfig.class);
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (event.getGroup().equals(InventoryTotalConfig.GROUP))
+		{
+			if (event.getKey().equals(InventoryTotalConfig.showTripOverlayKeyName))
+			{
+				if (config.showTripOverlay())
+					overlayManager.add(overlay);
+				else
+					overlayManager.remove(overlay);
+			}
+			if (event.getKey().equals(InventoryTotalConfig.enableSessionPanelKeyName))
+			{
+				if (config.enableSessionPanel())
+					clientToolbar.addNavigation(navButton);
+				else
+					clientToolbar.removeNavigation(navButton);
+			}
+		}
 	}
 
 	@Subscribe
@@ -985,7 +1008,6 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			String json = gson.toJson(runData);
 			saveData( "inventory_total_data", json);
-			lastWriteSaveTime = Instant.now().toEpochMilli();
 		});
 	}
 

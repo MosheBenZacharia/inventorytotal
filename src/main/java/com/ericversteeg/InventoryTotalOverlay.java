@@ -322,7 +322,7 @@ class InventoryTotalOverlay extends Overlay
 
 		RoundRectangle2D roundRectangle2D = new RoundRectangle2D.Double(x, y, width + 1, height + 1, cornerRadius, cornerRadius);
 		if (roundRectangle2D.contains(mouseX, mouseY) && plugin.getState() != InventoryTotalState.BANK
-				&& !plugin.getRunData().isBankDelay && config.showTooltip())
+				&& !plugin.getRunData().isBankDelay && config.showLedgerOnHover())
 		{
 			if (plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
 			{
