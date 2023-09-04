@@ -110,6 +110,7 @@ class ActiveSessionPanel extends PluginPanel
 	private Component tripCountSpacing;
 	private Component avgTripDurationSpacing;
 	private final UI.LootPanelData sessionLootPanelData = new UI.LootPanelData();
+	private boolean showSessionLootGrid = true;
 
 	void setTripCountAndDurationVisible(boolean visible)
 	{
@@ -127,7 +128,7 @@ class ActiveSessionPanel extends PluginPanel
 		JPanel sessionInfoSection = new JPanel();
 		sessionInfoSection.setLayout(new BoxLayout(sessionInfoSection, BoxLayout.Y_AXIS));
 		sessionInfoSection.setBorder(new EmptyBorder(6, 5, 3, 0));
-		int vGap = 8;
+		int vGap = 6;
 
 		sessionNameLabel.setFont(FontManager.getRunescapeBoldFont());
 
@@ -157,6 +158,7 @@ class ActiveSessionPanel extends PluginPanel
 			updateStopStartVisibility();
 		});
 		updateStopStartVisibility();
+		JLabel toggleSessionLootGridButton = UI.createIconButton(UI.SESSIONINFO_GRID_ICON, UI.SESSIONINFO_GRID_HOVER_ICON, "Toggle session loot grid", ()-> { showSessionLootGrid = !showSessionLootGrid;});
 		JLabel refreshPricesButton = UI.createIconButton(UI.SESSIONINFO_REFRESH_ICON, UI.SESSIONINFO_REFRESH_HOVER_ICON, "Refresh prices", ()-> { clientThread.invokeLater(() -> {plugin.refreshPrices();});});
 		JLabel deleteTripsButton = UI.createIconButton(UI.SESSIONINFO_TRASH_ICON, UI.SESSIONINFO_TRASH_HOVER_ICON, "Delete all trips", ()-> { 
 
@@ -187,30 +189,31 @@ class ActiveSessionPanel extends PluginPanel
 			}
 			plugin.saveNewSession(name);
 		});
-		JLabel debugButton = UI.createIconButton(UI.SESSIONINFO_WRENCH_ICON, UI.SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
-		{
-			for (TripPanelData data : tripPanels)
-			{
-				this.tripsPanel.remove(data.masterPanel);
-			}
-			this.tripPanels.clear();
-			this.updateTrips();
-		});
+		// JLabel debugButton = UI.createIconButton(UI.SESSIONINFO_WRENCH_ICON, UI.SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
+		// {
+		// 	for (TripPanelData data : tripPanels)
+		// 	{
+		// 		this.tripsPanel.remove(data.masterPanel);
+		// 	}
+		// 	this.tripPanels.clear();
+		// 	this.updateTrips();
+		// });
 
 		JPanel iconButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		iconButtons.add(startTrackingButton);
 		iconButtons.add(stopTrackingButton);
+		iconButtons.add(toggleSessionLootGridButton);
 		iconButtons.add(refreshPricesButton);
 		iconButtons.add(deleteTripsButton);
 		iconButtons.add(saveButton);
 		iconButtons.add(settingsButton);
-		iconButtons.add(debugButton);
+		// iconButtons.add(debugButton);
 
 		sessionLootPanelData.lootPanel.setLayout(new BorderLayout());
 		sessionLootPanelData.lootPanel.setBorder(new MatteBorder(1,1,1,1,borderColor));
 		sessionInfoPanel.add(sessionInfoSection, BorderLayout.NORTH);
-		sessionInfoPanel.add(sessionLootPanelData.lootPanel, BorderLayout.CENTER);
-		sessionInfoPanel.add(iconButtons, BorderLayout.SOUTH);
+		sessionInfoPanel.add(iconButtons, BorderLayout.CENTER);
+		sessionInfoPanel.add(sessionLootPanelData.lootPanel, BorderLayout.SOUTH);
 
 		return sessionInfoPanel;
 	}
@@ -268,7 +271,8 @@ class ActiveSessionPanel extends PluginPanel
 			sessionTimeLabel.setText(htmlLabel(sessionTimeLabelPrefix, "N/A"));
 			tripCountLabel.setText(htmlLabel(tripCountLabelPrefix, "N/A"));
 			avgTripDurationLabel.setText(htmlLabel(avgTripDurationLabelPrefix, "N/A"));
-			UI.updateLootGrid(emptyLedger, sessionLootPanelData, itemManager, config);
+			if (showSessionLootGrid)
+				UI.updateLootGrid(emptyLedger, sessionLootPanelData, itemManager, config);
 
 		} else
 		{
@@ -291,10 +295,13 @@ class ActiveSessionPanel extends PluginPanel
 				avgTripDurationLabel
 						.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
 			}
-			UI.updateLootGrid(UI.filterAndSortLedger(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
+			if (showSessionLootGrid)
+				UI.updateLootGrid(UI.filterAndSortLedger(InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
 					sessionLootPanelData, itemManager, config);
 		}
+		sessionLootPanelData.lootPanel.setVisible(showSessionLootGrid);
 	}
+
 
 	//not always previous but rather the first of the identical ones
 	InventoryTotalRunData previousRunData = null;
