@@ -37,8 +37,20 @@ import net.runelite.client.util.ImageUtil;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 
 @PluginDescriptor(
-	name = "Inventory Total",
-	description = "Totals item prices in your inventory."
+	name = "GP Per Hour",
+	description = "Tracks your gp/hr over various trips.",
+	tags = {
+		"inventory",
+		"total",
+		"profit",
+		"tracker",
+		"loss",
+		"gp",
+		"per",
+		"hour",
+		"prices",
+		"gold farming"
+	}
 )
 
 @Slf4j
