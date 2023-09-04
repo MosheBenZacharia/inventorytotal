@@ -13,6 +13,10 @@ import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -137,6 +141,14 @@ public class InventoryTotalPlugin extends Plugin
     private NavigationButton navButton;
 	private boolean sessionHistoryDirty;
 	private boolean isLoggedIn;
+
+	@Getter
+	private Widget inventoryWidget;
+	private ItemContainer inventoryItemContainer;
+	private ItemContainer equipmentItemContainer;
+	private boolean onceBank = false;
+	private boolean postNewRun = false;
+	private long newRunTick = 0;
 
 	// from ClueScrollPlugin
 	private static final int[] RUNEPOUCH_AMOUNT_VARBITS = {
@@ -295,6 +307,7 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
+		updatePluginState();
 		updatePanels();
 		
 		if (this.state == InventoryTotalState.RUN && runData.isPaused && lastTickTime != null)
@@ -337,6 +350,131 @@ public class InventoryTotalPlugin extends Plugin
 	InventoryTotalConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(InventoryTotalConfig.class);
+	}
+
+	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		updatePluginState();
+	}
+	
+	void updatePluginState()
+	{
+		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
+
+		inventoryItemContainer = client.getItemContainer(InventoryID.INVENTORY);
+		equipmentItemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
+
+		if (config.enableProfitLoss())
+		{
+			setMode(InventoryTotalMode.PROFIT_LOSS);
+		}
+		else
+		{
+			setMode(InventoryTotalMode.TOTAL);
+		}
+
+		boolean isBank = false;
+
+		//Collect on bank
+		//Don't want it to appear there but have it count as bank still
+		Widget collectOnBank = client.getWidget(402, 2);
+		if (collectOnBank != null && !collectOnBank.isHidden())
+		{
+			isBank = true;
+		}
+		//Grand exchange can be open while inventory widget is closed, same functionality as above
+		Widget grandExchange = client.getWidget(WidgetInfo.GRAND_EXCHANGE_WINDOW_CONTAINER);
+		if (grandExchange != null && !grandExchange.isHidden())
+		{
+			isBank = true;
+		}
+
+		if (inventoryWidget == null || inventoryWidget.getCanvasLocation().getX() < 0 || inventoryWidget.isHidden())
+		{
+			Widget [] altInventoryWidgets = new Widget[]
+			{
+				//Bank
+				client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER),
+				//GE
+				client.getWidget(WidgetInfo.GRAND_EXCHANGE_INVENTORY_ITEMS_CONTAINER),
+				//Bank with equipment view open
+				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 4),
+				//Bank with looting bag open
+				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 5),
+				//Deposit box open
+				client.getWidget(268, 0)
+			};
+
+			for (Widget altInventoryWidget: altInventoryWidgets)
+			{
+				inventoryWidget = altInventoryWidget;
+				if (inventoryWidget != null && !inventoryWidget.isHidden())
+				{
+					isBank = true;
+					if (!onceBank)
+					{
+						onceBank = true;
+					}
+
+					break;
+				}
+			}
+		}
+
+		if (isBank)
+		{
+			setState(InventoryTotalState.BANK);
+		}
+		else
+		{
+			setState(InventoryTotalState.RUN);
+		}
+
+		// before totals
+		boolean newRun = getPreviousState() == InventoryTotalState.BANK && getState() == InventoryTotalState.RUN;
+		getRunData().itemQtys.clear();
+
+		// totals
+		long inventoryTotal = getInventoryTotal(false);
+		long equipmentTotal = getEquipmentTotal(false);
+
+
+		long totalGp = inventoryTotal;
+		if (getState() == InventoryTotalState.RUN && getMode() == InventoryTotalMode.PROFIT_LOSS)
+		{
+			totalGp += equipmentTotal;
+		}
+
+		setTotalGp(totalGp);
+
+		// after totals
+		if (newRun)
+		{
+			onNewRun();
+
+			postNewRun = true;
+			newRunTick = client.getTickCount();
+		}
+		else if (getPreviousState() == InventoryTotalState.RUN && getState() == InventoryTotalState.BANK)
+		{
+			onBank();
+		}
+
+		// check post new run, need to wait two ticks because if you withdraw something and close the bank right after it shows up one tick later
+		if (postNewRun && (client.getTickCount() - newRunTick) > 1)
+		{
+			//make sure user didn't open the bank back up in those two ticks
+			if (getState() == InventoryTotalState.RUN)
+			{
+				postNewRun();
+			}
+			else
+			{
+				getRunData().isBankDelay = false;
+			}
+			postNewRun = false;
+		}
 	}
 
 	void onNewRun()
@@ -383,7 +521,7 @@ public class InventoryTotalPlugin extends Plugin
 
 	long getInventoryTotal(boolean isNewRun)
 	{
-		if (overlay.getInventoryItemContainer() == null)
+		if (inventoryItemContainer == null)
 		{
 			return 0l;
 		}
@@ -435,7 +573,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		equipmentQtyMap.clear();
 
-		ItemContainer itemContainer = overlay.getEquipmentItemContainer();
+		ItemContainer itemContainer = equipmentItemContainer;
 
 		if (itemContainer == null)
 		{
@@ -554,7 +692,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		List<InventoryTotalLedgerItem> ledgerItems = new LinkedList<>();
 
-		if (overlay.getInventoryItemContainer() == null)
+		if (inventoryItemContainer == null)
 		{
 			return new LinkedList<>();
 		}
@@ -587,7 +725,7 @@ public class InventoryTotalPlugin extends Plugin
 	Map<Integer, Float> getInventoryQtyMap()
 	{
 		inventoryQtyMap.clear();
-		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
+		final ItemContainer itemContainer = inventoryItemContainer;
 
 		final Item[] items = itemContainer.getItems();
 
@@ -635,7 +773,7 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		if (this.state == InventoryTotalState.BANK)
 			return false;
-		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
+		final ItemContainer itemContainer = inventoryItemContainer;
 		if(itemContainer == null)
 			return false;
 
@@ -657,7 +795,7 @@ public class InventoryTotalPlugin extends Plugin
 		if (this.state == InventoryTotalState.BANK)
 			return chargeableItemsNeedingCheck;
 
-		final ItemContainer itemContainer = overlay.getInventoryItemContainer();
+		final ItemContainer itemContainer = inventoryItemContainer;
 		//loop through container instead of getting qtyMap because we don't care about chargeable items in looting bag (actually can you even put something charged in a container? wouldnt be tradeable right?)
 		if (itemContainer != null)
 		{

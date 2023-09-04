@@ -51,15 +51,6 @@ class InventoryTotalOverlay extends Overlay
 	private final ItemManager itemManager;
 	private final SpriteManager spriteManager;
 
-	private Widget inventoryWidget;
-	private ItemContainer inventoryItemContainer;
-	private ItemContainer equipmentItemContainer;
-
-	private boolean onceBank = false;
-
-	private boolean postNewRun = false;
-	private long newRunTick = 0;
-	
 	private long lastGpPerHour;
 	private long lastGpPerHourUpdateTime;
 
@@ -92,131 +83,10 @@ class InventoryTotalOverlay extends Overlay
 		this.spriteManager = spriteManager;
 	}
 
-	void updatePluginState()
-	{
-		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
-
-		inventoryItemContainer = client.getItemContainer(InventoryID.INVENTORY);
-		equipmentItemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
-
-		if (config.enableProfitLoss())
-		{
-			plugin.setMode(InventoryTotalMode.PROFIT_LOSS);
-		}
-		else
-		{
-			plugin.setMode(InventoryTotalMode.TOTAL);
-		}
-
-		boolean isBank = false;
-
-		//Collect on bank
-		//Don't want it to appear there but have it count as bank still
-		Widget collectOnBank = client.getWidget(402, 2);
-		if (collectOnBank != null && !collectOnBank.isHidden())
-		{
-			isBank = true;
-		}
-		//Grand exchange can be open while inventory widget is closed, same functionality as above
-		Widget grandExchange = client.getWidget(WidgetInfo.GRAND_EXCHANGE_WINDOW_CONTAINER);
-		if (grandExchange != null && !grandExchange.isHidden())
-		{
-			isBank = true;
-		}
-
-		if (inventoryWidget == null || inventoryWidget.getCanvasLocation().getX() < 0 || inventoryWidget.isHidden())
-		{
-			Widget [] altInventoryWidgets = new Widget[]
-			{
-				//Bank
-				client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER),
-				//GE
-				client.getWidget(WidgetInfo.GRAND_EXCHANGE_INVENTORY_ITEMS_CONTAINER),
-				//Bank with equipment view open
-				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 4),
-				//Bank with looting bag open
-				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 5),
-				//Deposit box open
-				client.getWidget(268, 0)
-			};
-
-			for (Widget altInventoryWidget: altInventoryWidgets)
-			{
-				inventoryWidget = altInventoryWidget;
-				if (inventoryWidget != null && !inventoryWidget.isHidden())
-				{
-					isBank = true;
-					if (!onceBank)
-					{
-						onceBank = true;
-					}
-
-					break;
-				}
-			}
-		}
-
-		if (isBank)
-		{
-			plugin.setState(InventoryTotalState.BANK);
-		}
-		else
-		{
-			plugin.setState(InventoryTotalState.RUN);
-		}
-
-		// before totals
-		boolean newRun = plugin.getPreviousState() == InventoryTotalState.BANK && plugin.getState() == InventoryTotalState.RUN;
-		plugin.getRunData().itemQtys.clear();
-
-		// totals
-		long inventoryTotal = plugin.getInventoryTotal(false);
-		long equipmentTotal = plugin.getEquipmentTotal(false);
-
-
-		long totalGp = inventoryTotal;
-		if (plugin.getState() == InventoryTotalState.RUN && plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
-		{
-			totalGp += equipmentTotal;
-		}
-
-		plugin.setTotalGp(totalGp);
-
-		// after totals
-		if (newRun)
-		{
-			plugin.onNewRun();
-
-			postNewRun = true;
-			newRunTick = client.getTickCount();
-		}
-		else if (plugin.getPreviousState() == InventoryTotalState.RUN && plugin.getState() == InventoryTotalState.BANK)
-		{
-			plugin.onBank();
-		}
-
-		// check post new run, need to wait two ticks because if you withdraw something and close the bank right after it shows up one tick later
-		if (postNewRun && (client.getTickCount() - newRunTick) > 1)
-		{
-			//make sure user didn't open the bank back up in those two ticks
-			if (plugin.getState() == InventoryTotalState.RUN)
-			{
-				plugin.postNewRun();
-			}
-			else
-			{
-				plugin.getRunData().isBankDelay = false;
-			}
-			postNewRun = false;
-		}
-	}
-
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		//TODO: do i need to even run this every frame? can i just run this once per tick?
-		updatePluginState();
-
+		Widget inventoryWidget = plugin.getInventoryWidget();
 		boolean isInvHidden = inventoryWidget == null || inventoryWidget.isHidden();
 		if (isInvHidden)
 		{
@@ -452,7 +322,7 @@ class InventoryTotalOverlay extends Overlay
 
 		RoundRectangle2D roundRectangle2D = new RoundRectangle2D.Double(x, y, width + 1, height + 1, cornerRadius, cornerRadius);
 		if (roundRectangle2D.contains(mouseX, mouseY) && plugin.getState() != InventoryTotalState.BANK
-				&& (client.getTickCount() - newRunTick) > 1 && config.showTooltip())
+				&& !plugin.getRunData().isBankDelay && config.showTooltip())
 		{
 			if (plugin.getMode() == InventoryTotalMode.PROFIT_LOSS)
 			{
@@ -757,15 +627,5 @@ class InventoryTotalOverlay extends Overlay
 		}
 
 		return UI.formatTime(runTime);
-	}
-
-	public ItemContainer getInventoryItemContainer()
-	{
-		return inventoryItemContainer;
-	}
-
-	public ItemContainer getEquipmentItemContainer()
-	{
-		return equipmentItemContainer;
 	}
 }
