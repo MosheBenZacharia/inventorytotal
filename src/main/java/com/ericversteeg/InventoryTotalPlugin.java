@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
@@ -145,7 +146,6 @@ public class InventoryTotalPlugin extends Plugin
 	private Widget inventoryWidget;
 	private ItemContainer inventoryItemContainer;
 	private ItemContainer equipmentItemContainer;
-	private boolean onceBank = false;
 	private boolean postNewRun = false;
 	private long newRunTick = 0;
 
@@ -308,7 +308,7 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
-		updatePluginState();
+		updatePluginState(false);
 		updatePanels();
 		updateChargeableItemsNeedingCheck();
 		
@@ -394,10 +394,21 @@ public class InventoryTotalPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		updatePluginState();
+		updatePluginState(false);
+	}
+
+    @Subscribe
+    public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		if (event.getId() == ObjectID.BANK_DEPOSIT_BOX 
+			|| event.getId() == ObjectID.DEPOSIT_POOL
+			|| event.getId() == ObjectID.DEPOSIT_POT)
+		{
+			updatePluginState(true);
+		}
 	}
 	
-	void updatePluginState()
+	void updatePluginState(boolean forceBanking)
 	{
 		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
 
@@ -413,7 +424,7 @@ public class InventoryTotalPlugin extends Plugin
 			setMode(InventoryTotalMode.TOTAL);
 		}
 
-		boolean isBank = false;
+		boolean isBank = forceBanking;
 
 		//Collect on bank
 		//Don't want it to appear there but have it count as bank still
@@ -451,11 +462,6 @@ public class InventoryTotalPlugin extends Plugin
 				if (inventoryWidget != null && !inventoryWidget.isHidden())
 				{
 					isBank = true;
-					if (!onceBank)
-					{
-						onceBank = true;
-					}
-
 					break;
 				}
 			}
