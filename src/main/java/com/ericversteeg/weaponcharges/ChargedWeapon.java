@@ -766,6 +766,25 @@ public enum ChargedWeapon
 			params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
+	BLADE_OF_SAELDOR(new ChargedWeaponBuilder()
+		.chargedItemIds(ItemID.BLADE_OF_SAELDOR)
+		.unchargedItemIds(ItemID.BLADE_OF_SAELDOR_INACTIVE)
+		.animationIds(386, 390)
+		.name("Blade of saeldor")
+		.configKeyName("blade_of_saeldor")
+		.checkChargesRegexes(
+			ChargesMessage.matcherGroupChargeMessage("Your Blade of Saeldor has ([\\d,]+) charges remaining.", 1)
+		)
+		.updateMessageChargesRegexes(
+			ChargesMessage.matcherGroupChargeMessage(Text.removeTags("<col=ff0000>Your Blade of Saeldor has ([\\d,]+) charges remaining.</col>"), 1)
+		)
+		.updateChargeComponents((UpdateChargeComponentsParams params) ->
+		{
+			Integer charges = params.currentCharges;
+			float shards = charges / 100f;
+			params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
+		})
+	),
 	/*
 	crystal armor
 	check:
