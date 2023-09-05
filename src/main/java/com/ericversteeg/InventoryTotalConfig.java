@@ -416,7 +416,18 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 36,
+			position = 5,
+			keyName = "autoResumeTrip",
+			name = "Auto Resume Trip",
+			description = "Automatically resume a paused trip when a profit change is detected.",
+			section =  sessionPanelSection
+	)
+	default boolean autoResumeTrip() {
+		return true;
+	}
+
+	@ConfigItem(
+			position = 10,
 			keyName = "ignoreBankTime",
 			name = "Ignore Bank time",
 			description = "Don't count time with a bank UI open towards session time.",
@@ -428,7 +439,7 @@ public interface InventoryTotalConfig extends Config
 
 	public static final String sidePanelPositionKeyName = "sidePanelPosition";
     @ConfigItem(
-            position = 50,
+            position = 20,
             keyName = sidePanelPositionKeyName,
             name = "Side Panel Position",
             description = "Panel icon position, Lower # = higher pos, Higher # = lower pos ",

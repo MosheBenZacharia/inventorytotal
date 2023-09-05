@@ -318,11 +318,11 @@ public class InventoryTotalPlugin extends Plugin
 		}
 		lastTickTime = Instant.now().toEpochMilli();
 
-		checkGoldDrop();
+		checkTickProfit();
     }
 
 	// If profit total changed generate gold drop (nice animation for showing gold earn or loss)
-	void checkGoldDrop()
+	void checkTickProfit()
 	{
 		boolean isRun = this.state == InventoryTotalState.RUN;
 
@@ -338,11 +338,15 @@ public class InventoryTotalPlugin extends Plugin
 		}
         long tickProfit = (totalGp - previousTotalGp);
 		previousTotalGp = Long.valueOf(totalGp);
-		if(tickProfit == 0)
+		if (tickProfit == 0)
 			return;
 
-		// generate gold drop
-		if (config.goldDrops() && config.enableProfitLoss() && tickProfit != 0)
+		//unpause run automatically
+		if (runData.isPaused && config.autoResumeTrip())
+		{
+			runData.isPaused = false;
+		}
+		if (config.goldDrops())
 		{
 			goldDropsObject.requestGoldDrop(tickProfit);
 		}
