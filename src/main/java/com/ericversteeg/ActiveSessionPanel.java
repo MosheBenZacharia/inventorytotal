@@ -154,6 +154,8 @@ class ActiveSessionPanel extends PluginPanel
 		errorSpacing = UI.addVerticalRigidBox(sessionInfoSection, vGap);
 		errorLabel.setForeground(Color.red);
 		sessionInfoSection.add(errorLabel);
+		errorLabel.setVisible(false);
+		errorSpacing.setVisible(false);
 		
 
 		//icon buttons

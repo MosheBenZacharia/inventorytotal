@@ -226,7 +226,7 @@ public class LootingBagManager
 			return;
 		}
 
-		// not in wilderness or ferox -> can't pickup items directly into looting bag
+		// not in wilderness or ferox -> can't pick up items directly into looting bag
 		if (client.getVarbitValue(Varbits.IN_WILDERNESS) == 0
 			&& !FEROX_REGION.contains(client.getLocalPlayer().getWorldLocation().getRegionID()))
 		{
