@@ -540,6 +540,7 @@ public class InventoryTotalPlugin extends Plugin
 	void postNewRun()
 	{
 		runData.initialItemQtys.clear();
+		runData.itemQtys.clear();
 
 		long inventoryTotal = getInventoryTotal(true);
 		long equipmentTotal = getEquipmentTotal(true);
