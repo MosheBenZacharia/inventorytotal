@@ -50,6 +50,8 @@ public class UI {
     public static final ImageIcon SESSIONINFO_INFO_HOVER_ICON;
     public static final ImageIcon SESSIONINFO_GRID_ICON;
     public static final ImageIcon SESSIONINFO_GRID_HOVER_ICON;
+    public static final ImageIcon SESSIONINFO_PLUS_ICON;
+    public static final ImageIcon SESSIONINFO_PLUS_HOVER_ICON;
 
     private static final String PROFIT_LOSS_TIME_FORMAT = "%01d:%02d:%02d";
     private static final String PROFIT_LOSS_TIME_NO_HOURS_FORMAT = "%01d:%02d";
@@ -304,5 +306,8 @@ public class UI {
         final BufferedImage gridIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-grid.png");
         SESSIONINFO_GRID_ICON = new ImageIcon(gridIcon);
         SESSIONINFO_GRID_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(gridIcon, hoverAlphaOffset));
+        final BufferedImage plusIcon = ImageUtil.loadImageResource(InventoryTotalPlugin.class, "/gpperhour-session-plus.png");
+        SESSIONINFO_PLUS_ICON = new ImageIcon(plusIcon);
+        SESSIONINFO_PLUS_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(plusIcon, hoverAlphaOffset));
     }
 }

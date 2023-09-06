@@ -159,16 +159,20 @@ class ActiveSessionPanel extends PluginPanel
 		
 
 		//icon buttons
+		JLabel newTripButton = UI.createIconButton(UI.SESSIONINFO_PLUS_ICON, UI.SESSIONINFO_PLUS_HOVER_ICON, "Create new trip", ()-> { clientThread.invokeLater(() -> {plugin.updatePluginState(true);});});
 		startTrackingButton = UI.createIconButton(UI.SESSIONINFO_PLAY_ICON, UI.SESSIONINFO_PLAY_HOVER_ICON, "Start tracking new trips", ()-> { 
 			sessionManager.startTracking(); 
 			updateStopStartVisibility();
+			this.updateTrips();
+
 		});
 		stopTrackingButton = UI.createIconButton(UI.SESSIONINFO_STOP_ICON, UI.SESSIONINFO_STOP_HOVER_ICON, "Stop tracking new trips", ()-> { 
 			sessionManager.stopTracking();
 			updateStopStartVisibility();
+			this.updateTrips();
 		});
 		updateStopStartVisibility();
-		JLabel toggleSessionLootGridButton = UI.createIconButton(UI.SESSIONINFO_GRID_ICON, UI.SESSIONINFO_GRID_HOVER_ICON, "Toggle session loot grid", ()-> { showSessionLootGrid = !showSessionLootGrid;});
+		JLabel toggleSessionLootGridButton = UI.createIconButton(UI.SESSIONINFO_GRID_ICON, UI.SESSIONINFO_GRID_HOVER_ICON, "Toggle session loot grid", ()-> { showSessionLootGrid = !showSessionLootGrid; this.updateTrips();});
 		JLabel refreshPricesButton = UI.createIconButton(UI.SESSIONINFO_REFRESH_ICON, UI.SESSIONINFO_REFRESH_HOVER_ICON, "Refresh prices", ()-> { clientThread.invokeLater(() -> {plugin.refreshPrices();});});
 		JLabel deleteTripsButton = UI.createIconButton(UI.SESSIONINFO_TRASH_ICON, UI.SESSIONINFO_TRASH_HOVER_ICON, "Delete all trips", ()-> { 
 
@@ -210,12 +214,13 @@ class ActiveSessionPanel extends PluginPanel
 		// });
 
 		JPanel iconButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+		iconButtons.add(newTripButton);
 		iconButtons.add(startTrackingButton);
 		iconButtons.add(stopTrackingButton);
+		iconButtons.add(saveButton);
 		iconButtons.add(toggleSessionLootGridButton);
 		iconButtons.add(refreshPricesButton);
 		iconButtons.add(deleteTripsButton);
-		iconButtons.add(saveButton);
 		iconButtons.add(settingsButton);
 		// iconButtons.add(debugButton);
 
