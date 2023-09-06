@@ -339,7 +339,7 @@ public class InventoryTotalPlugin extends Plugin
         long tickProfit = (totalGp - previousTotalGp);
 		previousTotalGp = Long.valueOf(totalGp);
 		//avoid rounding issues with charges
-		if (Math.abs(tickProfit) > 1l)
+		if (Math.abs(tickProfit) <= 1l)
 			return;
 
 		//unpause run automatically
