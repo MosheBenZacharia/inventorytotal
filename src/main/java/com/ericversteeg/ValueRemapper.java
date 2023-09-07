@@ -2,6 +2,7 @@ package com.ericversteeg;
 
 import static net.runelite.api.ItemID.*;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 public class ValueRemapper {
@@ -43,11 +44,12 @@ public class ValueRemapper {
                     (1f/1000f)*plugin.getPrice(MYSTIC_HAT_DUSK)*1f;
             return value;
         }
-        else if(itemId == TOKKUL)
+        else if (itemId == TOKKUL)
         {
             switch(config.tokkulValue())
             {
                 case NO_VALUE:
+                default:
                     return 0f;
                 //overstock price for runes since they hit overstock quickly. overstock price same with/without gloves.
                 case BUY_CHAOS_RUNE:
@@ -62,15 +64,65 @@ public class ValueRemapper {
                     return plugin.getPrice(TOKTZMEJTAL) / (config.tokkulKaramjaGloves() ? 45500f : 52500f);
                 case SELL_UNCUT_ONYX:
                     return plugin.getPrice(UNCUT_ONYX) / (config.tokkulKaramjaGloves() ? 260000f : 300000f);
-                default:
-                    return 0f;
             }
         }
-        //careful with recursive loop of crystal shards (since the chest can have crystal shards)
+        else if (itemId == CRYSTAL_SHARD)
+        {
+            switch(config.crystalShardValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case BUY_TELEPORT_SEED:
+                    return plugin.getPrice(ENHANCED_CRYSTAL_TELEPORT_SEED) / 150f;
+                case SELL_BASTION:
+                    return (plugin.getPrice(DIVINE_BASTION_POTION4) - plugin.getPrice(BASTION_POTION4))/0.4f;
+                case SELL_BATTLEMAGE:
+                    return (plugin.getPrice(DIVINE_BATTLEMAGE_POTION4) - plugin.getPrice(BATTLEMAGE_POTION4))/0.4f;
+                case SELL_MAGIC:
+                    return (plugin.getPrice(DIVINE_MAGIC_POTION4) - plugin.getPrice(MAGIC_POTION4))/0.4f;
+                case SELL_RANGING:
+                    return (plugin.getPrice(DIVINE_RANGING_POTION4) - plugin.getPrice(RANGING_POTION4))/0.4f;
+                case SELL_SUPER_ATTACK:
+                    return (plugin.getPrice(DIVINE_SUPER_ATTACK_POTION4) - plugin.getPrice(SUPER_ATTACK4))/0.4f;
+                case SELL_SUPER_COMBAT:
+                    return (plugin.getPrice(DIVINE_SUPER_COMBAT_POTION4) - plugin.getPrice(SUPER_COMBAT_POTION4))/0.4f;
+                case SELL_SUPER_DEFENCE:
+                    return (plugin.getPrice(DIVINE_SUPER_DEFENCE_POTION4) - plugin.getPrice(SUPER_DEFENCE4))/0.4f;
+                case SELL_SUPER_STRENGTH:
+                    return (plugin.getPrice(DIVINE_SUPER_STRENGTH_POTION4) - plugin.getPrice(SUPER_STRENGTH4))/0.4f;
+            }
+        }
+        else if (itemId == CRYSTAL_DUST_23964)
+        {
+            switch(config.crystalDustValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_BASTION:
+                    return (plugin.getPrice(DIVINE_BASTION_POTION4) - plugin.getPrice(BASTION_POTION4))/4f;
+                case SELL_BATTLEMAGE:
+                    return (plugin.getPrice(DIVINE_BATTLEMAGE_POTION4) - plugin.getPrice(BATTLEMAGE_POTION4))/4f;
+                case SELL_MAGIC:
+                    return (plugin.getPrice(DIVINE_MAGIC_POTION4) - plugin.getPrice(MAGIC_POTION4))/4f;
+                case SELL_RANGING:
+                    return (plugin.getPrice(DIVINE_RANGING_POTION4) - plugin.getPrice(RANGING_POTION4))/4f;
+                case SELL_SUPER_ATTACK:
+                    return (plugin.getPrice(DIVINE_SUPER_ATTACK_POTION4) - plugin.getPrice(SUPER_ATTACK4))/4f;
+                case SELL_SUPER_COMBAT:
+                    return (plugin.getPrice(DIVINE_SUPER_COMBAT_POTION4) - plugin.getPrice(SUPER_COMBAT_POTION4))/4f;
+                case SELL_SUPER_DEFENCE:
+                    return (plugin.getPrice(DIVINE_SUPER_DEFENCE_POTION4) - plugin.getPrice(SUPER_DEFENCE4))/4f;
+                case SELL_SUPER_STRENGTH:
+                    return (plugin.getPrice(DIVINE_SUPER_STRENGTH_POTION4) - plugin.getPrice(SUPER_STRENGTH4))/4f;
+            }
+        }
 
         return null;
     }
 
+    @AllArgsConstructor
     public enum TokkulOverride {
         NO_VALUE("No Value (Default)"),
         BUY_CHAOS_RUNE      ("Chaos Rune (Buy)"),
@@ -80,18 +132,44 @@ public class ValueRemapper {
         SELL_TOKTZ_KET_XIL  ("Toktz-ket-xil (Sell)"),
         SELL_OBBY_CAPE      ("Obsidian cape (Sell)");
     
-        private final String description;
-    
-        // Constructor to initialize the description for each enum constant
-        private TokkulOverride(String description) {
-            this.description = description;
-        }
-    
-        // Override the toString() method to return the custom string representation
+        private final String configName;
         @Override
-        public String toString() {
-            return description;
-        }
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum CrystalShardOverride {
+        NO_VALUE("No Value (Default)"),
+        BUY_TELEPORT_SEED       ("Teleport Seed (Buy)"),
+        SELL_SUPER_ATTACK       ("Super Attack (Sell)"),
+        SELL_SUPER_STRENGTH     ("Super Strength (Sell)"),
+        SELL_SUPER_DEFENCE      ("Super Defence (Sell)"),
+        SELL_RANGING            ("Ranging (Sell)"),
+        SELL_MAGIC              ("Magic (Sell)"),
+        SELL_BASTION            ("Bastion (Sell)"),
+        SELL_BATTLEMAGE         ("Battlemage (Sell)"),
+        SELL_SUPER_COMBAT       ("Super Combat (Sell)");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum CrystalDustOverride {
+        NO_VALUE("No Value (Default)"),
+        SELL_SUPER_ATTACK       ("Super Attack (Sell)"),
+        SELL_SUPER_STRENGTH     ("Super Strength (Sell)"),
+        SELL_SUPER_DEFENCE      ("Super Defence (Sell)"),
+        SELL_RANGING            ("Ranging (Sell)"),
+        SELL_MAGIC              ("Magic (Sell)"),
+        SELL_BASTION            ("Bastion (Sell)"),
+        SELL_BATTLEMAGE         ("Battlemage (Sell)"),
+        SELL_SUPER_COMBAT       ("Super Combat (Sell)");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
     }
 
 }

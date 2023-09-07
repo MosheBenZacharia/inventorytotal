@@ -485,4 +485,28 @@ public interface InventoryTotalConfig extends Config
 	{
 		return ValueRemapper.TokkulOverride.NO_VALUE;
 	}
+
+	@ConfigItem(
+			position = 10,
+			keyName = "crystalShardValue",
+			name = "C Shard:",
+			description = "Crystal Shard: Uses enhanced crystal teleport seed for buy value, divine potion profit for sell value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.CrystalShardOverride crystalShardValue()
+	{
+		return ValueRemapper.CrystalShardOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 15,
+			keyName = "crystalDustValue",
+			name = "C Dust:",
+			description = "Crystal Dust: Uses divine potion profit for value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.CrystalDustOverride crystalDustValue()
+	{
+		return ValueRemapper.CrystalDustOverride.NO_VALUE;
+	}
 }

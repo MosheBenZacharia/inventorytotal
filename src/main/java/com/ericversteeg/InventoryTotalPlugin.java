@@ -388,9 +388,17 @@ public class InventoryTotalPlugin extends Plugin
 					clientToolbar.addNavigation(navButton);
 				}
 			}
-			else if (event.getKey().contains("tokkul"))
+			else if (event.getKey().startsWith("tokkul"))
 			{
 				refreshPrice(ItemID.TOKKUL);
+			}
+			else if (event.getKey().startsWith("crystalShard"))
+			{
+				refreshPrice(ItemID.CRYSTAL_SHARD);
+			}
+			else if (event.getKey().startsWith("crystalDust"))
+			{
+				refreshPrice(ItemID.CRYSTAL_DUST_23964);
 			}
 		}
 	}
@@ -401,7 +409,7 @@ public class InventoryTotalPlugin extends Plugin
 
 			if (itemPrices.remove(itemID) != null)
 			{
-				getPrice(itemID);
+				float price = getPrice(itemID);
 			}
 		});
 	}
@@ -934,7 +942,7 @@ public class InventoryTotalPlugin extends Plugin
 			}
 			else
 			{
-				if (price > 0)
+				if (price != 0)
 				{
 					ledgerItems.put(name, new InventoryTotalLedgerItem(name, qtyDifference, price, itemId));
 				}
