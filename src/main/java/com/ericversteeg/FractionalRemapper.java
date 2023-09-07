@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ItemID;
 
 import static net.runelite.api.ItemID.*;
 
@@ -54,7 +53,7 @@ public class FractionalRemapper
         //Sourced from https://github.com/runelite/runelite/blob/master/runelite-client/src/main/java/net/runelite/client/plugins/itemcharges/ItemWithCharge.java
         remapData = new HashMap<>();
 
-        remapData.put(ItemID.MINNOW, new RemapData(ItemID.RAW_SHARK, 1f/40f));
+        remapData.put(MINNOW, new RemapData(RAW_SHARK, 1f/40f));
 
         /////////////////////// Rechargeable Jewelery ///////////////////////
         //These shouldn't really lose value as the charges deplete since the uncharged

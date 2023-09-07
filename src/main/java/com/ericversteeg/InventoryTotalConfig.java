@@ -446,4 +446,43 @@ public interface InventoryTotalConfig extends Config
 			section =  sessionPanelSection
     )
     default int sidePanelPosition() { return 6; }
+
+
+
+
+
+
+
+
+	@ConfigSection(
+		name = "Untradeable Values",
+		description = "Customize value for items that are not tradeable.",
+		position = 200,
+		closedByDefault = true
+	)
+	String untradeableValuesSection = "untradeableValuesSection";
+
+	@ConfigItem(
+			position = 5,
+			keyName = "tokkulKaramjaGloves",
+			name = "Tokkul: Include Karamja Gloves",
+			description = "Include karamja glove discount for tokkul price.",
+			section =  untradeableValuesSection
+	)
+	default boolean tokkulKaramjaGloves()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 6,
+			keyName = "tokkulValue",
+			name = "Tokkul:",
+			description = "Uses overstock price for buy value, normal stock for sell value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.TokkulOverride tokkulValue()
+	{
+		return ValueRemapper.TokkulOverride.NO_VALUE;
+	}
 }

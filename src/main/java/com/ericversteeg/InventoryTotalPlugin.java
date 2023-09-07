@@ -70,7 +70,7 @@ public class InventoryTotalPlugin extends Plugin
 
     // static item prices so that when ItemManager updates, the Profit / Loss value doesn't all of a sudden change
     // this is cleared and repopulated at the start of each new run (after bank) and whenever new items hit the inventory
-    private static final Map<Integer, Integer> itemPrices = new HashMap<>();
+    private static final Map<Integer, Float> itemPrices = new HashMap<>();
 	//so we can do name lookups on the swing thread
 	private static final Map<Integer, String> itemNames = new HashMap<>();
 
@@ -371,14 +371,14 @@ public class InventoryTotalPlugin extends Plugin
 				else
 					overlayManager.remove(overlay);
 			}
-			if (event.getKey().equals(InventoryTotalConfig.enableSessionPanelKeyName))
+			else if (event.getKey().equals(InventoryTotalConfig.enableSessionPanelKeyName))
 			{
 				if (config.enableSessionPanel())
 					clientToolbar.addNavigation(navButton);
 				else
 					clientToolbar.removeNavigation(navButton);
 			}
-			if (event.getKey().equals(InventoryTotalConfig.sidePanelPositionKeyName))
+			else if (event.getKey().equals(InventoryTotalConfig.sidePanelPositionKeyName))
 			{
 				clientToolbar.removeNavigation(navButton);
 				//need to rebuild it for some reason (i think its a bug in core)
@@ -388,7 +388,22 @@ public class InventoryTotalPlugin extends Plugin
 					clientToolbar.addNavigation(navButton);
 				}
 			}
+			else if (event.getKey().contains("tokkul"))
+			{
+				refreshPrice(ItemID.TOKKUL);
+			}
 		}
+	}
+
+	private void refreshPrice(int itemID)
+	{
+		clientThread.invoke(()->{
+
+			if (itemPrices.remove(itemID) != null)
+			{
+				getPrice(itemID);
+			}
+		});
 	}
 
 	private NavigationButton buildNavButton()
@@ -583,7 +598,7 @@ public class InventoryTotalPlugin extends Plugin
 		for (Integer itemId: qtyMap.keySet())
 		{
 			long totalPrice;
-			int gePrice = getPrice(itemId);
+			float gePrice = getPrice(itemId);
 			float itemQty = qtyMap.get(itemId);
 
 			if (itemId == COINS)
@@ -694,7 +709,7 @@ public class InventoryTotalPlugin extends Plugin
 		for (int itemId: equMap.keySet())
 		{
 			float qty = equMap.get(itemId);
-			int gePrice = getPrice(itemId);
+			float gePrice = getPrice(itemId);
 			if (itemId == COINS)
 			{
 				gePrice = 1;
@@ -764,10 +779,10 @@ public class InventoryTotalPlugin extends Plugin
 
 			Float qty = qtyMap.get(itemId);
 
-			Integer price = itemPrices.get(itemId);
+			Float price = itemPrices.get(itemId);
 			if (itemId == COINS || price == null)
 			{
-				price = 1;
+				price = 1f;
 			}
 
 			ledgerItems.add(new InventoryTotalLedgerItem(itemName, qty, price, itemId));
@@ -905,10 +920,10 @@ public class InventoryTotalPlugin extends Plugin
 			{
 				continue;
 			}
-			Integer price = itemPrices.get(itemId);
+			Float price = itemPrices.get(itemId);
 			if (price == null)
 			{
-				price = 1;
+				price = 1f;
 			}
 
 			Float qtyDifference = qtyDifferences.get(itemId);
@@ -968,7 +983,7 @@ public class InventoryTotalPlugin extends Plugin
 		return runepouchItems;
 	}
 
-	void updateRunData(boolean isNewRun, int itemId, float itemQty, int gePrice)
+	void updateRunData(boolean isNewRun, int itemId, float itemQty, float gePrice)
 	{
 		if (itemId != COINS && !itemPrices.containsKey(itemId))
 		{
@@ -999,7 +1014,7 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
-	int getPrice(int itemId)
+	float getPrice(int itemId)
 	{
 		if (itemPrices.containsKey(itemId))
 		{
@@ -1007,12 +1022,10 @@ public class InventoryTotalPlugin extends Plugin
 		}
 		else
 		{
-			//certain things should still have value (still need to figure out what else to include)
-			if (itemId == ItemID.CRYSTAL_SHARD
-				|| itemId == ItemID.BRIMSTONE_KEY)
+			Float remappedValue = ValueRemapper.remapPrice(itemId, this, config);
+			if (remappedValue != null)
 			{
-				ItemComposition composition = itemManager.getItemComposition(itemId);
-				return composition.getHaPrice();
+				return remappedValue;
 			}
 			else
 			{
@@ -1033,8 +1046,6 @@ public class InventoryTotalPlugin extends Plugin
 	private InventoryTotalRunData getSavedData()
 	{
 		String json = readData( "inventory_total_data");
-
-		log.info("got save data");
 		InventoryTotalRunData savedData = gson.fromJson(json, InventoryTotalRunData.class);
 
 		if (savedData == null)

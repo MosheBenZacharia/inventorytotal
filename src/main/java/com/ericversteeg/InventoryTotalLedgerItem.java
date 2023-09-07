@@ -3,10 +3,10 @@ package com.ericversteeg;
 public class InventoryTotalLedgerItem {
     private final String description;
     private float qty;
-    private final int price;
+    private final float price;
     private final int itemId;
 
-    public InventoryTotalLedgerItem(String description, float qty, int price, int itemId)
+    public InventoryTotalLedgerItem(String description, float qty, float price, int itemId)
     {
         this.description = description;
         this.qty = qty;
@@ -24,7 +24,7 @@ public class InventoryTotalLedgerItem {
         return qty;
     }
 
-    public int getPrice()
+    public float getPrice()
     {
         return price;
     }

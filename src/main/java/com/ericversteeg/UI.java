@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.awt.event.MouseAdapter;
@@ -23,6 +25,7 @@ import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 
+@Slf4j
 public class UI {
     public static class LootPanelData {
         JPanel lootPanel = new JPanel();
@@ -113,6 +116,9 @@ public class UI {
             if (itemOne.getItemId() != itemTwo.getItemId()) {
                 return false;
             }
+            if (itemOne.getPrice() != itemTwo.getPrice()) {
+                return false;
+            }
         }
 
         return true;
@@ -193,11 +199,19 @@ public class UI {
         return gpPerHour;
     }
 
-    public static String formatGp(long total, boolean showExact) {
+    public static String formatGp(long value, boolean showExact) {
         if (showExact) {
-            return QuantityFormatter.formatNumber(total);
+            return QuantityFormatter.formatNumber(value);
         } else {
-            return QuantityFormatter.quantityToStackSize(total);
+            return QuantityFormatter.quantityToStackSize(value);
+        }
+    }
+
+    public static String formatGp(double value, boolean showExact) {
+        if (showExact || Math.abs(value) < 10d) {
+            return QuantityFormatter.formatNumber(value);
+        } else {
+            return QuantityFormatter.quantityToStackSize(Math.round(value));
         }
     }
 
