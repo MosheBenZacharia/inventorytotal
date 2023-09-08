@@ -400,6 +400,10 @@ public class InventoryTotalPlugin extends Plugin
 			{
 				refreshPrice(ItemID.CRYSTAL_DUST_23964);
 			}
+			else if (event.getKey().startsWith("mermaidsTear"))
+			{
+				refreshPrice(ItemID.MERMAIDS_TEAR);
+			}
 		}
 	}
 

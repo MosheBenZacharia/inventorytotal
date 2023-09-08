@@ -477,7 +477,7 @@ public interface InventoryTotalConfig extends Config
 	@ConfigItem(
 			position = 6,
 			keyName = "tokkulValue",
-			name = "Tokkul:",
+			name = "Tokkul",
 			description = "Uses overstock price for buy value, normal stock for sell value.",
 			section =  untradeableValuesSection
 	)
@@ -489,7 +489,7 @@ public interface InventoryTotalConfig extends Config
 	@ConfigItem(
 			position = 10,
 			keyName = "crystalShardValue",
-			name = "C Shard:",
+			name = "C Shard",
 			description = "Crystal Shard: Uses enhanced crystal teleport seed for buy value, divine potion profit for sell value.",
 			section =  untradeableValuesSection
 	)
@@ -501,12 +501,24 @@ public interface InventoryTotalConfig extends Config
 	@ConfigItem(
 			position = 15,
 			keyName = "crystalDustValue",
-			name = "C Dust:",
+			name = "C Dust",
 			description = "Crystal Dust: Uses divine potion profit for value.",
 			section =  untradeableValuesSection
 	)
 	default ValueRemapper.CrystalDustOverride crystalDustValue()
 	{
 		return ValueRemapper.CrystalDustOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 20,
+			keyName = "mermaidsTearValue",
+			name = "Mermaid's Tear",
+			description = "Option to use merfolk trident to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.MermaidsTearOverride mermaidsTearValue()
+	{
+		return ValueRemapper.MermaidsTearOverride.NO_VALUE;
 	}
 }

@@ -118,6 +118,17 @@ public class ValueRemapper {
                     return (plugin.getPrice(DIVINE_SUPER_STRENGTH_POTION4) - plugin.getPrice(SUPER_STRENGTH4))/4f;
             }
         }
+        else if (itemId == MERMAIDS_TEAR)
+        {
+            switch(config.mermaidsTearValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_MERFOLK_TRIDENT:
+                    return plugin.getPrice(MERFOLK_TRIDENT)/400f;
+            }
+        }
 
         return null;
     }
@@ -166,6 +177,16 @@ public class ValueRemapper {
         SELL_BASTION            ("Bastion (Sell)"),
         SELL_BATTLEMAGE         ("Battlemage (Sell)"),
         SELL_SUPER_COMBAT       ("Super Combat (Sell)");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum MermaidsTearOverride {
+        NO_VALUE                    ("No Value (Default)"),
+        SELL_MERFOLK_TRIDENT        ("Merfolk Trident");
     
         private final String configName;
         @Override
