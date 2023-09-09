@@ -558,8 +558,8 @@ public class InventoryTotalPlugin extends Plugin
 			onBank();
 		}
 
-		// check post new run, need to wait two ticks because if you withdraw something and close the bank right after it shows up one tick later
-		if (postNewRun && (client.getTickCount() - newRunTick) > 1)
+		// check post new run, need to wait one tick because if you withdraw something and close the bank right after it shows up one tick later
+		if (postNewRun && (client.getTickCount() - newRunTick) > 0)
 		{
 			//make sure user didn't open the bank back up in those two ticks
 			if (getState() == InventoryTotalState.RUN)
