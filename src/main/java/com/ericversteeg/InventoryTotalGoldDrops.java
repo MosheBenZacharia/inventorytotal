@@ -41,18 +41,17 @@ public class InventoryTotalGoldDrops {
      */
 
 	/*
-	Free sprite id for the gold icons.
+	Free sprite ids for the gold icons.
 	 */
-	private static final int COINS_SPRITE_ID = -1337;
+	private static final int COINS_100_SPRITE_ID = -1337;
+	private static final int COINS_250_SPRITE_ID = -1338;
+	private static final int COINS_1000_SPRITE_ID = -1339;
+	private static final int COINS_10000_SPRITE_ID = -1340;
 
 	// Skill ordinal to send in the fake xp drop script.
 	// doesn't matter which skill expect it's better not be attack/defense/magic to avoid collision with
 	// XpDropPlugin which looks for those and might change text color
 	private static final int XPDROP_SKILL = Skill.FISHING.ordinal();
-
-	// Value to send in the fake xp drop script. Doesn't matter at all
-	// since we don't use this value, but we use currentGoldDropValue
-	private static final int XPDROP_VALUE = 6;
 
 	/*
 	Singletons which will be provided at creation by the plugin
@@ -72,7 +71,10 @@ public class InventoryTotalGoldDrops {
 		this.client = client;
 		this.itemManager = itemManager;
 
-		prepareCoinSprite();
+		prepareCoinSprite(10000, COINS_10000_SPRITE_ID);
+		prepareCoinSprite(1000, COINS_1000_SPRITE_ID);
+		prepareCoinSprite(250, COINS_250_SPRITE_ID);
+		prepareCoinSprite(100, COINS_100_SPRITE_ID);
 
 		currentGoldDropValue = 0L;
 
@@ -182,37 +184,51 @@ public class InventoryTotalGoldDrops {
 			dropTextWidget.setTextColor(Color.RED.getRGB());
 		}
 
+		int spriteId = 0;
+		long absValue = Math.abs(goldDropValue);
+		if (absValue >= 10000)
+		{
+			spriteId = COINS_10000_SPRITE_ID;
+		}
+		else if (absValue >= 1000)
+		{
+			spriteId = COINS_1000_SPRITE_ID;
+		}
+		else if (absValue >= 250)
+		{
+			spriteId = COINS_250_SPRITE_ID;
+		}
+		else
+		{
+			spriteId = COINS_100_SPRITE_ID;
+		}
+
 		// change skill sprite to coin sprite
-		dropSpriteWidget.setSpriteId(COINS_SPRITE_ID);
+		dropSpriteWidget.setSpriteId(spriteId);
 
 	}
 
-	private void prepareCoinSprite()
+	private void prepareCoinSprite(int quantity, int spriteId)
 	{
         /*
         Prepare coin sprites for use in the gold drops.
         It seems item icons are not available as sprites with id,
         so we convert in this function.
-
         */
 
-		AsyncBufferedImage coin_image_raw;
-
 		// get image object by coin item id
-		coin_image_raw = itemManager.getImage(ItemID.COINS_995, 10000, false);
+		AsyncBufferedImage coin_image_raw = itemManager.getImage(ItemID.COINS_995, quantity, false);
 
-		// since getImage returns an AsyncBufferedImage, which is not loaded initially,
-		// we schedule sprite conversion and sprite override for when the image is actually loaded
-		coin_image_raw.onLoaded(() -> {
-			final SpritePixels coin_sprite;
-
-			// convert image to sprite
-			coin_sprite = ImageUtil.getImageSpritePixels(coin_image_raw, client);
-
+		Runnable r = () -> {
+			final SpritePixels coin_sprite = ImageUtil.getImageSpritePixels(coin_image_raw, client);
 			// register new coin sprite by overriding a free sprite id
-			client.getSpriteOverrides().put(COINS_SPRITE_ID, coin_sprite);
-		});
+			client.getSpriteOverrides().put(spriteId, coin_sprite);
+		};
 
+		coin_image_raw.onLoaded(r);
+		//run now in case it loaded instantly.
+		//TODO: remove this if/when my PR ever merges
+		r.run();
 	}
 
 	public void requestGoldDrop(long amount)
