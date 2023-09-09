@@ -521,4 +521,64 @@ public interface InventoryTotalConfig extends Config
 	{
 		return ValueRemapper.MermaidsTearOverride.NO_VALUE;
 	}
+
+	@ConfigItem(
+			position = 25,
+			keyName = "stardustValue",
+			name = "Stardust",
+			description = "Option to use value of buyable items to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.StardustOverride stardustValue()
+	{
+		return ValueRemapper.StardustOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 30,
+			keyName = "unidentifiedMineralsValue",
+			name = "U Minerals",
+			description = "Unidentified Minerals: Option to use value of buyable items to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.UnidentifiedMineralsOverride unidentifiedMineralsValue()
+	{
+		return ValueRemapper.UnidentifiedMineralsOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 35,
+			keyName = "goldenNuggetValue",
+			name = "G Nuggets",
+			description = "Golden Nuggets: Option to use value of buyable items to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.GoldenNuggetOverride goldenNuggetValue()
+	{
+		return ValueRemapper.GoldenNuggetOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 40,
+			keyName = "hallowedMarkValue",
+			name = "Hallowed M",
+			description = "Hallowed Mark: Option to use value of buyable items to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.HallowedMarkOverride hallowedMarkValue()
+	{
+		return ValueRemapper.HallowedMarkOverride.NO_VALUE;
+	}
+
+	@ConfigItem(
+			position = 45,
+			keyName = "abyssalPearlsValue",
+			name = "Abyssal P",
+			description = "Abyssal Pearls: Option to use value of buyable items to derive the value.",
+			section =  untradeableValuesSection
+	)
+	default ValueRemapper.AbyssalPearlsOverride abyssalPearlsValue()
+	{
+		return ValueRemapper.AbyssalPearlsOverride.NO_VALUE;
+	}
 }

@@ -404,6 +404,26 @@ public class InventoryTotalPlugin extends Plugin
 			{
 				refreshPrice(ItemID.MERMAIDS_TEAR);
 			}
+			else if (event.getKey().startsWith("stardust"))
+			{
+				refreshPrice(ItemID.STARDUST);
+			}
+			else if (event.getKey().startsWith("unidentifiedMinerals"))
+			{
+				refreshPrice(ItemID.UNIDENTIFIED_MINERALS);
+			}
+			else if (event.getKey().startsWith("goldenNugget"))
+			{
+				refreshPrice(ItemID.GOLDEN_NUGGET);
+			}
+			else if (event.getKey().startsWith("hallowedMark"))
+			{
+				refreshPrice(ItemID.HALLOWED_MARK);
+			}
+			else if (event.getKey().startsWith("abyssalPearls"))
+			{
+				refreshPrice(ItemID.ABYSSAL_PEARLS);
+			}
 		}
 	}
 
@@ -413,7 +433,7 @@ public class InventoryTotalPlugin extends Plugin
 
 			if (itemPrices.remove(itemID) != null)
 			{
-				float price = getPrice(itemID);
+				getPrice(itemID);
 			}
 		});
 	}

@@ -129,6 +129,113 @@ public class ValueRemapper {
                     return plugin.getPrice(MERFOLK_TRIDENT)/400f;
             }
         }
+        else if (itemId == STARDUST)
+        {
+            switch(config.stardustValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_SOFT_CLAY_PACK:
+                    return plugin.getPrice(SOFT_CLAY_PACK)/150f;
+                case SELL_BAG_FULL_OF_GEMS:
+                    return plugin.getPrice(BAG_FULL_OF_GEMS)/300f;
+            }
+        }
+        else if (itemId == UNIDENTIFIED_MINERALS)
+        {
+            switch(config.unidentifiedMineralsValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_SOFT_CLAY_PACK:
+                    return plugin.getPrice(SOFT_CLAY_PACK)/10f;
+                case SELL_BAG_FULL_OF_GEMS:
+                    return plugin.getPrice(BAG_FULL_OF_GEMS)/20f;
+            }
+        }
+        else if (itemId == GOLDEN_NUGGET)
+        {
+            switch(config.goldenNuggetValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_SOFT_CLAY_PACK:
+                    return plugin.getPrice(SOFT_CLAY_PACK)/10f;
+                case SELL_BAG_FULL_OF_GEMS:
+                    return plugin.getPrice(BAG_FULL_OF_GEMS)/40f;
+            }
+        }
+        else if (itemId == SOFT_CLAY_PACK || itemId == SOFT_CLAY_PACK_12010 || itemId == SOFT_CLAY_PACK_24851 || itemId == SOFT_CLAY_PACK_25533)
+        {
+            return plugin.getPrice(SOFT_CLAY) * 100f;
+        }
+        else if (itemId == BAG_FULL_OF_GEMS || itemId == BAG_FULL_OF_GEMS_24853 || itemId == BAG_FULL_OF_GEMS_25537)
+        {
+            return  plugin.getPrice(UNCUT_SAPPHIRE)*(40f / 2.003f) + 
+                    plugin.getPrice(UNCUT_EMERALD)*(40f / 2.884f) + 
+                    plugin.getPrice(UNCUT_RUBY)*(40f / 8.475f) + 
+                    plugin.getPrice(UNCUT_DIAMOND)*(40f / 32.36f) + 
+                    plugin.getPrice(UNCUT_DRAGONSTONE)*(40f / 161.3f) + 
+                    plugin.getPrice(UNCUT_ONYX)*(40f / 100000000f);
+        }
+        else if (itemId == ABYSSAL_PEARLS)
+        {
+            switch(config.abyssalPearlsValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_RING_OF_THE_ELEMENTS:
+                    return plugin.getPrice(RING_OF_THE_ELEMENTS)/400f;
+            }
+        }
+        else if (itemId == HALLOWED_MARK)
+        {
+            switch(config.hallowedMarkValue())
+            {
+                case NO_VALUE:
+                default:
+                    return 0f;
+                case SELL_HALLOWED_SACK:
+                    return plugin.getPrice(HALLOWED_SACK)/100f;
+            }
+        }
+        else if (itemId == HALLOWED_SACK)
+        {
+            return plugin.getPrice(MONKS_ROBE_TOP)*1f*.5f+
+            plugin.getPrice(MONKS_ROBE)*1f*.5f+
+            plugin.getPrice(HOLY_SYMBOL)*1f*.5f+
+            plugin.getPrice(AIR_RUNE)*625f*.5f+
+            plugin.getPrice(FIRE_RUNE)*625f*.5f+
+            plugin.getPrice(CHAOS_RUNE)*37.5f*.5f+
+            plugin.getPrice(MITHRIL_BOLTS)*100f*.5f+
+            plugin.getPrice(PRAYER_POTION2)*1f*.5f+
+            plugin.getPrice(WHITE_LILY)*1f*.5f+
+            1f*2250f*.5f+//coins
+            plugin.getPrice(ADAMANT_2H_SWORD)*1f*.1f+
+            plugin.getPrice(ADAMANT_PLATEBODY)*1f*.1f+
+            plugin.getPrice(COSMIC_RUNE)*80f*.1f+
+            plugin.getPrice(DEATH_RUNE)*80f*.1f+
+            plugin.getPrice(NATURE_RUNE)*80f*.1f+
+            plugin.getPrice(ADAMANT_BOLTS)*125f*.1f+
+            plugin.getPrice(MONKFISH)*2f*.1f+
+            plugin.getPrice(PRAYER_POTION4)*1f*.1f+
+            plugin.getPrice(GRIMY_RANARR_WEED)*1.5f*.1f+
+            1f*10000f*.1f+//coins
+            plugin.getPrice(RUNE_2H_SWORD)*1f*.2f+
+            plugin.getPrice(RUNE_PLATEBODY)*1f*.2f+
+            plugin.getPrice(LAW_RUNE)*200f*.2f+
+            plugin.getPrice(BLOOD_RUNE)*200f*.2f+
+            plugin.getPrice(SOUL_RUNE)*200f*.2f+
+            plugin.getPrice(RUNITE_BOLTS)*200f*.2f+
+            plugin.getPrice(MONKFISH)*4f*.2f+
+            plugin.getPrice(SANFEW_SERUM4)*1.5f*.2f+
+            plugin.getPrice(RANARR_SEED)*1.5f*.2f+
+            1f*20000f*.2f;//coins
+        }
 
         return null;
     }
@@ -187,6 +294,59 @@ public class ValueRemapper {
     public enum MermaidsTearOverride {
         NO_VALUE                    ("No Value (Default)"),
         SELL_MERFOLK_TRIDENT        ("Merfolk Trident");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum UnidentifiedMineralsOverride {
+        NO_VALUE                        ("No Value (Default)"),
+        SELL_SOFT_CLAY_PACK             ("Soft Clay Pack"),
+        SELL_BAG_FULL_OF_GEMS           ("Bag Full of Gems");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum StardustOverride {
+        NO_VALUE                        ("No Value (Default)"),
+        SELL_SOFT_CLAY_PACK             ("Soft Clay Pack"),
+        SELL_BAG_FULL_OF_GEMS           ("Bag Full of Gems");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum GoldenNuggetOverride {
+        NO_VALUE                        ("No Value (Default)"),
+        SELL_SOFT_CLAY_PACK             ("Soft Clay Pack"),
+        SELL_BAG_FULL_OF_GEMS           ("Bag Full of Gems");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum HallowedMarkOverride {
+        NO_VALUE                        ("No Value (Default)"),
+        SELL_HALLOWED_SACK              ("Hallowed Sack");
+    
+        private final String configName;
+        @Override
+        public String toString() { return configName; }
+    }
+
+    @AllArgsConstructor
+    public enum AbyssalPearlsOverride {
+        NO_VALUE                        ("No Value (Default)"),
+        SELL_RING_OF_THE_ELEMENTS       ("Ring of the Elements");
     
         private final String configName;
         @Override
