@@ -141,9 +141,9 @@ public class InventoryTotalPlugin extends Plugin
     private NavigationButton navButton;
 	private boolean sessionHistoryDirty;
 	private boolean isLoggedIn;
-	//no gc
-	Map<Integer, Float> inventoryQtyMap = new HashMap<>();
-	Map<Integer, Float> equipmentQtyMap = new HashMap<>();
+	private Map<Integer, Float> inventoryQtyMap = new HashMap<>();
+	private Map<Integer, Float> equipmentQtyMap = new HashMap<>();
+	private HashSet<String> ignoredItems = new HashSet<>();
 
 	@Getter
 	private Widget inventoryWidget;
@@ -173,7 +173,7 @@ public class InventoryTotalPlugin extends Plugin
 		weaponChargesManager.startUp();
 		chargedItemManager.startUp();
 		lootingBagManager.startUp();
-
+		
 		runData = getSavedData();
 		loadSessions();
 		sessionManager = new SessionManager(this, config);
@@ -182,6 +182,7 @@ public class InventoryTotalPlugin extends Plugin
 			sessionManager.onTripStarted(runData);
 		buildSidePanel();
 		updatePanels();
+		refreshIgnoredItems();
 	}
 
 	@Override
@@ -392,6 +393,10 @@ public class InventoryTotalPlugin extends Plugin
 					clientToolbar.addNavigation(navButton);
 				}
 			}
+			else if (event.getKey().equals(InventoryTotalConfig.ignoredItemsKey))
+			{
+				refreshIgnoredItems();
+			}
 			else if (event.getKey().startsWith("tokkul"))
 			{
 				refreshPrice(ItemID.TOKKUL);
@@ -428,6 +433,17 @@ public class InventoryTotalPlugin extends Plugin
 			{
 				refreshPrice(ItemID.ABYSSAL_PEARLS);
 			}
+		}
+	}
+
+	private void refreshIgnoredItems()
+	{
+		ignoredItems.clear();
+
+		String[] items = config.ignoredItems().split(",");
+		for(int i=0;i<items.length;++i)
+		{
+			ignoredItems.add(items[i].trim().toLowerCase());
 		}
 	}
 
@@ -794,13 +810,9 @@ public class InventoryTotalPlugin extends Plugin
 			if (itemId == -1)
 				continue;
 
-			final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+			ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 			String itemName = itemComposition.getName();
-			final boolean ignore = runData.ignoredItems.stream().anyMatch(s -> {
-				String lcItemName = itemName.toLowerCase();
-				String lcS = s.toLowerCase();
-				return lcItemName.contains(lcS);
-			});
+			boolean ignore = ignoredItems.contains(itemName.toLowerCase());
 			if (ignore) { continue; }
 				
 			qtyMap.merge(itemId, (float) containerItems[i].getQuantity(), Float::sum);

@@ -65,9 +65,10 @@ public interface InventoryTotalConfig extends Config
         return false;
     }
 
+	public static final String ignoredItemsKey = "ignoredItems";
 	@ConfigItem(
 			position = 34,
-			keyName = "ignoredItems",
+			keyName = ignoredItemsKey,
 			name = "Ignored Items",
 			description = "Ignore these items in your inventory (applies after banking).",
 			section =  sharedSettingSection
