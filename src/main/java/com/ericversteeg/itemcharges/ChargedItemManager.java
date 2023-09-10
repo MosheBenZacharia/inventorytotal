@@ -214,7 +214,7 @@ public class ChargedItemManager {
 		ChargedItem chargedItem = getChargedItem(itemId);
 		if (chargedItem == null)
 		{
-			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
+			log.warn("Didn't find a charged item for this itemID, this shouldn't happen.");
 			return false;
 		}
 		return chargedItem.hasChargeData();
@@ -225,7 +225,7 @@ public class ChargedItemManager {
 		ChargedItem chargedItem = getChargedItem(itemId);
 		if (chargedItem == null)
 		{
-			log.info("Didn't find a charged item for this itemID, this shouldn't happen.");
+			log.warn("Didn't find a charged item for this itemID, this shouldn't happen.");
 			return emptyMap;
 		}
 		return chargedItem.getItemQuantities();

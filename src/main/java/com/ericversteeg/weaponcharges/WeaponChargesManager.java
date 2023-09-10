@@ -799,7 +799,7 @@ public class WeaponChargesManager
 
 	public void setCharges(ChargedWeapon weapon, int charges, boolean logChange) {
 		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName, Math.max(charges, 0));
-		if (logChange)
+		if (verboseLogging)
 		{
 			log.info("set charges for " + weapon + " to " + charges + " (" + configManager.getRSProfileKey() + ")");
 		}
@@ -829,7 +829,7 @@ public class WeaponChargesManager
 	private void setDartsLeft(float dartsLeft, boolean logChange)
 	{
 		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDarts", dartsLeft);
-		if (logChange)
+		if (verboseLogging)
 		{
 			log.info("set darts left to " + dartsLeft + " (" + configManager.getRSProfileKey() + ")");
 		}
@@ -850,7 +850,8 @@ public class WeaponChargesManager
 	void setDartType(DartType dartType)
 	{
 		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDartType", dartType);
-		log.info("set dart type to " + dartType + " (" + configManager.getRSProfileKey() + ")");
+		if (verboseLogging)
+			log.info("set dart type to " + dartType + " (" + configManager.getRSProfileKey() + ")");
 	}
 
 	public Float getScalesLeft()
@@ -868,7 +869,7 @@ public class WeaponChargesManager
 	private void setScalesLeft(float scalesLeft, boolean logChange)
 	{
 		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeScales", scalesLeft);
-		if (logChange)
+		if (verboseLogging)
 		{
 			log.info("set scales left to " + scalesLeft + " (" + configManager.getRSProfileKey() + ")");
 		}
@@ -944,7 +945,7 @@ public class WeaponChargesManager
 				return getCharges(chargedWeapon) != null;
 			}
 		}
-		log.info("Didn't find a chargeable weapon for this itemID, this shouldn't happen.");
+		log.warn("Didn't find a chargeable weapon for this itemID, this shouldn't happen.");
 		return false;
 	}
 
@@ -962,7 +963,7 @@ public class WeaponChargesManager
 		}
 		if (weapon == null)
 		{
-			log.info("Weapon is NULL");
+			log.warn("Weapon is NULL");
 			return emptyMap;
 		}
 		//special case cause of how fucked the blowpipe is
