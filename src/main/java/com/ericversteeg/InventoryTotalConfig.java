@@ -513,7 +513,7 @@ public interface InventoryTotalConfig extends Config
 	@ConfigItem(
 			position = 20,
 			keyName = "mermaidsTearValue",
-			name = "Mermaid's Tear",
+			name = "Mermaid's T",
 			description = "Option to use merfolk trident to derive the value.",
 			section =  untradeableValuesSection
 	)
