@@ -107,15 +107,171 @@ public interface InventoryTotalConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 5,
+			position = 1,
 			keyName = "enableProfitLoss",
-			name = "Profit / Loss",
-			description = "Configures whether or not current total is relative to start amount.",
+			name = "Show Profit",
+			description = "Show profit in the trip overlay, if disabled shows inventory total value.",
 			section =  tripOverlaySection
 	)
 	default boolean enableProfitLoss()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			position = 2,
+			keyName = "showLapTime",
+			name = "Show Run Time",
+			description = "Configures whether or not the run time is visible.",
+			section =  tripOverlaySection
+	)
+	default boolean showRunTime()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 3,
+			keyName = "showGpPerHourOnOverlay",
+			name = "Show GP/hr On Overlay",
+			description = "Configures whether or not gp/hr is shown instead of net total when in profit / loss mode.",
+			section =  tripOverlaySection
+	)
+	default boolean showGpPerHourOnOverlay()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 4,
+			keyName = "showCoinStack",
+			name = "Show Coin Stack",
+			description = "Configures whether or not the coin stack image is visible.",
+			section =  tripOverlaySection
+	)
+	default boolean showCoinStack()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 5,
+			keyName = "showWhileBanking",
+			name = "Show While Banking",
+			description = "Configures whether or not the total is visible while banking.",
+			section =  tripOverlaySection
+	)
+	default boolean showWhileBanking()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 6,
+			keyName = "showOnEmpty",
+			name = "Show On Empty",
+			description = "Configures whether or not to show the total when inventory is empty.",
+			section =  tripOverlaySection
+	)
+	default boolean showOnEmpty()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 7,
+			keyName = "showTooltip",
+			name = "Show Ledger on Hover",
+			description = "Show the ledger when hovering over the trip overlay.",
+			section =  tripOverlaySection
+	)
+	default boolean showLedgerOnHover()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 11,
+			keyName = "roundedCorners",
+			name = "Rounded Corners",
+			description = "Toggle rounded corners.",
+			section =  tripOverlaySection
+	)
+	default boolean roundCorners()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			position = 12,
+			keyName = "cornerRadius",
+			name = "Corner Radius",
+			description = "Configures the corner radius.",
+			section =  tripOverlaySection
+	)
+	default int cornerRadius()
+	{
+		return 10;
+	}
+
+	@ConfigItem(
+			position = 13,
+			keyName = "alignment",
+			name = "Alignment",
+			description = "Configures alignment.",
+			section =  tripOverlaySection
+	)
+	default InventoryTotalAlignment horizontalAlignment()
+	{
+		return InventoryTotalAlignment.CENTER;
+	}
+
+	@ConfigItem(
+			position = 14,
+			keyName = "inventoryOffsetX",
+			name = "Inventory Offset X",
+			description = "Configures x-axis offset.",
+			section =  tripOverlaySection
+	)
+	default int inventoryXOffset()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+			position = 15,
+			keyName = "inventoryOffsetXNegative",
+			name = "Inventory Offset X Negative",
+			description = "Configures whether or not the y-axis offset is a negative number.",
+			section =  tripOverlaySection
+	)
+	default boolean isInventoryXOffsetNegative()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 16,
+			keyName = "inventoryOffsetY",
+			name = "Inventory Offset Y",
+			description = "Configures y-axis offset.",
+			section =  tripOverlaySection
+	)
+	default int inventoryYOffset()
+	{
+		return 42;
+	}
+
+	@ConfigItem(
+			position = 17,
+			keyName = "inventoryOffsetYNegative",
+			name = "Inventory Offset Y Negative",
+			description = "Configures whether or not the y-axis offset is a negative number.",
+			section =  tripOverlaySection
+	)
+	default boolean isInventoryYOffsetNegative()
+	{
+		return false;
 	}
 
 	@Alpha
@@ -230,162 +386,6 @@ public interface InventoryTotalConfig extends Config
 	default Color lossBorderColor()
 	{
 		return Color.decode("#0E0E0E");
-	}
-
-	@ConfigItem(
-			position = 11,
-			keyName = "roundedCorners",
-			name = "Rounded Corners",
-			description = "Toggle rounded corners.",
-			section =  tripOverlaySection
-	)
-	default boolean roundCorners()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			position = 12,
-			keyName = "cornerRadius",
-			name = "Corner Radius",
-			description = "Configures the corner radius.",
-			section =  tripOverlaySection
-	)
-	default int cornerRadius()
-	{
-		return 10;
-	}
-
-	@ConfigItem(
-			position = 13,
-			keyName = "alignment",
-			name = "Alignment",
-			description = "Configures alignment.",
-			section =  tripOverlaySection
-	)
-	default InventoryTotalAlignment horizontalAlignment()
-	{
-		return InventoryTotalAlignment.CENTER;
-	}
-
-	@ConfigItem(
-			position = 14,
-			keyName = "inventoryOffsetX",
-			name = "Inventory Offset X",
-			description = "Configures x-axis offset.",
-			section =  tripOverlaySection
-	)
-	default int inventoryXOffset()
-	{
-		return 0;
-	}
-
-	@ConfigItem(
-			position = 15,
-			keyName = "inventoryOffsetXNegative",
-			name = "Inventory Offset X Negative",
-			description = "Configures whether or not the y-axis offset is a negative number.",
-			section =  tripOverlaySection
-	)
-	default boolean isInventoryXOffsetNegative()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-			position = 16,
-			keyName = "inventoryOffsetY",
-			name = "Inventory Offset Y",
-			description = "Configures y-axis offset.",
-			section =  tripOverlaySection
-	)
-	default int inventoryYOffset()
-	{
-		return 42;
-	}
-
-	@ConfigItem(
-			position = 17,
-			keyName = "inventoryOffsetYNegative",
-			name = "Inventory Offset Y Negative",
-			description = "Configures whether or not the y-axis offset is a negative number.",
-			section =  tripOverlaySection
-	)
-	default boolean isInventoryYOffsetNegative()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-			position = 18,
-			keyName = "showLapTime",
-			name = "Show Run Time",
-			description = "Configures whether or not the run time is visible.",
-			section =  tripOverlaySection
-	)
-	default boolean showRunTime()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-			position = 20,
-			keyName = "showGpPerHourOnOverlay",
-			name = "Show GP/hr On Overlay",
-			description = "Configures whether or not gp/hr is shown instead of net total when in profit / loss mode.",
-			section =  tripOverlaySection
-	)
-	default boolean showGpPerHourOnOverlay()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			position = 24,
-			keyName = "showCoinStack",
-			name = "Show Coin Stack",
-			description = "Configures whether or not the coin stack image is visible.",
-			section =  tripOverlaySection
-	)
-	default boolean showCoinStack()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			position = 26,
-			keyName = "showWhileBanking",
-			name = "Show While Banking",
-			description = "Configures whether or not the total is visible while banking.",
-			section =  tripOverlaySection
-	)
-	default boolean showWhileBanking()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			position = 28,
-			keyName = "showOnEmpty",
-			name = "Show On Empty",
-			description = "Configures whether or not to show the total when inventory is empty.",
-			section =  tripOverlaySection
-	)
-	default boolean showOnEmpty()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			position = 30,
-			keyName = "showTooltip",
-			name = "Show Ledger on Hover",
-			description = "Show the ledger when hovering over the trip overlay.",
-			section =  tripOverlaySection
-	)
-	default boolean showLedgerOnHover()
-	{
-		return true;
 	}
 
 
