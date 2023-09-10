@@ -1,41 +1,68 @@
+/*
+ * Copyright (c) 2023, Moshe Ben-Zacharia <https://github.com/MosheBenZacharia>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.ericversteeg;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedList;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
+
 import net.runelite.api.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.FlatTextField;
 import net.runelite.client.ui.components.IconTextField;
-import net.runelite.client.ui.components.PluginErrorPanel;
-import net.runelite.client.util.*;
+import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.ImageUtil;
 
-import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
-
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.List;
-import java.util.Locale;
-
+//Tab in the side panel for showing all your sessions
 public class SessionHistoryPanel extends JPanel
 {
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
@@ -215,7 +242,7 @@ public class SessionHistoryPanel extends JPanel
 						.setText(htmlLabel(avgTripDurationLabelPrefix, UI.formatTime(stats.getAvgTripDuration())));
 			}
 			UI.updateLootGrid(
-					UI.filterAndSortLedger(
+					UI.sortLedger(
 							InventoryTotalPlugin.getProfitLossLedger(stats.getInitialQtys(), stats.getQtys())),
 					panelData.sessionLootPanelData, itemManager, config);
 		}
@@ -295,7 +322,6 @@ public class SessionHistoryPanel extends JPanel
 
 			JPanel gpPerHourWrapperPanel = new JPanel();
 			gpPerHourWrapperPanel.setLayout(new BorderLayout());
-			// gpPerHourWrapperPanel.setBorder(new MatteBorder(0,0,1,0,borderColor));
 			gpPerHourWrapperPanel.add(gpPerHourPanel, BorderLayout.WEST);
 
 			nameField = new EditableNameField(parentPanel, 50, ColorScheme.DARKER_GRAY_COLOR, null);

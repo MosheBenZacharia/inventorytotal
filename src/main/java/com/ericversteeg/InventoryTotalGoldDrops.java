@@ -1,5 +1,26 @@
 /*
- * Copyright (c) 2023, nofatigue <https://github.com/nofatigue>
+ * Copyright (c) 2023, Moshe Ben-Zacharia <https://github.com/MosheBenZacharia>, nofatigue <https://github.com/nofatigue>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.ericversteeg;
 
@@ -20,26 +41,25 @@ import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
 import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
 
 @Slf4j
+/*
+	Implement gold drops.
+	We do this by using the XPDrop mechanism, namely the Fake XPDrop script,
+	which is intended to generate xp drops for maxed out skills.
+	Fake XP Drops are composed of a skill sprite,
+	and a text widget with a mod icon (<img=11> in text)
+	So to create a gold drop, we create a fake xp drop, and interefere in the middle,
+	and change the sprite and text to our liking.
+
+	Flow is:
+
+	1. create xp drop using runScript (see requestGoldDrop)
+	2. getting in the middle of the drop, changing icon and text (see handleXpDrop)
+
+	A more correct way to do this is probably by calling Item.GetImage with wanted
+	coin quantity, which will give us correct coin icon and correct text,
+	and simply drawing that image ourselfs somehow. Instead of using xp drop mechanism.
+	*/
 public class InventoryTotalGoldDrops {
-    /*
-       Implement gold drops.
-       We do this by using the XPDrop mechanism, namely the Fake XPDrop script,
-       which is intended to generate xp drops for maxed out skills.
-       Fake XP Drops are composed of a skill sprite,
-        and a text widget with a mod icon (<img=11> in text)
-       So to create a gold drop, we create a fake xp drop, and interefere in the middle,
-       and change the sprite and text to our liking.
-
-       Flow is:
-
-       1. create xp drop using runScript (see requestGoldDrop)
-       2. getting in the middle of the drop, changing icon and text (see handleXpDrop)
-
-       A more correct way to do this is probably by calling Item.GetImage with wanted
-       coin quantity, which will give us correct coin icon and correct text,
-       and simply drawing that image ourselfs somehow. Instead of using xp drop mechanism.
-     */
-
 	/*
 	Free sprite ids for the gold icons.
 	 */

@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2023, Moshe Ben-Zacharia <https://github.com/MosheBenZacharia>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.ericversteeg;
 
 import java.awt.*;
@@ -26,6 +50,7 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 
 @Slf4j
+//Some utility code for various functionality used by different classes.
 public class UI {
     public static class LootPanelData {
         JPanel lootPanel = new JPanel();
@@ -173,12 +198,7 @@ public class UI {
         }
     }
 
-    public static List<InventoryTotalLedgerItem> filterAndSortLedger(List<InventoryTotalLedgerItem> ledger) {
-        //don'tneed to filter here, getprofitlossledger does this at the bottom
-
-        // filter out anything with no change or change that will get rounded to 0
-        // ledger = ledger.stream().filter(item -> Math.abs(item.getQty()) > (InventoryTotalPlugin.roundAmount / 2f))
-        //         .collect(Collectors.toList());
+    public static List<InventoryTotalLedgerItem> sortLedger(List<InventoryTotalLedgerItem> ledger) {
 
         // sort by profit descending
         ledger = ledger.stream().sorted(Comparator.comparingLong(o -> -(o.getCombinedValue())))
@@ -222,9 +242,6 @@ public class UI {
         lootPanelData.previousLedger = ledger;
         JPanel containerCurrent = new JPanel();
         int totalItems = ledger.size();
-
-        // tpData.containerPanel.setBorder(new EmptyBorder(2, 2, 5, 2));
-        // containerCurrent.setBorder(new EmptyBorder(2, 2, 5, 2));
 
         // Calculates how many rows need to be display to fit all items
         final int rowSize = ((totalItems % ITEMS_PER_ROW == 0) ? 0 : 1) + totalItems / ITEMS_PER_ROW;
