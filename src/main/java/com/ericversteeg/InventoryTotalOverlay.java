@@ -77,9 +77,13 @@ class InventoryTotalOverlay extends Overlay
 	private long lastGpPerHour;
 	private long lastGpPerHourUpdateTime;
 
-	private BufferedImage coinsImage;
-	private int lastCoinValue;
 	private BufferedImage redXImage;
+
+	private boolean hasLoadedCoinsImages;
+    private BufferedImage coinsImage100;
+    private BufferedImage coinsImage250;
+    private BufferedImage coinsImage1000;
+    private BufferedImage coinsImage10000;
 
 	@RequiredArgsConstructor
 	class LedgerEntry
@@ -165,15 +169,45 @@ class InventoryTotalOverlay extends Overlay
 		return plugin.getChargeableItemsNeedingCheck().size() != 0;
 	}
 
+
+    private void loadCoinsImages()
+    {
+        coinsImage100 = loadCoinsImage(100);
+        coinsImage250 = loadCoinsImage(250);
+        coinsImage1000 = loadCoinsImage(1000);
+        coinsImage10000 = loadCoinsImage(10000);
+		hasLoadedCoinsImages = true;
+    }
+
+    private BufferedImage loadCoinsImage(int quantity)
+    {
+		BufferedImage image = itemManager.getImage(ItemID.COINS_995, quantity, false);
+		image = ImageUtil.resizeImage(image, imageSize, imageSize);
+		return image;
+    }
+
 	private BufferedImage getCoinsImage(int quantity)
 	{
-		if (coinsImage == null || quantity != lastCoinValue)
+		if(!hasLoadedCoinsImages)
+			loadCoinsImages();
+
+		long absValue = Math.abs(quantity);
+		if (absValue >= 10000)
 		{
-			coinsImage = itemManager.getImage(ItemID.COINS_995, quantity, false);
-			coinsImage = ImageUtil.resizeImage(coinsImage, imageSize, imageSize);
+			return coinsImage10000;
 		}
-		lastCoinValue = quantity;
-		return coinsImage;
+		else if (absValue >= 1000)
+		{
+			return coinsImage1000;
+		}
+		else if (absValue >= 250)
+		{
+			return coinsImage250;
+		}
+		else
+		{
+			return coinsImage100;
+		}
 	}
 
 	private BufferedImage getRedXImage()

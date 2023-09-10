@@ -225,7 +225,6 @@ public class InventoryTotalGoldDrops {
 
 		// change skill sprite to coin sprite
 		dropSpriteWidget.setSpriteId(spriteId);
-
 	}
 
 	private void prepareCoinSprite(int quantity, int spriteId)
@@ -253,12 +252,6 @@ public class InventoryTotalGoldDrops {
 
 	public void requestGoldDrop(long amount)
 	{
-        /*
-        We create gold drops by faking a fake xp drop :)
-         */
-
-		log.debug(String.format("goldDrop: %d", amount));
-
 		// save the value and mark an ongoing gold drop
 		currentGoldDropValue = amount;
 

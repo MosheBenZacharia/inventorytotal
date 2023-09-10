@@ -49,5 +49,4 @@ class SessionStats
 	//ui state (this could probably be done without having view and model code merged but it would be a lot of work)
 	transient boolean showDetails;
 	transient BufferedImage coinsImage;
-	transient int lastCoinsImageValue;
 }
