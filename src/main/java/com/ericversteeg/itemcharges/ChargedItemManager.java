@@ -98,9 +98,9 @@ public class ChargedItemManager {
 	@Inject
 	private Gson gson;
 
-	private ChargedItem[] chargedItems;
+	private ChargedItem[] chargedItems = new ChargedItem[0];
 
-	public void startUp() {
+	public void loadConfigData() {
 		chargedItems = new ChargedItem[]{
 			new U_FishBarrel(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
 			new U_LogBasket(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
@@ -112,10 +112,6 @@ public class ChargedItemManager {
 			new U_HerbSack(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
 			new U_SeedBox(client, client_thread, configs, items, chat_messages, notifier, gson, executorService),
 		};
-	}
-
-	public void shutDown() {
-
 	}
 
 	@Subscribe

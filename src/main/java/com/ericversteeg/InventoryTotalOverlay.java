@@ -113,6 +113,9 @@ class InventoryTotalOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		if (plugin.getRunData() == null)
+			return null;
+
 		Widget inventoryWidget = plugin.getInventoryWidget();
 		boolean isInvHidden = inventoryWidget == null || inventoryWidget.isHidden();
 		if (isInvHidden)

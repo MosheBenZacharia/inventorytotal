@@ -101,10 +101,10 @@ public class LootingBagManager
 
 	private PickupAction lastPickUpAction;
 
-	public void startUp()
+	public void loadConfigData()
 	{
 		Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
-		bagItems = gson.fromJson(configManager.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag), mapType);
+		bagItems = gson.fromJson(configManager.getRSProfileConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag), mapType);
 	}
 
 	@Subscribe
@@ -327,7 +327,7 @@ public class LootingBagManager
 	{
 		executor.execute(() ->
 		{
-			configManager.setConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag, gson.toJson(this.bagItems));
+			configManager.setRSProfileConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag, gson.toJson(this.bagItems));
 		});
 	}
 

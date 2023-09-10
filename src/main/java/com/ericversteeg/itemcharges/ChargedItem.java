@@ -838,14 +838,14 @@ public class ChargedItem {
 			return;
 		
 		try {
-			charges = Integer.parseInt(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key));
+			charges = Integer.parseInt(configs.getRSProfileConfiguration(InventoryTotalConfig.GROUP, config_key));
 			return;
 		} catch (final Exception ignored) {}
 
 		//if that didn't work try loading map
 		try {
 			Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Float>>() {}.getType();
-			itemQuantities = gson.fromJson(configs.getConfiguration(InventoryTotalConfig.GROUP, config_key), mapType);
+			itemQuantities = gson.fromJson(configs.getRSProfileConfiguration(InventoryTotalConfig.GROUP, config_key), mapType);
 			return;
 		} catch (final Exception ignored) {}
 
@@ -891,11 +891,11 @@ public class ChargedItem {
 	}
 
 	private void setConfiguration(final String key, @Nonnull final String value) {
-		configs.setConfiguration(InventoryTotalConfig.GROUP, key, value);
+		configs.setRSProfileConfiguration(InventoryTotalConfig.GROUP, key, value);
 	}
 
 	private void setConfiguration(final String key, final int value) {
-		configs.setConfiguration(InventoryTotalConfig.GROUP, key, value);
+		configs.setRSProfileConfiguration(InventoryTotalConfig.GROUP, key, value);
 	}
 
 	private void updateItemId(final int item_id) {

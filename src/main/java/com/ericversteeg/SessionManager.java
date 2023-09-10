@@ -56,16 +56,6 @@ public class SessionManager
 		this.config = config;
 	}
 
-	void startUp()
-	{
-
-	}
-
-	void shutDown()
-	{
-
-	}
-
 	void startTracking()
 	{
 		isTracking = true;

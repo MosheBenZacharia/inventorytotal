@@ -353,6 +353,8 @@ public class InventoryTotalPlugin extends Plugin
     @Subscribe
     public void onGameTick(GameTick gameTick)
     {
+		if (runData == null)
+			return;
 		updatePluginState(false);
 		updatePanels();
 		updateChargeableItemsNeedingCheck();
@@ -481,7 +483,7 @@ public class InventoryTotalPlugin extends Plugin
 		ignoredItems.clear();
 
 		String[] items = config.ignoredItems().split(",");
-		for(int i=0;i<items.length;++i)
+		for (int i=0;i<items.length;++i)
 		{
 			ignoredItems.add(items[i].trim().toLowerCase());
 		}

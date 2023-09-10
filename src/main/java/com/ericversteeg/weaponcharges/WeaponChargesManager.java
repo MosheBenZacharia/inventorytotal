@@ -780,8 +780,7 @@ public class WeaponChargesManager
 			case ItemID.RANGING_CAPE:
 			case ItemID.RANGING_CAPET:
 			case ItemID.MAX_CAPE:
-				boolean vorkathsHeadUsed = Boolean.valueOf(configManager.getConfiguration(CONFIG_GROUP_NAME, "vorkathsHeadUsed"));
-				return vorkathsHeadUsed ? 0.2f : 0.28f;
+				return 0.28f;
 			case ItemID.AVAS_ASSEMBLER:
 			case ItemID.AVAS_ASSEMBLER_L:
 			case ItemID.ASSEMBLER_MAX_CAPE:
@@ -809,7 +808,7 @@ public class WeaponChargesManager
 	ConfigManager configManager;
 
 	public Integer getCharges(ChargedWeapon weapon) {
-		String configString = configManager.getConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName);
+		String configString = configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName);
 		if (configString == null) return null;
 		return Integer.parseInt(configString);
 	}
@@ -819,7 +818,7 @@ public class WeaponChargesManager
 	}
 
 	public void setCharges(ChargedWeapon weapon, int charges, boolean logChange) {
-		configManager.setConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName, Math.max(charges, 0));
+		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, weapon.configKeyName, Math.max(charges, 0));
 		if (verboseLogging)
 		{
 			log.info("set charges for " + weapon + " to " + charges);
@@ -837,7 +836,7 @@ public class WeaponChargesManager
 
 	public Float getDartsLeft()
 	{
-		String configString = configManager.getConfiguration(CONFIG_GROUP_NAME, "blowpipeDarts");
+		String configString = configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDarts");
 		if (configString == null) return null;
 		return Float.parseFloat(configString);
 	}
@@ -849,7 +848,7 @@ public class WeaponChargesManager
 
 	private void setDartsLeft(float dartsLeft, boolean logChange)
 	{
-		configManager.setConfiguration(CONFIG_GROUP_NAME, "blowpipeDarts", dartsLeft);
+		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDarts", dartsLeft);
 		if (verboseLogging)
 		{
 			log.info("set darts left to " + dartsLeft);
@@ -863,21 +862,21 @@ public class WeaponChargesManager
 
 	public DartType getDartType()
 	{
-		String configString = configManager.getConfiguration(CONFIG_GROUP_NAME, "blowpipeDartType");
+		String configString = configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDartType");
 		if (configString == null) return DartType.UNKNOWN;
 		return DartType.valueOf(configString);
 	}
 
 	void setDartType(DartType dartType)
 	{
-		configManager.setConfiguration(CONFIG_GROUP_NAME, "blowpipeDartType", dartType);
+		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeDartType", dartType);
 		if (verboseLogging)
 			log.info("set dart type to " + dartType);
 	}
 
 	public Float getScalesLeft()
 	{
-		String configString = configManager.getConfiguration(CONFIG_GROUP_NAME, "blowpipeScales");
+		String configString = configManager.getRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeScales");
 		if (configString == null) return null;
 		return Float.parseFloat(configString);
 	}
@@ -889,7 +888,7 @@ public class WeaponChargesManager
 
 	private void setScalesLeft(float scalesLeft, boolean logChange)
 	{
-		configManager.setConfiguration(CONFIG_GROUP_NAME, "blowpipeScales", scalesLeft);
+		configManager.setRSProfileConfiguration(CONFIG_GROUP_NAME, "blowpipeScales", scalesLeft);
 		if (verboseLogging)
 		{
 			log.info("set scales left to " + scalesLeft);

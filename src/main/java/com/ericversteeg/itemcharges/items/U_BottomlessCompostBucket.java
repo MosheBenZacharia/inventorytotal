@@ -82,7 +82,7 @@ public class U_BottomlessCompostBucket extends ChargedItem {
     }
 
     private String getCompostType() {
-        return configs.getConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.bottomless_compost_bucket_type);
+        return configs.getRSProfileConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.bottomless_compost_bucket_type);
     }
 
     @Override
