@@ -175,7 +175,8 @@ public class InventoryTotalPlugin extends Plugin
 		loadSessions();
 		sessionManager = new SessionManager(this, config);
 		sessionManager.startUp();
-		sessionManager.onTripStarted(runData);
+		if (!runData.isFirstRun)
+			sessionManager.onTripStarted(runData);
 		buildSidePanel();
 		updatePanels();
 	}
@@ -459,37 +460,21 @@ public class InventoryTotalPlugin extends Plugin
 			updatePluginState(true);
 		}
 	}
-	
-	void updatePluginState(boolean forceBanking)
+
+	boolean isBanking()
 	{
-		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
-
-		inventoryItemContainer = client.getItemContainer(InventoryID.INVENTORY);
-		equipmentItemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
-
-		if (config.enableProfitLoss())
-		{
-			setMode(InventoryTotalMode.PROFIT_LOSS);
-		}
-		else
-		{
-			setMode(InventoryTotalMode.TOTAL);
-		}
-
-		boolean isBank = forceBanking;
-
 		//Collect on bank
 		//Don't want it to appear there but have it count as bank still
 		Widget collectOnBank = client.getWidget(402, 2);
 		if (collectOnBank != null && !collectOnBank.isHidden())
 		{
-			isBank = true;
+			return true;
 		}
 		//Grand exchange can be open while inventory widget is closed, same functionality as above
 		Widget grandExchange = client.getWidget(WidgetInfo.GRAND_EXCHANGE_WINDOW_CONTAINER);
 		if (grandExchange != null && !grandExchange.isHidden())
 		{
-			isBank = true;
+			return true;
 		}
 
 		if (inventoryWidget == null || inventoryWidget.getCanvasLocation().getX() < 0 || inventoryWidget.isHidden())
@@ -513,11 +498,30 @@ public class InventoryTotalPlugin extends Plugin
 				inventoryWidget = altInventoryWidget;
 				if (inventoryWidget != null && !inventoryWidget.isHidden())
 				{
-					isBank = true;
-					break;
+					return true;
 				}
 			}
 		}
+		return false;
+	}
+	
+	void updatePluginState(boolean forceBanking)
+	{
+		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
+
+		inventoryItemContainer = client.getItemContainer(InventoryID.INVENTORY);
+		equipmentItemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
+
+		if (config.enableProfitLoss())
+		{
+			setMode(InventoryTotalMode.PROFIT_LOSS);
+		}
+		else
+		{
+			setMode(InventoryTotalMode.TOTAL);
+		}
+
+		boolean isBank = runData.isFirstRun || forceBanking || isBanking();
 
 		if (isBank)
 		{
@@ -528,11 +532,9 @@ public class InventoryTotalPlugin extends Plugin
 			setState(InventoryTotalState.RUN);
 		}
 
-		// before totals
 		boolean newRun = getPreviousState() == InventoryTotalState.BANK && getState() == InventoryTotalState.RUN;
+		
 		getRunData().itemQtys.clear();
-
-		// totals
 		long inventoryTotal = getInventoryTotal(false);
 		long equipmentTotal = getEquipmentTotal(false);
 
@@ -545,7 +547,6 @@ public class InventoryTotalPlugin extends Plugin
 
 		setTotalGp(totalGp);
 
-		// after totals
 		if (newRun)
 		{
 			onNewRun();
@@ -553,7 +554,7 @@ public class InventoryTotalPlugin extends Plugin
 			postNewRun = true;
 			newRunTick = client.getTickCount();
 		}
-		else if (getPreviousState() == InventoryTotalState.RUN && getState() == InventoryTotalState.BANK)
+		else if (getPreviousState() != InventoryTotalState.BANK && getState() == InventoryTotalState.BANK)
 		{
 			onBank();
 		}
@@ -612,7 +613,10 @@ public class InventoryTotalPlugin extends Plugin
 	void onBank()
 	{
 		runData.runEndTime = Instant.now().toEpochMilli();
-		sessionManager.onTripCompleted(runData);
+		if (!runData.isFirstRun)
+		{
+			sessionManager.onTripCompleted(runData);
+		}
 		runData = createRunData();
 		initialGp = 0;
 	}
@@ -1082,7 +1086,10 @@ public class InventoryTotalPlugin extends Plugin
 
 		if (savedData == null)
 		{
-			return createRunData();
+			log.info("Save data is null");
+			InventoryTotalRunData runData = createRunData();
+			runData.isFirstRun = true;
+			return runData;
 		}
 		return savedData;
 	}

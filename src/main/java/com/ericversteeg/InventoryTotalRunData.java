@@ -42,4 +42,6 @@ public class InventoryTotalRunData
     // when we call onPostNewRun. we have this delay because of how you can withdraw from the bank,
     // close it immediately, and still get the items in your inventory a tick later.
     transient boolean isBankDelay;
+    //first run needs to be reinitialized on first game tick.
+    transient boolean isFirstRun;
 }
