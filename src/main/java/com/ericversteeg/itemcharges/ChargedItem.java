@@ -692,11 +692,17 @@ public class ChargedItem {
 			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
 			if (itemContainer == null)
 				return;
-			Item itemA = itemContainer.getItem(client.getSelectedWidget().getIndex());
+			Widget widgetA = client.getSelectedWidget();
+			if (widgetA == null)
+				return;
+			Item itemA = itemContainer.getItem(widgetA.getIndex());
 			if (itemA == null) 
 				return;
 			int itemAId = itemA.getId();
-			Item itemB = itemContainer.getItem(event.getWidget().getIndex());
+			Widget widgetB = event.getWidget();
+			if (widgetB == null)
+				return;
+			Item itemB = itemContainer.getItem(widgetB.getIndex());
 			if (itemB == null) 
 				return;
 			int itemBId = itemB.getId();

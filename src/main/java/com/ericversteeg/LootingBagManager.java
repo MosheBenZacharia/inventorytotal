@@ -32,6 +32,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.ItemDespawned;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -196,11 +197,17 @@ public class LootingBagManager
 			ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
 			if (itemContainer == null)
 				return;
-			Item itemA = itemContainer.getItem(client.getSelectedWidget().getIndex());
+			Widget widgetA = client.getSelectedWidget();
+			if (widgetA == null)
+				return;
+			Item itemA = itemContainer.getItem(widgetA.getIndex());
 			if (itemA == null) 
 				return;
 			int itemAId = itemA.getId();
-			Item itemB = itemContainer.getItem(event.getWidget().getIndex());
+			Widget widgetB = event.getWidget();
+			if (widgetB == null)
+				return;
+			Item itemB = itemContainer.getItem(widgetB.getIndex());
 			if (itemB == null) 
 				return;
 			int itemBId = itemB.getId();

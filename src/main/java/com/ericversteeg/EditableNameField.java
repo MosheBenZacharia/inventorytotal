@@ -140,7 +140,6 @@ public class EditableNameField extends JPanel
             @Override
             public void mousePressed(MouseEvent mouseEvent)
             {
-                log.info("save enabled: "+ save.isEnabled());
                 if (SwingUtilities.isLeftMouseButton(mouseEvent) && save.isEnabled())
                 {
                     name = nameInput.getText();
@@ -294,12 +293,10 @@ public class EditableNameField extends JPanel
         // If nothing has changed or name is invalid, disable the save button
         if (nameInput.getText().isEmpty() || nameInput.getText().equals(this.name))
         {
-            //log.info("set enabled false");
             save.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
             save.setEnabled(false);
         } else
         {
-          // log.info("set enabled true");
             save.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
             save.setEnabled(true);
         }

@@ -490,7 +490,9 @@ public class InventoryTotalPlugin extends Plugin
 				//Bank with looting bag open
 				client.getWidget(WidgetID.BANK_INVENTORY_GROUP_ID, 5),
 				//Deposit box open
-				client.getWidget(268, 0)
+				client.getWidget(268, 0),
+				//COX storage open
+				client.getWidget(WidgetID.CHAMBERS_OF_XERIC_STORAGE_UNIT_INVENTORY_GROUP_ID, 1)
 			};
 
 			for (Widget altInventoryWidget: altInventoryWidgets)
@@ -1086,7 +1088,6 @@ public class InventoryTotalPlugin extends Plugin
 
 		if (savedData == null)
 		{
-			log.info("Save data is null");
 			InventoryTotalRunData runData = createRunData();
 			runData.isFirstRun = true;
 			return runData;

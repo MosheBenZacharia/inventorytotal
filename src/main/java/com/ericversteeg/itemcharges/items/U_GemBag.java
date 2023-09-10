@@ -72,7 +72,6 @@ public class U_GemBag extends ChargedItem
                 new TriggerChatMessage("The gem bag is empty.").onItemClick().extraConsumer((message) -> { super.emptyOrClear(); }),
                 new TriggerChatMessage(checkRegex).extraConsumer(message -> {
 
-                    log.info("message matched: "+ message);
                     super.emptyOrClear();
                     final Matcher matcher = checkPattern.matcher(message);
                     while (matcher.find())
