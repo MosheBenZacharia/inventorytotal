@@ -286,14 +286,7 @@ public class InventoryTotalPlugin extends Plugin
 			//ensure we load these after a restart
 			if (sessionStats != null)
 			{
-				for(Integer intialItemId : sessionStats.getInitialQtys().keySet())
-				{
-					ensureNameAndPriceLoaded(intialItemId);
-				}
-				for(Integer itemId : sessionStats.getQtys().keySet())
-				{
-					ensureNameAndPriceLoaded(itemId);
-				}
+				ensureSessionNameAndPriceLoaded(sessionStats);
 			}
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
@@ -302,17 +295,22 @@ public class InventoryTotalPlugin extends Plugin
 			//ensure we load these after a restart
 			for (SessionStats sessionStats : this.sessionHistory)
 			{
-				for(Integer intialItemId : sessionStats.getInitialQtys().keySet())
-				{
-					ensureNameAndPriceLoaded(intialItemId);
-				}
-				for(Integer itemId : sessionStats.getQtys().keySet())
-				{
-					ensureNameAndPriceLoaded(itemId);
-				}
+				ensureSessionNameAndPriceLoaded(sessionStats);
 			}
 			SwingUtilities.invokeLater(() -> sessionHistoryPanel.updateSessions());
 			sessionHistoryDirty = false;
+		}
+	}
+
+	void ensureSessionNameAndPriceLoaded(SessionStats sessionStats)
+	{
+		for(Integer intialItemId : sessionStats.getInitialQtys().keySet())
+		{
+			ensureNameAndPriceLoaded(intialItemId);
+		}
+		for(Integer itemId : sessionStats.getQtys().keySet())
+		{
+			ensureNameAndPriceLoaded(itemId);
 		}
 	}
 

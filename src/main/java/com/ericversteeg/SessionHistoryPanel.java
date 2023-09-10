@@ -216,7 +216,7 @@ public class SessionHistoryPanel extends JPanel
 
 		panelData.gpPerHourTabLabel.setText(gpPerHour);
 		int gpPerHourCoinsImage = Math.abs((int) gpPerHourLong);
-		gpPerHourCoinsImage /= 100;
+		gpPerHourCoinsImage /= 100;//divide by 100 to get more variation in coins image
 		getCoinsImage(gpPerHourCoinsImage, (BufferedImage image) ->
 		{
 			panelData.coinsLabel.setIcon(new ImageIcon(image));

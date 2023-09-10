@@ -361,7 +361,7 @@ class InventoryTotalOverlay extends Overlay
 			if (showCheckIcon)
 				imageOffset -= imageWidthWithPadding / 2;
 
-			BufferedImage image = getCoinsImage(numCoins);
+			BufferedImage image = getCoinsImage(numCoins / 100);//divide by 100 to get more variation in coins image
 			graphics.drawImage(image, (x + width) - HORIZONTAL_PADDING - imageSize + imageOffset, y + 3, null);
 		}
 
