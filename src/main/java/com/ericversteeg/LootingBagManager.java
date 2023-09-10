@@ -121,23 +121,17 @@ public class LootingBagManager
 		saveData();
 	}
 
-	//dont GC
-	private List<Item> lootingBagItems = new ArrayList<>(LOOTING_BAG_SIZE);
-
-	List<Item> getLootingBagContents()
+	void addLootingBagContents(Map<Integer,Float> qtyMap)
 	{
-		lootingBagItems.clear();
 		//needs to be checked/calibrated
 		if (bagItems == null)
 		{
-			return lootingBagItems;
+			return;
 		}
 		for (Integer itemId: bagItems.keySet())
 		{
-			Item item = new Item(itemId, bagItems.get(itemId));
-			lootingBagItems.add(item);
+			qtyMap.merge(itemId, (float) bagItems.get(itemId), Float::sum);
 		}
-		return lootingBagItems;
 	}
 
 	//avoid GC
