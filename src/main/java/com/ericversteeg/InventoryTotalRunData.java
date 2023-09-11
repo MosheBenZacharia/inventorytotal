@@ -37,12 +37,11 @@ public class InventoryTotalRunData
     long runStartTime = 0;
     // if this is null the trip is in progress
     Long runEndTime = null;
-    // add to this while paused? then subtract when calculating duration
-    long pauseTime = 0;
+    long runtime = 0;
     boolean isPaused = false;
 
     Map<Integer, Float> initialItemQtys = new HashMap<>();
-    Map<Integer, Float> itemQtys = new HashMap<>();
+    transient Map<Integer, Float> itemQtys = new HashMap<>();
 
     LinkedList<String> ignoredItems = new LinkedList<>();
 
@@ -53,7 +52,7 @@ public class InventoryTotalRunData
 
     long getRuntime()
     {
-        return (getEndTime() - runStartTime) - pauseTime;
+        return runtime;
     }
 
     long getEndTime()

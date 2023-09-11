@@ -285,45 +285,7 @@ public class InventoryTotalPlugin extends Plugin
 		sessionManager.stopTracking();
 		runData = getSavedData();
 		sessionManager.startTracking();
-	}
-
-	private boolean isLoggedIn;
-	
-	@Subscribe
-	private void onGameStateChanged(GameStateChanged gameStateChanged)
-	{
-		GameState state = gameStateChanged.getGameState();
-		boolean loggedInNew = state.getState() >= GameState.LOADING.getState();
-		if (loggedInNew != this.isLoggedIn)
-		{
-			this.isLoggedIn = loggedInNew;
-			if (isLoggedIn)
-			{
-				String timeString = readData(InventoryTotalConfig.logOutTimeKey);
-				if (timeString != null)
-				{
-					Long logOutTime = Long.parseLong(timeString);
-					long timePassed = Instant.now().toEpochMilli() - logOutTime;
-					if (this.runData != null)
-					{
-						this.runData.pauseTime += timePassed;
-					}
-				}
-				deleteData(InventoryTotalConfig.logOutTimeKey);
-			}
-			else
-			{
-				if (this.state == InventoryTotalState.RUN && this.runData != null)
-				{
-					saveData(InventoryTotalConfig.logOutTimeKey, Instant.now().toEpochMilli());
-				}
-				else
-				{
-					deleteData(InventoryTotalConfig.logOutTimeKey);
-				}
-				lastTickTime = null;
-			}
-		}
+		previousTotalGp = null;
 	}
 
 	void updatePanels()
@@ -407,9 +369,9 @@ public class InventoryTotalPlugin extends Plugin
 		updatePanels();
 		updateChargeableItemsNeedingCheck();
 		
-		if (this.state == InventoryTotalState.RUN && runData.isPaused && lastTickTime != null)
+		if (this.state == InventoryTotalState.RUN && !runData.isPaused && lastTickTime != null)
 		{
-			runData.pauseTime += Instant.now().toEpochMilli() - lastTickTime;
+			runData.runtime += Instant.now().toEpochMilli() - lastTickTime;
 		}
 		lastTickTime = Instant.now().toEpochMilli();
 

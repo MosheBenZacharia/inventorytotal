@@ -150,7 +150,7 @@ public class SessionManager
 				}
 			}
 			tripDurationSum += runData.getRuntime();
-			totalPauseTime += runData.pauseTime;
+			totalPauseTime += (runData.getEndTime()-runData.runStartTime) - runData.getRuntime();
 			tripCount++;
 
 			if (activeSessionEndId != null && activeSessionEndId.equals(runData.identifier))
