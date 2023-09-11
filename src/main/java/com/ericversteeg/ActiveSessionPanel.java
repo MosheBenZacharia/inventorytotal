@@ -226,7 +226,7 @@ class ActiveSessionPanel extends PluginPanel
 			{
 				name = "Unnamed Session";
 			}
-			plugin.saveNewSession(name);
+			sessionManager.saveNewSession(name);
 		});
 		// JLabel debugButton = UI.createIconButton(UI.SESSIONINFO_WRENCH_ICON, UI.SESSIONINFO_WRENCH_HOVER_ICON, "Rebuild all trip panels", ()->
 		// {

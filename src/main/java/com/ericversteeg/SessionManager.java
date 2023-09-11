@@ -24,13 +24,19 @@
  */
 package com.ericversteeg;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
+
+import com.google.gson.Gson;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,6 +46,8 @@ public class SessionManager
 {
 	private final InventoryTotalPlugin plugin;
 	private final InventoryTotalConfig config;
+	private final ScheduledExecutorService executor;
+	private final Gson gson;
 
 	@Getter
 	private final Map<String, InventoryTotalRunData> activeTrips = new HashMap<>();
@@ -50,10 +58,12 @@ public class SessionManager
 	@Getter
 	private boolean isTracking = true;
 
-	public SessionManager(InventoryTotalPlugin plugin, InventoryTotalConfig config)
+	public SessionManager(InventoryTotalPlugin plugin, InventoryTotalConfig config, ScheduledExecutorService executor, Gson gson)
 	{
 		this.plugin = plugin;
 		this.config = config;
+		this.executor = executor;
+		this.gson = gson;
 	}
 
 	void startTracking()
@@ -64,7 +74,7 @@ public class SessionManager
 			return;
 		}
 		InventoryTotalRunData activeTrip = plugin.getRunData();
-		if (activeTrip != null && !activeTrip.isBankDelay && activeTrip.isInProgress())
+		if (activeTrip != null && !activeTrip.isBankDelay && !activeTrip.isFirstRun && activeTrip.isInProgress())
 		{
 			onTripStarted(activeTrip);
 		}
@@ -319,5 +329,100 @@ public class SessionManager
 	{
 		List<InventoryTotalLedgerItem> ledger = InventoryTotalPlugin.getProfitLossLedger(tripStart, tripEnd);
 		return !ledger.isEmpty();
+	}
+
+	List<SessionStats> sessionHistory = new LinkedList<>();
+	List<String> savedSessionIdentifiers = null;
+	boolean sessionHistoryDirty;
+
+	void saveNewSession(String name)
+	{
+		if (savedSessionIdentifiers == null)
+		{
+			log.error("can't save session, hasn't loaded sessions yet.");
+			return;
+		}
+		executor.execute(()->
+		{
+			SessionStats statsToSave = getActiveSessionStats();
+			if (statsToSave == null)
+			{
+				return;
+			}
+			statsToSave.sessionName = name;
+			statsToSave.sessionID = UUID.randomUUID().toString();
+			sessionHistory.add(statsToSave);
+
+			String json = gson.toJson(statsToSave);
+			plugin.saveData(InventoryTotalConfig.getSessionKey(statsToSave.sessionID), json);
+
+			savedSessionIdentifiers.add(statsToSave.sessionID);
+			saveSessionIdentifiers();
+			sessionHistoryDirty = true;
+		});
+	}
+
+	//assume already exists
+	void overwriteSession(SessionStats sessionStats)
+	{
+		if(sessionStats == null)
+		{
+			return;
+		}
+		executor.execute(()->
+		{
+			String json = gson.toJson(sessionStats);
+			plugin.saveData( InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
+			sessionHistoryDirty = true;
+		});
+	}
+
+	void deleteSession(SessionStats sessionStats)
+	{
+		if (savedSessionIdentifiers == null)
+		{
+			log.error("can't delete session, hasn't loaded sessions yet.");
+			return;
+		}
+		if (sessionStats == null)
+		{
+			return;
+		}
+		executor.execute(()->
+		{
+			sessionHistory.remove(sessionStats);
+			plugin.deleteData(InventoryTotalConfig.getSessionKey(sessionStats.sessionID));
+
+			savedSessionIdentifiers.remove(sessionStats.sessionID);
+			saveSessionIdentifiers();
+			sessionHistoryDirty = true;
+		});
+	}
+
+	void saveSessionIdentifiers()
+	{
+		String json = gson.toJson(savedSessionIdentifiers);
+		plugin.saveData(InventoryTotalConfig.sessionIdentifiersKey, json);
+	}
+
+	void reloadSessions()
+	{
+		sessionHistory.clear();
+		savedSessionIdentifiers = null;
+		executor.execute(()->
+		{
+			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();
+			savedSessionIdentifiers = gson.fromJson(plugin.readData(InventoryTotalConfig.sessionIdentifiersKey), listType);
+			if (savedSessionIdentifiers == null)
+			{
+				savedSessionIdentifiers = new LinkedList<>();
+			}
+			for (String sessionIdentifier : savedSessionIdentifiers)
+			{
+				SessionStats sessionStats = gson.fromJson(plugin.readData(InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
+				sessionHistory.add(sessionStats);
+			}
+			sessionHistoryDirty = true;
+		});
 	}
 }

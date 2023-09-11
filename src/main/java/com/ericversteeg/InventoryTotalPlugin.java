@@ -48,6 +48,7 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
@@ -74,6 +75,7 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.OverlayMenuClicked;
+import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -166,14 +168,19 @@ public class InventoryTotalPlugin extends Plugin
 	private ActiveSessionPanel activeSessionPanel;
 	private SessionHistoryPanel sessionHistoryPanel;
 
+	@Getter
 	private InventoryTotalRunData runData;
 	private InventoryTotalGoldDrops goldDropsObject;
 
+	@Getter
 	private InventoryTotalMode mode = InventoryTotalMode.TOTAL;
 
+	@Getter
 	private InventoryTotalState state = InventoryTotalState.NONE;
-	private InventoryTotalState prevState = InventoryTotalState.NONE;
+	@Getter
+	private InventoryTotalState previousState = InventoryTotalState.NONE;
 
+	@Getter @Setter
 	private long totalGp = 0;
 	private Long previousTotalGp = null;
 
@@ -181,8 +188,6 @@ public class InventoryTotalPlugin extends Plugin
 	
     private BufferedImage icon;
     private NavigationButton navButton;
-	private boolean sessionHistoryDirty;
-	private boolean isLoggedIn;
 	private Map<Integer, Float> inventoryQtyMap = new HashMap<>();
 	private Map<Integer, Float> equipmentQtyMap = new HashMap<>();
 	private HashSet<String> ignoredItems = new HashSet<>();
@@ -213,18 +218,12 @@ public class InventoryTotalPlugin extends Plugin
 		eventBus.register(weaponChargesManager);
 		eventBus.register(chargedItemManager);
 		weaponChargesManager.startUp();
-		chargedItemManager.startUp();
-		lootingBagManager.startUp();
 		
-		runData = getSavedData();
-		loadSessions();
-		sessionManager = new SessionManager(this, config);
-		sessionManager.startUp();
-		if (!runData.isFirstRun)
-			sessionManager.onTripStarted(runData);
+		sessionManager = new SessionManager(this, config, executor, gson);
 		buildSidePanel();
 		updatePanels();
 		refreshIgnoredItems();
+		checkLoadingState(true);
 	}
 
 	@Override
@@ -235,13 +234,61 @@ public class InventoryTotalPlugin extends Plugin
 		eventBus.unregister(weaponChargesManager);
 		eventBus.unregister(chargedItemManager);
 		weaponChargesManager.shutDown();
-		chargedItemManager.shutDown();
-		sessionManager.shutDown();
 		clientToolbar.removeNavigation(navButton);
-
-		writeSavedData();
+		if (this.currentProfileKey != null)
+		{
+			writeSavedData(this.currentProfileKey);
+		}
 	}
 
+	private String currentProfileKey;
+
+	@Subscribe
+	public void onRuneScapeProfileChanged(RuneScapeProfileChanged e)
+	{
+		checkLoadingState(false);
+	}
+
+	private void checkLoadingState(boolean isStartingUp)
+	{
+		String profileKey = configManager.getRSProfileKey();
+
+		if (profileKey != null)
+		{
+			//getting profile for first time
+			if (this.currentProfileKey == null || isStartingUp)
+			{
+				loadData();
+			}
+			//profile switched
+			else if (!profileKey.equals(this.currentProfileKey))
+			{
+				writeSavedData(this.currentProfileKey);
+				loadData();
+			}
+		}
+		//lost profile somehow
+		else if (this.currentProfileKey != null)
+		{
+			writeSavedData(this.currentProfileKey);
+		}
+
+		this.currentProfileKey = profileKey;
+	}
+
+	private void loadData()
+	{
+		lootingBagManager.loadConfigData();
+		chargedItemManager.loadConfigData();
+		sessionManager.reloadSessions();
+		sessionManager.deleteAllTrips();
+		sessionManager.stopTracking();
+		runData = getSavedData();
+		sessionManager.startTracking();
+	}
+
+	private boolean isLoggedIn;
+	
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
@@ -262,6 +309,7 @@ public class InventoryTotalPlugin extends Plugin
 						this.runData.pauseTime += timePassed;
 					}
 				}
+				deleteData(InventoryTotalConfig.logOutTimeKey);
 			}
 			else
 			{
@@ -290,15 +338,15 @@ public class InventoryTotalPlugin extends Plugin
 			}
 			SwingUtilities.invokeLater(() -> activeSessionPanel.updateTrips());
 		}
-		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory() && sessionHistoryDirty)
+		if (navButton.isSelected() && gpPerHourPanel.isShowingSessionHistory() && sessionManager.sessionHistoryDirty)
 		{
 			//ensure we load these after a restart
-			for (SessionStats sessionStats : this.sessionHistory)
+			for (SessionStats sessionStats : sessionManager.sessionHistory)
 			{
 				ensureSessionNameAndPriceLoaded(sessionStats);
 			}
 			SwingUtilities.invokeLater(() -> sessionHistoryPanel.updateSessions());
-			sessionHistoryDirty = false;
+			sessionManager.sessionHistoryDirty = false;
 		}
 	}
 
@@ -570,6 +618,8 @@ public class InventoryTotalPlugin extends Plugin
 	
 	void updatePluginState(boolean forceBanking)
 	{
+		if (runData == null)
+			return;
 		inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
 
 		inventoryItemContainer = client.getItemContainer(InventoryID.INVENTORY);
@@ -668,7 +718,7 @@ public class InventoryTotalPlugin extends Plugin
 		}
 
 		runData.isBankDelay = false;
-		writeSavedData();
+		writeSavedData(this.currentProfileKey);
 
 		sessionManager.onTripStarted(runData);
 	}
@@ -1047,12 +1097,12 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
-	void writeSavedData()
+	void writeSavedData(String profileKey)
 	{
 		executor.execute(() ->
 		{
 			String json = gson.toJson(runData);
-			saveData( "inventory_total_data", json);
+			configManager.setConfiguration(InventoryTotalConfig.GROUP, profileKey, "inventory_total_data", json);
 		});
 	}
 
@@ -1068,100 +1118,6 @@ public class InventoryTotalPlugin extends Plugin
 			return runData;
 		}
 		return savedData;
-	}
-
-	List<SessionStats> sessionHistory = new LinkedList<>();
-	List<String> savedSessionIdentifiers = null;
-
-	void saveNewSession(String name)
-	{
-		if (savedSessionIdentifiers == null)
-		{
-			log.error("can't save session, hasn't loaded sessions yet.");
-			return;
-		}
-		executor.execute(()->
-		{
-			SessionStats statsToSave = sessionManager.getActiveSessionStats();
-			if (statsToSave == null)
-			{
-				return;
-			}
-			statsToSave.sessionName = name;
-			statsToSave.sessionID = UUID.randomUUID().toString();
-			sessionHistory.add(statsToSave);
-
-			String json = gson.toJson(statsToSave);
-			saveData(InventoryTotalConfig.getSessionKey(statsToSave.sessionID), json);
-
-			savedSessionIdentifiers.add(statsToSave.sessionID);
-			saveSessionIdentifiers();
-			sessionHistoryDirty = true;
-		});
-	}
-
-	//assume already exists
-	void overwriteSession(SessionStats sessionStats)
-	{
-		if(sessionStats == null)
-		{
-			return;
-		}
-		executor.execute(()->
-		{
-			String json = gson.toJson(sessionStats);
-			saveData( InventoryTotalConfig.getSessionKey(sessionStats.sessionID), json);
-			sessionHistoryDirty = true;
-		});
-	}
-
-	void deleteSession(SessionStats sessionStats)
-	{
-		if (savedSessionIdentifiers == null)
-		{
-			log.error("can't delete session, hasn't loaded sessions yet.");
-			return;
-		}
-		if (sessionStats == null)
-		{
-			return;
-		}
-		executor.execute(()->
-		{
-			sessionHistory.remove(sessionStats);
-			deleteData(InventoryTotalConfig.getSessionKey(sessionStats.sessionID));
-
-			savedSessionIdentifiers.remove(sessionStats.sessionID);
-			saveSessionIdentifiers();
-			sessionHistoryDirty = true;
-		});
-	}
-
-	void saveSessionIdentifiers()
-	{
-		String json = gson.toJson(savedSessionIdentifiers);
-		saveData( InventoryTotalConfig.sessionIdentifiersKey, json);
-	}
-
-	void loadSessions()
-	{
-		sessionHistory.clear();
-		savedSessionIdentifiers = null;
-		executor.execute(()->
-		{
-			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();
-			savedSessionIdentifiers = gson.fromJson(readData( InventoryTotalConfig.sessionIdentifiersKey), listType);
-			if (savedSessionIdentifiers == null)
-			{
-				savedSessionIdentifiers = new LinkedList<>();
-			}
-			for (String sessionIdentifier : savedSessionIdentifiers)
-			{
-				SessionStats sessionStats = gson.fromJson(readData( InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
-				sessionHistory.add(sessionStats);
-			}
-			sessionHistoryDirty = true;
-		});
 	}
 
 	private InventoryTotalRunData createRunData()
@@ -1204,25 +1160,10 @@ public class InventoryTotalPlugin extends Plugin
 		}
 	}
 
-	public InventoryTotalMode getMode()
-	{
-		return mode;
-	}
-
 	void setState(InventoryTotalState state)
 	{
-		this.prevState = this.state;
+		this.previousState = this.state;
 		this.state = state;
-	}
-
-	public InventoryTotalState getState()
-	{
-		return state;
-	}
-
-	public InventoryTotalState getPreviousState()
-	{
-		return prevState;
 	}
 
 	public long getProfitGp()
@@ -1230,34 +1171,19 @@ public class InventoryTotalPlugin extends Plugin
 		return totalGp - initialGp;
 	}
 
-	void setTotalGp(long totalGp)
-	{
-		this.totalGp = totalGp;
-	}
-
-	public long getTotalGp()
-	{
-		return totalGp;
-	}
-
-	public InventoryTotalRunData getRunData()
-	{
-		return runData;
-	}
-
 	void saveData(String key, String data)
 	{
-		configManager.setConfiguration(InventoryTotalConfig.GROUP, key, data);
+		configManager.setRSProfileConfiguration(InventoryTotalConfig.GROUP, key, data);
 	}
 
 	String readData(String key)
 	{
-		return configManager.getConfiguration(InventoryTotalConfig.GROUP, key);
+		return configManager.getRSProfileConfiguration(InventoryTotalConfig.GROUP, key);
 	}
 
 	<T> void saveData(String key, T data)
 	{
-		configManager.setConfiguration(InventoryTotalConfig.GROUP, key, data);
+		configManager.setRSProfileConfiguration(InventoryTotalConfig.GROUP, key, data);
 	}
 
 	void deleteData(String key)

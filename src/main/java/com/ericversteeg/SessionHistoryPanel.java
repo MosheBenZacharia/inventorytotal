@@ -168,7 +168,7 @@ public class SessionHistoryPanel extends JPanel
 
 	void updateSessions()
 	{
-		List<SessionStats> sessions = plugin.sessionHistory;
+		List<SessionStats> sessions = sessionManager.sessionHistory;
 		if (!searchBar.getText().isEmpty())
 		{
 			sessions = filterSessions(sessions, searchBar.getText());
@@ -203,7 +203,7 @@ public class SessionHistoryPanel extends JPanel
 		panelData.nameField.setData(stats.sessionName, (String newName) ->
 		{
 			stats.sessionName = newName;
-			plugin.overwriteSession(stats);
+			sessionManager.overwriteSession(stats);
 		});
 		SimpleDateFormat sdfLeft = new SimpleDateFormat("MMM dd, yyyy   h:mm a", Locale.US);
 		Date date = new Date(stats.getSessionSaveTime());
@@ -259,7 +259,7 @@ public class SessionHistoryPanel extends JPanel
 
 			if (confirm == 0)
 			{
-				clientThread.invokeLater(()-> plugin.deleteSession(stats));
+				clientThread.invokeLater(()-> sessionManager.deleteSession(stats));
 			}
 		};
 	}
