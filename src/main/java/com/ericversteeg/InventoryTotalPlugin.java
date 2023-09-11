@@ -1188,6 +1188,6 @@ public class InventoryTotalPlugin extends Plugin
 
 	void deleteData(String key)
 	{
-		configManager.unsetConfiguration(InventoryTotalConfig.GROUP, key);
+		configManager.unsetRSProfileConfiguration(InventoryTotalConfig.GROUP, key);
 	}
 }
