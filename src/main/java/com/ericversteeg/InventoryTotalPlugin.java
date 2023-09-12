@@ -98,7 +98,8 @@ import net.runelite.client.util.ImageUtil;
 		"per",
 		"hour",
 		"prices",
-		"gold farming"
+		"gold farming",
+		"gp/hr"
 	}
 )
 
