@@ -66,7 +66,7 @@ public interface InventoryTotalConfig extends Config
 	String sharedSettingSection = "sharedSettingSection";
 
 	@ConfigItem(
-			position = 22,
+			position = 10,
 			keyName = "showExactGp",
 			name = "Show Exact Gp",
 			description = "Configures whether or not the exact gp value is visible.",
@@ -78,7 +78,7 @@ public interface InventoryTotalConfig extends Config
 	}
 
     @ConfigItem(
-			position = 32,
+			position = 20,
             keyName = "goldDrops",
             name = "Show Gold Drops",
             description = "Show each profit increase or decrease as an XP drop (only works in profit/loss mode).",
@@ -89,9 +89,37 @@ public interface InventoryTotalConfig extends Config
         return false;
     }
 
+	@Alpha
+	@ConfigItem(
+			position = 21,
+			keyName = "goldDropsPositiveColor",
+			name = "Gold Drop Positive Color",
+			description = "Configures the color for a positive gold drop.",
+			section =  sharedSettingSection
+	)
+	default Color goldDropsPositiveColor()
+	{
+		return new Color(255,255,255,255);
+	}
+
+	@Alpha
+	@ConfigItem(
+			position = 22,
+			keyName = "goldDropsNegativeColor",
+			name = "Gold Drop Negative Color",
+			description = "Configures the color for a negative gold drop.",
+			section =  sharedSettingSection
+	)
+	default Color goldDropsNegativeColor()
+	{
+		return new Color(255,255,255,255);
+	}
+
+
+
 	public static final String ignoredItemsKey = "ignoredItems";
 	@ConfigItem(
-			position = 34,
+			position = 30,
 			keyName = ignoredItemsKey,
 			name = "Ignored Items",
 			description = "Ignore these items in your inventory (applies after banking).",

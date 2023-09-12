@@ -214,7 +214,7 @@ public class InventoryTotalPlugin extends Plugin
 		if (config.showTripOverlay())
 			overlayManager.add(overlay);
 
-		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager);
+		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager, config);
 		eventBus.register(lootingBagManager);
 		eventBus.register(weaponChargesManager);
 		eventBus.register(chargedItemManager);
@@ -353,7 +353,7 @@ public class InventoryTotalPlugin extends Plugin
 			clientToolbar.addNavigation(navButton);
     }
 
-	@Subscribe
+	@Subscribe(priority = -1)//run after xpdrop plugin to overwrite their colors
 	public void onScriptPreFired(ScriptPreFired scriptPreFired)
 	{
 		goldDropsObject.onScriptPreFired(scriptPreFired);

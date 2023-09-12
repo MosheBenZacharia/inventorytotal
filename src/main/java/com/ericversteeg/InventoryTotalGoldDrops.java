@@ -78,6 +78,7 @@ public class InventoryTotalGoldDrops {
 	 */
 	private final ItemManager itemManager;
 	private final Client client;
+	private final InventoryTotalConfig config;
 
 	/* var currentGoldDropValue will have
 	the gold value of the current ongoing gold drop. 2 purposes:
@@ -86,10 +87,11 @@ public class InventoryTotalGoldDrops {
 	*/
 	private long currentGoldDropValue;
 
-	InventoryTotalGoldDrops(Client client, ItemManager itemManager)
+	InventoryTotalGoldDrops(Client client, ItemManager itemManager, InventoryTotalConfig config)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
+		this.config = config;
 
 		prepareCoinSprite(10000, COINS_10000_SPRITE_ID);
 		prepareCoinSprite(1000, COINS_1000_SPRITE_ID);
@@ -182,26 +184,24 @@ public class InventoryTotalGoldDrops {
 			// reset text color for all regular xpdrops
 			resetXpDropTextColor(dropTextWidget);
 		}
-
-
 	}
+
 	private void xpDropToGoldDrop(Widget dropTextWidget, Widget dropSpriteWidget, long goldDropValue)
 	{
         /*
         Change xpdrop icon and text, to make a gold drop
          */
-
 		dropTextWidget.setText(formatGoldDropText(goldDropValue));
 
 		if (goldDropValue > 0)
 		{
-			// green text for profit
-			dropTextWidget.setTextColor(Color.GREEN.getRGB());
+			dropTextWidget.setTextColor(config.goldDropsPositiveColor().getRGB());
+			dropTextWidget.setOpacity(255 - config.goldDropsPositiveColor().getAlpha());
 		}
 		else
 		{
-			// red for loss
-			dropTextWidget.setTextColor(Color.RED.getRGB());
+			dropTextWidget.setTextColor(config.goldDropsNegativeColor().getRGB());
+			dropTextWidget.setOpacity(255 - config.goldDropsNegativeColor().getAlpha());
 		}
 
 		int spriteId = 0;
@@ -283,6 +283,7 @@ public class InventoryTotalGoldDrops {
 		int defaultColorId = client.getVarbitValue(Varbits.EXPERIENCE_DROP_COLOR);
 		int color = colorEnum.getIntValue(defaultColorId);
 		xpDropTextWidget.setTextColor(color);
+		xpDropTextWidget.setOpacity(0);
 	}
 
 	private String formatGoldDropText(long goldDropValue)
