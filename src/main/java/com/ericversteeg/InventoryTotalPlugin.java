@@ -435,6 +435,12 @@ public class InventoryTotalPlugin extends Plugin
 					clientToolbar.addNavigation(navButton);
 				else
 					clientToolbar.removeNavigation(navButton);
+
+				sessionManager.refreshSessionTracking();
+			}
+			else if (event.getKey().equals(InventoryTotalConfig.enableSessionTrackingKeyName))
+			{
+				sessionManager.refreshSessionTracking();
 			}
 			else if (event.getKey().equals(InventoryTotalConfig.sidePanelPositionKeyName))
 			{

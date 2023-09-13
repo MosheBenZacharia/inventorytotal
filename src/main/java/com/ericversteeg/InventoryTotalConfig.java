@@ -468,6 +468,26 @@ public interface InventoryTotalConfig extends Config
 		return true;
 	}
 
+	public static final String enableSessionTrackingKeyName = "enableSessionTracking";
+	@ConfigItem(
+			position = 1,
+			hidden = true,
+			keyName = enableSessionTrackingKeyName,
+			name = "Enable Session Tracking",
+			description = "Enables/disables session tracking.",
+			section =  sessionPanelSection
+	)
+	default boolean getEnableSessionTracking()
+	{
+		return true;
+	}
+	@ConfigItem(
+		keyName = enableSessionTrackingKeyName,
+		name = "",
+		description = ""
+	)
+	void setEnableSessionTracking(boolean value);
+
 	@ConfigItem(
 			position = 5,
 			keyName = "autoResumeTrip",

@@ -186,13 +186,13 @@ class ActiveSessionPanel extends PluginPanel
 		//icon buttons
 		JLabel newTripButton = UI.createIconButton(UI.SESSIONINFO_PLUS_ICON, UI.SESSIONINFO_PLUS_HOVER_ICON, "Create new trip", ()-> { clientThread.invokeLater(() -> {plugin.updatePluginState(true);});});
 		startTrackingButton = UI.createIconButton(UI.SESSIONINFO_PLAY_ICON, UI.SESSIONINFO_PLAY_HOVER_ICON, "Start tracking new trips", ()-> { 
-			sessionManager.startTracking(); 
+			config.setEnableSessionTracking(true);
 			updateStopStartVisibility();
 			this.updateTrips();
 
 		});
 		stopTrackingButton = UI.createIconButton(UI.SESSIONINFO_STOP_ICON, UI.SESSIONINFO_STOP_HOVER_ICON, "Stop tracking new trips", ()-> { 
-			sessionManager.stopTracking();
+			config.setEnableSessionTracking(false);
 			updateStopStartVisibility();
 			this.updateTrips();
 		});
@@ -260,8 +260,8 @@ class ActiveSessionPanel extends PluginPanel
 
 	void updateStopStartVisibility()
 	{
-		startTrackingButton.setVisible(!sessionManager.isTracking());
-		stopTrackingButton.setVisible(sessionManager.isTracking());
+		startTrackingButton.setVisible(!config.getEnableSessionTracking());
+		stopTrackingButton.setVisible(config.getEnableSessionTracking());
 	}
 
 	// avoid GC

@@ -55,8 +55,6 @@ public class SessionManager
 	private String activeSessionStartId;
 	@Getter
 	private String activeSessionEndId;
-	@Getter
-	private boolean isTracking = true;
 
 	public SessionManager(InventoryTotalPlugin plugin, InventoryTotalConfig config, ScheduledExecutorService executor, Gson gson)
 	{
@@ -66,9 +64,25 @@ public class SessionManager
 		this.gson = gson;
 	}
 
+	void refreshSessionTracking()
+	{
+		if (isTracking())
+		{
+			startTracking();
+		}
+		else
+		{
+			stopTracking();
+		}
+	}
+
+	boolean isTracking()
+	{
+		return config.getEnableSessionTracking() && config.enableSessionPanel();
+	}
+
 	void startTracking()
 	{
-		isTracking = true;
 		if (plugin.getState() == InventoryTotalState.BANK)
 		{
 			return;
@@ -82,7 +96,6 @@ public class SessionManager
 
 	void stopTracking()
 	{
-		isTracking = false;
 		//remove the active trip if there is one
 		String activeTripIdentifier = null;
 		for (InventoryTotalRunData trip : activeTrips.values())
@@ -299,7 +312,7 @@ public class SessionManager
 
 	void onTripStarted(InventoryTotalRunData runData)
 	{
-		if (!isTracking)
+		if (!isTracking())
 		{
 			return;
 		}
@@ -312,7 +325,7 @@ public class SessionManager
 
 	void onTripCompleted(InventoryTotalRunData runData)
 	{
-		if (!isTracking)
+		if (!isTracking())
 		{
 			return;
 		}
