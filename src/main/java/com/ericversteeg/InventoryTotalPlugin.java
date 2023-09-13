@@ -214,7 +214,7 @@ public class InventoryTotalPlugin extends Plugin
 		if (config.showTripOverlay())
 			overlayManager.add(overlay);
 
-		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager, config);
+		goldDropsObject = new InventoryTotalGoldDrops(client, itemManager, config, configManager);
 		eventBus.register(lootingBagManager);
 		eventBus.register(weaponChargesManager);
 		eventBus.register(chargedItemManager);

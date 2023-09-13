@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
@@ -79,6 +80,7 @@ public class InventoryTotalGoldDrops {
 	private final ItemManager itemManager;
 	private final Client client;
 	private final InventoryTotalConfig config;
+	private final ConfigManager configManager;
 
 	/* var currentGoldDropValue will have
 	the gold value of the current ongoing gold drop. 2 purposes:
@@ -87,11 +89,12 @@ public class InventoryTotalGoldDrops {
 	*/
 	private long currentGoldDropValue;
 
-	InventoryTotalGoldDrops(Client client, ItemManager itemManager, InventoryTotalConfig config)
+	InventoryTotalGoldDrops(Client client, ItemManager itemManager, InventoryTotalConfig config, ConfigManager configManager)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
 		this.config = config;
+		this.configManager = configManager;
 
 		prepareCoinSprite(10000, COINS_10000_SPRITE_ID);
 		prepareCoinSprite(1000, COINS_1000_SPRITE_ID);
@@ -179,7 +182,8 @@ public class InventoryTotalGoldDrops {
 
 			xpDropToGoldDrop(dropTextWidget, dropSpriteWidget, goldDropValue);
 		}
-		else
+		//don't need to do this if xp drop plugin is active since it will handle this and it doesn't overwrite prayer colors this way
+		else if(!((Boolean) configManager.getConfiguration("runelite", "xpdropplugin", Boolean.class)))
 		{
 			// reset text color for all regular xpdrops
 			resetXpDropTextColor(dropTextWidget);
