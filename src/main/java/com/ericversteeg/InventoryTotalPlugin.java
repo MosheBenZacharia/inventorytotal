@@ -225,6 +225,7 @@ public class InventoryTotalPlugin extends Plugin
 		updatePanels();
 		refreshIgnoredItems();
 		checkLoadingState(true);
+		lastTickTime = null;
 	}
 
 	@Override
@@ -247,7 +248,14 @@ public class InventoryTotalPlugin extends Plugin
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged e)
 	{
+		lastTickTime = null;
 		checkLoadingState(false);
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		lastTickTime = null;
 	}
 
 	private void checkLoadingState(boolean isStartingUp)
