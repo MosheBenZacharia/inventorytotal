@@ -199,9 +199,9 @@ class ActiveSessionPanel extends PluginPanel
 		updateStopStartVisibility();
 		JLabel toggleSessionLootGridButton = UI.createIconButton(UI.SESSIONINFO_GRID_ICON, UI.SESSIONINFO_GRID_HOVER_ICON, "Toggle session loot grid", ()-> { showSessionLootGrid = !showSessionLootGrid; this.updateTrips();});
 		JLabel refreshPricesButton = UI.createIconButton(UI.SESSIONINFO_REFRESH_ICON, UI.SESSIONINFO_REFRESH_HOVER_ICON, "Refresh prices", ()-> { clientThread.invokeLater(() -> {plugin.refreshPrices();});});
-		JLabel deleteTripsButton = UI.createIconButton(UI.SESSIONINFO_TRASH_ICON, UI.SESSIONINFO_TRASH_HOVER_ICON, "Delete all trips", ()-> { 
+		JLabel deleteTripsButton = UI.createIconButton(UI.SESSIONINFO_TRASH_ICON, UI.SESSIONINFO_TRASH_HOVER_ICON, "Delete all completed trips", ()-> { 
 
-			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete all trips?", "Warning",
+			int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete all completed trips?", "Warning",
 						JOptionPane.OK_CANCEL_OPTION);
 			if (confirm == 0)
 			{
