@@ -51,6 +51,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Constants;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
 import net.runelite.api.GameState;
@@ -225,7 +226,6 @@ public class InventoryTotalPlugin extends Plugin
 		updatePanels();
 		refreshIgnoredItems();
 		checkLoadingState(true);
-		lastTickTime = null;
 	}
 
 	@Override
@@ -248,14 +248,13 @@ public class InventoryTotalPlugin extends Plugin
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged e)
 	{
-		lastTickTime = null;
 		checkLoadingState(false);
 	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		lastTickTime = null;
+		
 	}
 
 	private void checkLoadingState(boolean isStartingUp)
@@ -366,8 +365,6 @@ public class InventoryTotalPlugin extends Plugin
 	{
 		goldDropsObject.onScriptPreFired(scriptPreFired);
 	}
-
-	private Long lastTickTime = null;
 	
     @Subscribe
     public void onGameTick(GameTick gameTick)
@@ -378,11 +375,10 @@ public class InventoryTotalPlugin extends Plugin
 		updatePanels();
 		updateChargeableItemsNeedingCheck();
 		
-		if (this.state == InventoryTotalState.RUN && !runData.isPaused && lastTickTime != null)
+		if (this.state == InventoryTotalState.RUN && !runData.isPaused)
 		{
-			runData.runtime += Instant.now().toEpochMilli() - lastTickTime;
+			runData.runtime +=  Constants.GAME_TICK_LENGTH;
 		}
-		lastTickTime = Instant.now().toEpochMilli();
 
 		checkTickProfit();
     }
