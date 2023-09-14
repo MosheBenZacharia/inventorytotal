@@ -432,7 +432,12 @@ public class SessionManager
 			}
 			for (String sessionIdentifier : savedSessionIdentifiers)
 			{
-				SessionStats sessionStats = gson.fromJson(plugin.readData(InventoryTotalConfig.getSessionKey(sessionIdentifier)), SessionStats.class);
+				String json = plugin.readData(InventoryTotalConfig.getSessionKey(sessionIdentifier));
+				if	(json == null)
+				{
+					continue;
+				}
+				SessionStats sessionStats = gson.fromJson(json, SessionStats.class);
 				sessionHistory.add(sessionStats);
 			}
 			sessionHistoryDirty = true;
