@@ -1082,7 +1082,15 @@ public class InventoryTotalPlugin extends Plugin
 	private InventoryTotalRunData getSavedData()
 	{
 		String json = readData( "inventory_total_data");
-		InventoryTotalRunData savedData = gson.fromJson(json, InventoryTotalRunData.class);
+		InventoryTotalRunData savedData = null;
+		try 
+		{
+			savedData = gson.fromJson(json, InventoryTotalRunData.class);
+		}
+		catch(Exception e)
+		{
+			log.error("Failed to load run data from json: " + json, e);
+		}
 
 		if (savedData == null)
 		{

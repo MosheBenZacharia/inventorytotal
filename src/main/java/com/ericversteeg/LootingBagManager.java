@@ -104,7 +104,16 @@ public class LootingBagManager
 	public void loadConfigData()
 	{
 		Type mapType = new com.google.gson.reflect.TypeToken<Map<Integer, Integer>>() {}.getType();
-		bagItems = gson.fromJson(configManager.getRSProfileConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag), mapType);
+
+		String json = configManager.getRSProfileConfiguration(InventoryTotalConfig.GROUP, InventoryTotalConfig.looting_bag);
+		try 
+		{
+			bagItems = gson.fromJson(json, mapType);
+		}
+		catch(Exception e)
+		{
+			log.error("Failed to load looting bag data from json: " + json, e);
+		}
 	}
 
 	@Subscribe

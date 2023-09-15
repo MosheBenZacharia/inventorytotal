@@ -425,7 +425,16 @@ public class SessionManager
 		executor.execute(()->
 		{
 			Type listType = new com.google.gson.reflect.TypeToken<List<String>>() {}.getType();
-			savedSessionIdentifiers = gson.fromJson(plugin.readData(InventoryTotalConfig.sessionIdentifiersKey), listType);
+			String keysJSON = plugin.readData(InventoryTotalConfig.sessionIdentifiersKey);
+			try 
+			{
+				savedSessionIdentifiers = gson.fromJson(keysJSON, listType);
+			}
+			catch(Exception e)
+			{
+				log.error("Failed to load session identifiers from json: " + keysJSON, e);
+				return;
+			}
 			if (savedSessionIdentifiers == null)
 			{
 				savedSessionIdentifiers = new LinkedList<>();
@@ -437,8 +446,16 @@ public class SessionManager
 				{
 					continue;
 				}
-				SessionStats sessionStats = gson.fromJson(json, SessionStats.class);
-				sessionHistory.add(sessionStats);
+				try 
+				{
+					SessionStats sessionStats = gson.fromJson(json, SessionStats.class);
+					sessionHistory.add(sessionStats);
+				}
+				catch(Exception e)
+				{
+					log.error("Failed to load session data from json: " + json, e);
+					return;
+				}
 			}
 			sessionHistoryDirty = true;
 		});
