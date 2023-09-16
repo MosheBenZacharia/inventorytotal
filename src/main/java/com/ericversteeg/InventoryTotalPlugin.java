@@ -190,9 +190,9 @@ public class InventoryTotalPlugin extends Plugin
 	
     private BufferedImage icon;
     private NavigationButton navButton;
-	private Map<Integer, Float> inventoryQtyMap = new HashMap<>();
-	private Map<Integer, Float> equipmentQtyMap = new HashMap<>();
-	private HashSet<String> ignoredItems = new HashSet<>();
+	private final Map<Integer, Float> inventoryQtyMap = new HashMap<>();
+	private final Map<Integer, Float> equipmentQtyMap = new HashMap<>();
+	private final HashSet<String> ignoredItems = new HashSet<>();
 
 	@Getter
 	private Widget inventoryWidget;
@@ -549,15 +549,16 @@ public class InventoryTotalPlugin extends Plugin
 		//Don't want it to appear there but have it count as bank still
 		Widget collectOnBank = client.getWidget(402, 2);
 		if (collectOnBank != null && !collectOnBank.isHidden())
-		{
 			return true;
-		}
 		//Grand exchange can be open while inventory widget is closed, same functionality as above
 		Widget grandExchange = client.getWidget(WidgetInfo.GRAND_EXCHANGE_WINDOW_CONTAINER);
 		if (grandExchange != null && !grandExchange.isHidden())
-		{
 			return true;
-		}
+		//tool leprechauns
+		Widget toolLeprechaun = client.getWidget(125, 0);
+		if (toolLeprechaun != null && !toolLeprechaun.isHidden())
+			return true;
+
 
 		if (inventoryWidget == null || inventoryWidget.getCanvasLocation().getX() < 0 || inventoryWidget.isHidden())
 		{
