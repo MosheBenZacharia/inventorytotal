@@ -89,9 +89,21 @@ public interface InventoryTotalConfig extends Config
         return false;
     }
 
+    @ConfigItem(
+			position = 21,
+            keyName = "goldDropThreshold",
+            name = "Gold Drop Threshold",
+            description = "Minimum amount of coins that will trigger a gold drop.",
+			section =  sharedSettingSection
+    )
+    default int goldDropThreshold()
+    {
+        return 0;
+    }
+
 	@Alpha
 	@ConfigItem(
-			position = 21,
+			position = 22,
 			keyName = "goldDropsPositiveColor",
 			name = "Gold Drop Positive Color",
 			description = "Configures the color for a positive gold drop.",
@@ -104,7 +116,7 @@ public interface InventoryTotalConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-			position = 22,
+			position = 23,
 			keyName = "goldDropsNegativeColor",
 			name = "Gold Drop Negative Color",
 			description = "Configures the color for a negative gold drop.",

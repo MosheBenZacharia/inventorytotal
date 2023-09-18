@@ -409,7 +409,7 @@ public class InventoryTotalPlugin extends Plugin
 		{
 			runData.isPaused = false;
 		}
-		if (config.goldDrops())
+		if (config.goldDrops() && Math.abs(tickProfit) >= config.goldDropThreshold())
 		{
 			goldDropsObject.requestGoldDrop(tickProfit);
 		}
