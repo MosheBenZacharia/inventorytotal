@@ -491,7 +491,7 @@ class InventoryTotalOverlay extends Overlay
 				.collect(Collectors.toList());
 
 		gain = gain.stream().sorted(Comparator.comparingLong(o -> -o.getCombinedValue())).collect(Collectors.toList());
-		loss = loss.stream().sorted(Comparator.comparingLong(o -> o.getCombinedValue())).collect(Collectors.toList());
+		loss = loss.stream().sorted(Comparator.comparingLong(o -> -o.getCombinedValue())).collect(Collectors.toList());
 
 		ledger = new LinkedList<>();
 		ledger.addAll(gain);
