@@ -677,14 +677,12 @@ public class InventoryTotalPlugin extends Plugin
 		runData.initialItemQtys.clear();
 		runData.itemQtys.clear();
 
-		long inventoryTotal = getInventoryTotal(true);
-		long equipmentTotal = getEquipmentTotal(true);
-
-		runData.profitLossInitialGp = inventoryTotal + equipmentTotal;
+		getInventoryTotal(true);
+		getEquipmentTotal(true);
 
 		if (mode == InventoryTotalMode.PROFIT_LOSS)
 		{
-			initialGp = runData.profitLossInitialGp;
+			initialGp = getInitialGp();
 		}
 		else
 		{
@@ -1137,9 +1135,21 @@ public class InventoryTotalPlugin extends Plugin
 				initialGp = 0;
 				break;
 			case PROFIT_LOSS:
-				initialGp = runData.profitLossInitialGp;
+				initialGp = getInitialGp();
 				break;
 		}
+	}
+
+	long getInitialGp()
+	{
+		if (runData == null)
+			return 0;
+		long value = 0;
+		for (java.util.Map.Entry<Integer, Float> entry : runData.initialItemQtys.entrySet())
+		{
+			value += getPrice(entry.getKey()) * entry.getValue();
+		}
+		return value;
 	}
 
 	void setState(InventoryTotalState state)

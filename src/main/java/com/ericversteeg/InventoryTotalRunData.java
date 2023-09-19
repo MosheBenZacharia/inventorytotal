@@ -33,7 +33,6 @@ import java.util.Map;
 public class InventoryTotalRunData
 {
     String identifier = null;
-    long profitLossInitialGp = 0;
     long runStartTime = 0;
     // if this is null the trip is in progress
     Long runEndTime = null;
