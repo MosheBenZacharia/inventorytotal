@@ -124,6 +124,45 @@ public enum ChargedWeapon
 			//For now assume users are recharging for free, in future consider exposing this as an option in config.
 		})
 	),
+	WARPED_SCEPTRE(new ChargedWeaponBuilder()
+			.chargedItemIds(28585 /*WARPED_SCEPTRE*/)
+			.unchargedItemIds(28583 /*UNCHARGED_WARPED_SCEPTRE*/)
+			.animationIds(10501)
+			.name("Warped sceptre")
+			.rechargeAmount(20_000)
+			.configKeyName("warped_sceptre")
+			.checkChargesRegexes(
+					ChargesMessage.matcherGroupChargeMessage("Your warped sceptre has ([\\d,]+) charges remaining\\.", 1),
+					ChargesMessage.staticChargeMessage("Your warped sceptre has 1 charge remaining\\.", 1),
+					ChargesMessage.staticChargeMessage(Text.removeTags("<col=ff0000>Your warped sceptre has run out of charges!</col>"), 0)
+			)
+			.dialogHandlers(
+					new ChargesDialogHandler(
+							DialogStateMatcher.optionsOptionSelected(Pattern.compile("Fully uncharge your warped sceptre\\?"), null, Pattern.compile("Yes\\.")),
+							ChargesDialogHandler.genericUnchargeDialog()
+					),
+					new ChargesDialogHandler(
+							DialogStateMatcher.inputOptionSelected(Pattern.compile("How many charges do you want to add\\? \\(0 - ([\\d,]+)\\)"), null),
+							ChargesDialogHandler.genericInputChargeMessage()
+					),
+					new ChargesDialogHandler(
+							DialogStateMatcher.sprite(Pattern.compile("You add ([\\d,]+) charges? to your warped sceptre\\."), null),
+							ChargesDialogHandler.genericSpriteDialogChargesMessage(true, 1)
+					),
+					new ChargesDialogHandler(
+							DialogStateMatcher.sprite(Pattern.compile("You add an additional ([\\d,]+) charges to your warped sceptre\\. It now has ([\\d,]+) charges in total\\."), null),
+							ChargesDialogHandler.genericSpriteDialogChargesMessage(true, 2)
+					)
+			)
+			.updateChargeComponents((UpdateChargeComponentsParams params) ->
+			{
+				Integer charges = params.currentCharges;
+				Map<Integer, Float> chargeComponents = params.chargeComponents;
+	
+				chargeComponents.put(ItemID.CHAOS_RUNE, (float) charges * 2);
+				chargeComponents.put(ItemID.EARTH_RUNE, (float) charges * 5);
+			})
+	),
 
 	/* Tridents
 		Tridents all work the same way, afaik (only tested swap trident and partially seas trident).
@@ -786,6 +825,7 @@ public enum ChargedWeapon
 			params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
 	),
+	/* 
 	BLADE_OF_SAELDOR(new ChargedWeaponBuilder()
 		.chargedItemIds(ItemID.BLADE_OF_SAELDOR)
 		.unchargedItemIds(ItemID.BLADE_OF_SAELDOR_INACTIVE)
@@ -804,7 +844,7 @@ public enum ChargedWeapon
 			float shards = charges / 100f;
 			params.chargeComponents.put(ItemID.CRYSTAL_SHARD, shards);
 		})
-	),
+	),*/
 	/*
 	crystal armor
 	check:
