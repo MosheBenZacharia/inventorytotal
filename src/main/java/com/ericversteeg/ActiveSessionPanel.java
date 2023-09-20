@@ -213,7 +213,7 @@ class ActiveSessionPanel extends PluginPanel
 		JLabel saveButton = UI.createIconButton(UI.SESSIONINFO_SAVE_ICON, UI.SESSIONINFO_SAVE_HOVER_ICON, "Save session", ()-> { 
 
 			String name = JOptionPane.showInputDialog(this,
-				"Enter the name of this session.",
+				"Enter the name of the session to save.\nThis will not delete the selected trips.",
 				"Save Session",
 				JOptionPane.PLAIN_MESSAGE);
 
