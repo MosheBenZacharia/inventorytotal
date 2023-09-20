@@ -92,7 +92,9 @@ class InventoryTotalOverlay extends Overlay
 		final Color leftColor;
 		final String rightText;
 		final Color rightColor;
-		final boolean addGap;
+		final boolean addGapBefore;
+		boolean center;
+		boolean addGapAfter;
 	}
 
 	@Inject
@@ -402,63 +404,73 @@ class InventoryTotalOverlay extends Overlay
 		java.util.List<InventoryTotalLedgerItem> ledger = plugin.getInventoryLedger().stream()
 				.filter(item -> item.getQty() > (InventoryTotalPlugin.roundAmount/2f)).collect(Collectors.toList());
 
-		if (ledger.isEmpty() && !needsCheck())
-		{
-			return;
-		}
-
-		ledger = ledger.stream().sorted(Comparator.comparingLong(o ->
-				-o.getCombinedValue())
-		).collect(Collectors.toList());
-
-		String [] descriptions = ledger.stream().map(item -> {
-			String desc = item.getDescription();
-			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
-			{
-				desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
-			}
-			return desc;
-		}).toArray(String[]::new);
-		Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
-
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
-		if (descriptions.length == prices.length)
+		ledgerEntries.add(createTitleEntry());
+		if (ledger.isEmpty())
 		{
-			for (int i = 0; i < descriptions.length; i++)
-			{
-				String desc = descriptions[i];
-				long price = prices[i];
-				String rightText = formatNumber(price);
-				Color leftColor = Color.decode("#FFF7E3");
-				Color rightColor = price > 0 ? Color.GREEN : Color.WHITE;
-				ledgerEntries.add(new LedgerEntry(desc, leftColor, rightText, rightColor, false));
-			}
+			ledgerEntries.add(createEmptyEntry());
 		}
-		long total = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
-		ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
+		else
+		{
+			ledger = ledger.stream().sorted(Comparator.comparingLong(o ->
+					-o.getCombinedValue())
+			).collect(Collectors.toList());
+
+			String [] descriptions = ledger.stream().map(item -> {
+				String desc = item.getDescription();
+				if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
+				{
+					desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
+				}
+				return desc;
+			}).toArray(String[]::new);
+			Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
+
+			if (descriptions.length == prices.length)
+			{
+				for (int i = 0; i < descriptions.length; i++)
+				{
+					String desc = descriptions[i];
+					long price = prices[i];
+					String rightText = formatNumber(price);
+					Color leftColor = Color.decode("#FFF7E3");
+					Color rightColor = price > 0 ? Color.GREEN : Color.WHITE;
+					ledgerEntries.add(new LedgerEntry(desc, leftColor, rightText, rightColor, false));
+				}
+			}
+			long total = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
+			ledgerEntries.add(new LedgerEntry("Total", Color.ORANGE, formatNumber(total), priceToColor(total), true));
+		}
+		boolean firstCharge = true;
 		for (String itemName : plugin.getChargeableItemsNeedingCheck())
 		{
-			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, firstCharge));
+			firstCharge = false;
 		}
 
 		int maxRowW = 0;
+		int sectionPadding = 5;
+		int sectionPaddingTotal = 0;
 		for(LedgerEntry entry : ledgerEntries)
 		{
 			int width = fontMetrics.stringWidth(entry.leftText) + fontMetrics.stringWidth(entry.rightText);
 			if (width > maxRowW)
 				maxRowW = width;
+			if (entry.addGapBefore)
+				sectionPaddingTotal += sectionPadding;
+			if (entry.addGapAfter)
+				sectionPaddingTotal += sectionPadding;
 		}
 
 		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
 		int mouseX = mouse.getX();
 		int mouseY = mouse.getY();
 
-		int sectionPadding = 5;
 
 		int rowW = maxRowW + 20 + HORIZONTAL_PADDING * 2;
 		int rowH = fontMetrics.getHeight();
 
-		int h = ledgerEntries.size() * rowH + TEXT_Y_OFFSET / 2 + sectionPadding + 2;
+		int h = ledgerEntries.size() * rowH + TEXT_Y_OFFSET / 2 + sectionPaddingTotal + 2;
 
 		int x = mouseX - rowW - 10;
 		int y = mouseY - h / 2;
@@ -476,6 +488,20 @@ class InventoryTotalOverlay extends Overlay
 				rowW + borderWidth / 2, h + borderWidth / 2, cornerRadius, cornerRadius);
 
 		renderLedgerEntries(ledgerEntries, x, y, rowW, rowH, sectionPadding, graphics);
+	}
+
+	private LedgerEntry createTitleEntry()
+	{
+		LedgerEntry titleEntry = new LedgerEntry("Active Trip Summary", Color.WHITE, "", Color.WHITE, false);
+		titleEntry.addGapAfter = true;
+		titleEntry.center = true;
+		return titleEntry;
+	}
+
+	private LedgerEntry createEmptyEntry()
+	{
+		LedgerEntry emptyEntry = new LedgerEntry("Ledger items will appear here.", Color.WHITE, "", Color.WHITE, false);
+		return emptyEntry;
 	}
 
 	private void renderProfitLossLedger(Graphics2D graphics)
@@ -497,91 +523,96 @@ class InventoryTotalOverlay extends Overlay
 		ledger.addAll(gain);
 		ledger.addAll(loss);
 
-		if (ledger.isEmpty() && !needsCheck())
-		{
-			return;
-		}
-
-		String [] descriptions = ledger.stream().map(item -> {
-			String desc = item.getDescription();
-			if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
-			{
-				desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
-			}
-			return desc;
-		}).toArray(String[]::new);
-		Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
-
 		LinkedList<LedgerEntry> ledgerEntries = new LinkedList<>();
-		if (descriptions.length == prices.length)
+		ledgerEntries.add(createTitleEntry());
+
+		if (ledger.isEmpty())
 		{
-			String prevDesc = "";
-			for (int i = 0; i < descriptions.length; i++)
-			{
-				Color leftColor = Color.decode("#FFF7E3");
-				Color rightColor = Color.WHITE;
-				boolean addGap = false;
-				String desc = descriptions[i];
-
-				if (i > 0 && prices[i - 1] >= 0 && prices[i] < 0 && !prevDesc.contains("Total"))
+			ledgerEntries.add(createEmptyEntry());
+		}
+		else
+		{
+			String [] descriptions = ledger.stream().map(item -> {
+				String desc = item.getDescription();
+				if (item.getQty() != 0 && Math.abs(item.getQty()) != 1 && !item.getDescription().contains("Coins"))
 				{
-					addGap = true;
+					desc = UI.formatQuantity(item.getQty(), true) + " " + desc;
 				}
-
-				prevDesc = desc;
-
-				long price = prices[i];
-				String formattedPrice = formatNumber(price);
-				rightColor = priceToColor(price);
-
-				ledgerEntries.add(new LedgerEntry(desc, leftColor, formattedPrice, rightColor, addGap));
+				return desc;
+			}).toArray(String[]::new);
+			Long [] prices = ledger.stream().map(item -> item.getCombinedValue()).toArray(Long[]::new);
+	
+			if (descriptions.length == prices.length)
+			{
+				String prevDesc = "";
+				for (int i = 0; i < descriptions.length; i++)
+				{
+					Color leftColor = Color.decode("#FFF7E3");
+					Color rightColor = Color.WHITE;
+					boolean addGap = false;
+					String desc = descriptions[i];
+	
+					if (i > 0 && prices[i - 1] >= 0 && prices[i] < 0 && !prevDesc.contains("Total"))
+					{
+						addGap = true;
+					}
+	
+					prevDesc = desc;
+	
+					long price = prices[i];
+					String formattedPrice = formatNumber(price);
+					rightColor = priceToColor(price);
+	
+					ledgerEntries.add(new LedgerEntry(desc, leftColor, formattedPrice, rightColor, addGap));
+				}
+			}
+	
+			long totalGain = gain.stream().mapToLong(item ->  item.getCombinedValue()).sum();
+			long totalLoss = loss.stream().mapToLong(item ->  item.getCombinedValue()).sum();
+			long netTotal = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
+			ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
+			ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
+			ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(netTotal), priceToColor(netTotal), false));
+	
+			long runTime = plugin.elapsedRunTime();
+			if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
+			{
+				long gpPerHour = getGpPerHour(runTime, netTotal);
+				String gpPerHourString = UI.formatGp(gpPerHour, config.showExactGp());
+				ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
 			}
 		}
 
-		long totalGain = gain.stream().mapToLong(item ->  item.getCombinedValue()).sum();
-		long totalLoss = loss.stream().mapToLong(item ->  item.getCombinedValue()).sum();
-		long netTotal = ledger.stream().mapToLong(item -> item.getCombinedValue()).sum();
-		ledgerEntries.add(new LedgerEntry("Total Gain", Color.YELLOW, formatNumber(totalGain), priceToColor(totalGain), true));
-		ledgerEntries.add(new LedgerEntry("Total Loss", Color.YELLOW, formatNumber(totalLoss), priceToColor(totalLoss), false));
-		ledgerEntries.add(new LedgerEntry("Net Total", Color.ORANGE, formatNumber(netTotal), priceToColor(netTotal), false));
-
-		long runTime = plugin.elapsedRunTime();
-		if (runTime != InventoryTotalPlugin.NO_PROFIT_LOSS_TIME)
-		{
-			long gpPerHour = getGpPerHour(runTime, netTotal);
-			String gpPerHourString = UI.formatGp(gpPerHour, config.showExactGp());
-			ledgerEntries.add(new LedgerEntry("GP/hr", Color.ORANGE, gpPerHourString, priceToColor(gpPerHour), false));
-		}
+		boolean firstCharge = true;
 		for (String itemName : plugin.getChargeableItemsNeedingCheck())
 		{
-			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
+			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, firstCharge));
+			firstCharge = false;
 		}
 
 		int maxRowW = 0;
+		int sectionPadding = 5;
+		int sectionPaddingTotal = 0;
 		for (LedgerEntry entry : ledgerEntries)
 		{
 			int width = fontMetrics.stringWidth(entry.leftText) + fontMetrics.stringWidth(entry.rightText);
 			if (width > maxRowW)
 				maxRowW = width;
+			if (entry.addGapBefore)
+				sectionPaddingTotal += sectionPadding;
+			if (entry.addGapAfter)
+				sectionPaddingTotal += sectionPadding;
 		}
 
 		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
 		int mouseX = mouse.getX();
 		int mouseY = mouse.getY();
 
-		int sectionPadding = 5;
-
 		int rowW = maxRowW + 20 + HORIZONTAL_PADDING * 2;
 		int rowH = fontMetrics.getHeight();
 
-		int sectionPaddingTotal = sectionPadding;
-		if (!gain.isEmpty() && !loss.isEmpty())
-		{
-			sectionPaddingTotal += sectionPadding;
-		}
-
 		int h = ledgerEntries.size() * rowH + TEXT_Y_OFFSET / 2 + sectionPaddingTotal + 2;
-
+		
 		int x = mouseX - rowW - 10;
 		int y = mouseY - h / 2;
 
@@ -641,29 +672,50 @@ class InventoryTotalOverlay extends Overlay
 		int yPosition = TEXT_Y_OFFSET;
 		for (LedgerEntry ledgerEntry: ledgerEntries)
 		{
-			if(ledgerEntry.addGap)
+			if (ledgerEntry.addGapBefore)
 				yPosition += sectionPadding;
 
-			int textX = x + HORIZONTAL_PADDING;
-			int textY = y + yPosition;
+			//only renders left text
+			if (ledgerEntry.center)
+			{
+				String leftText = ledgerEntry.leftText;
+				int textW = fontMetrics.stringWidth(leftText);
+				int textX = x + rowW/2 - textW/2;
+				int textY = y + yPosition;
 
-			TextComponent textComponent = new TextComponent();
-			textComponent.setColor(ledgerEntry.leftColor);
-			textComponent.setText(ledgerEntry.leftText);
-			textComponent.setPosition(new Point(textX, textY));
-			textComponent.render(graphics);
-			
-			String rightText = ledgerEntry.rightText;
-			int textW = fontMetrics.stringWidth(rightText);
-			textX = x + rowW - HORIZONTAL_PADDING - textW;
+				TextComponent textComponent = new TextComponent();
+				textComponent.setColor(ledgerEntry.leftColor);
+				textComponent.setText(leftText);
+				textComponent.setPosition(new Point(textX, textY));
+				textComponent.render(graphics);
+			}
+			else
+			{
+				int textX = x + HORIZONTAL_PADDING;
+				int textY = y + yPosition;
+	
+				TextComponent textComponent = new TextComponent();
+				textComponent.setColor(ledgerEntry.leftColor);
+				textComponent.setText(ledgerEntry.leftText);
+				textComponent.setPosition(new Point(textX, textY));
+				textComponent.render(graphics);
+				
+				String rightText = ledgerEntry.rightText;
+				int textW = fontMetrics.stringWidth(rightText);
+				textX = x + rowW - HORIZONTAL_PADDING - textW;
+	
+				textComponent = new TextComponent();
+				textComponent.setColor(ledgerEntry.rightColor);
+				textComponent.setText(rightText);
+				textComponent.setPosition(new Point(textX, textY));
+				textComponent.render(graphics);
+			}
 
-			textComponent = new TextComponent();
-			textComponent.setColor(ledgerEntry.rightColor);
-			textComponent.setText(rightText);
-			textComponent.setPosition(new Point(textX, textY));
-			textComponent.render(graphics);
 
 			yPosition += rowH;
+
+			if (ledgerEntry.addGapAfter)
+				yPosition += sectionPadding;
 		}
 	}
 
