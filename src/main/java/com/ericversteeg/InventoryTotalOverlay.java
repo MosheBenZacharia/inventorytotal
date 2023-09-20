@@ -441,13 +441,13 @@ class InventoryTotalOverlay extends Overlay
 			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
 		}
 
-
-		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
-				i -> fontMetrics.stringWidth(ledgerEntries.get(i).leftText)
-						+ fontMetrics.stringWidth(ledgerEntries.get(i).rightText)
-		).toArray(Integer[]::new);
-
-		Arrays.sort(rowWidths);
+		int maxRowW = 0;
+		for(LedgerEntry entry : ledgerEntries)
+		{
+			int width = fontMetrics.stringWidth(entry.leftText) + fontMetrics.stringWidth(entry.rightText);
+			if (width > maxRowW)
+				maxRowW = width;
+		}
 
 		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
 		int mouseX = mouse.getX();
@@ -455,7 +455,7 @@ class InventoryTotalOverlay extends Overlay
 
 		int sectionPadding = 5;
 
-		int rowW = rowWidths[rowWidths.length - 1] + 20 + HORIZONTAL_PADDING * 2;
+		int rowW = maxRowW + 20 + HORIZONTAL_PADDING * 2;
 		int rowH = fontMetrics.getHeight();
 
 		int h = ledgerEntries.size() * rowH + TEXT_Y_OFFSET / 2 + sectionPadding + 2;
@@ -557,12 +557,13 @@ class InventoryTotalOverlay extends Overlay
 			ledgerEntries.add(new LedgerEntry("Check " + itemName + " to calibrate.", Color.RED, "", Color.WHITE, false));
 		}
 
-		Integer [] rowWidths = IntStream.range(0, ledgerEntries.size()).mapToObj(
-				i -> fontMetrics.stringWidth(ledgerEntries.get(i).leftText)
-						+ fontMetrics.stringWidth(ledgerEntries.get(i).rightText)
-		).toArray(Integer[]::new);
-
-		Arrays.sort(rowWidths);
+		int maxRowW = 0;
+		for (LedgerEntry entry : ledgerEntries)
+		{
+			int width = fontMetrics.stringWidth(entry.leftText) + fontMetrics.stringWidth(entry.rightText);
+			if (width > maxRowW)
+				maxRowW = width;
+		}
 
 		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
 		int mouseX = mouse.getX();
@@ -570,7 +571,7 @@ class InventoryTotalOverlay extends Overlay
 
 		int sectionPadding = 5;
 
-		int rowW = rowWidths[rowWidths.length - 1] + 20 + HORIZONTAL_PADDING * 2;
+		int rowW = maxRowW + 20 + HORIZONTAL_PADDING * 2;
 		int rowH = fontMetrics.getHeight();
 
 		int sectionPaddingTotal = sectionPadding;
